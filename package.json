@@ -1,0 +1,24 @@
+{
+  "name": "asc-rewrite",
+  "version": "0.0.0",
+  "description": "The ASC bot",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/NotSugden/ASC-rewrite.git"
+  },
+  "author": "Sugden",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/NotSugden/ASC-rewrite/issues"
+  },
+  "homepage": "https://github.com/NotSugden/ASC-rewrite#readme",
+  "dependencies": {
+    "@types/node": "^13.7.7",
+    "discord.js": "github:discordjs/discord.js",
+    "moment": "^2.24.0"
+  }
+}
