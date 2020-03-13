@@ -1,0 +1,20 @@
+on:
+  push:
+  pull_request:
+
+jobs:
+  eslint:
+    name: eslint
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v1
+    - name: install Node v12
+      uses: actions/setup-node@v1
+      with:
+        node-version: 12
+    - name: Install Dependencies
+      run: npm install
+    - name: eslint
+      uses: icrawl/action-eslint@v1
+      with:
+        custom-glob: /home/runner/work/ASC-rewrite/ASC-rewrite
