@@ -1,4 +1,5 @@
 {
+  "prefix": "+",
 	"token": "Your bot token",
 	"webhooks": [{
 		"name": "audit-logs",
