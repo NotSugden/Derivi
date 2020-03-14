@@ -1,9 +1,19 @@
-import { UserResolvable } from 'discord.js';
+import { UserResolvable, User } from 'discord.js';
 import * as sqlite from 'sqlite';
 import Client from './Client';
-import { Errors } from './Constants';
+import { Errors, ModerationActionTypes } from './Constants';
+import Case, { RawCase } from '../structures/Case';
 import Levels, { RawLevels } from '../structures/Levels';
 import Points, { RawPoints } from '../structures/Points';
+import Message from '../structures/discord.js/Message';
+
+const stringify = (json: object) => {
+	try {
+		return JSON.stringify(json);
+	} catch {
+		return '{}';
+	}
+};
 
 export default class DatabaseManager {
 	private client!: Client;
@@ -18,7 +28,7 @@ export default class DatabaseManager {
    */
 	public open() {
 		return sqlite.open(this.client.config.database, {
-			cached: true,
+			cached: true
 		});
 	}
 
@@ -32,7 +42,7 @@ export default class DatabaseManager {
 	): Promise<Points>;
 	public async setPoints(
 		user: UserResolvable,
-		{ points, vault, daily }: { points?: number; vault?: number; daily?: boolean | number },
+		{ points, vault, daily }: { points?: number; vault?: number; daily?: boolean | number }
 	) {
 		const id = this.client.users.resolveID(user);
 		const error = new Error(Errors.POINTS_RESOLVE_ID(false));
@@ -63,7 +73,7 @@ export default class DatabaseManager {
 		await this.rawDatabase.run(
 			`UPDATE points SET ${set.map(([key]) => `${key} = ?`).join(', ')} WHERE id = ?`,
 			...set.map(([, value]) => value),
-			id,
+			id
 		);
 		return existing;
 	}
@@ -81,13 +91,13 @@ export default class DatabaseManager {
 				id,
 				0,
 				1000,
-				0,
+				0
 			);
 			data = {
 				id,
 				last_daily: 0,
 				points: 1000,
-				vault: 0,
+				vault: 0
 			};
 		}
 		return new Points(this.client, data);
@@ -124,7 +134,7 @@ export default class DatabaseManager {
 		await this.rawDatabase.run('UPDATE levels SET level = ?, xp = ? WHERE id = ?',
 			existing.level = level,
 			existing.xp = xp,
-			id,
+			id
 		);
 		return existing;
 	}
@@ -141,9 +151,83 @@ export default class DatabaseManager {
 			data = {
 				id,
 				level: 0,
-				xp: 0,
+				xp: 0
 			};
 		}
 		return new Levels(this.client, data);
+	}
+
+	public async case(id: number): Promise<Case | null>;
+	public async case(id: number[]): Promise<(Case | null)[]>;
+	public async case(id: number | number[]) {
+		if (Array.isArray(id)) return Promise.all(id.map(i => this.case(i)));
+		const data: RawCase | undefined = await this.rawDatabase.get('SELECT * FROM cases WHERE id = ?', id);
+		if (!data) return null;
+		return new Case(this.client, data);
+	}
+
+	public async newCase({
+		action,
+		extras,
+		message,
+		moderator,
+		reason,
+		screenshots = [],
+		users
+	}: {
+		action: keyof typeof ModerationActionTypes;
+		extras?: object;
+		message: Message;
+		moderator: UserResolvable;
+		reason: string;
+		screenshots?: string[];
+		users: UserResolvable[];
+	}) {
+		const data = { reason } as RawCase;
+		/* Couldn't come up with a better soloution here
+		 * because `User | null` isn't assignable to `UserResolvable`
+		 */
+		const _moderator = this.client.users.resolve(moderator);
+		if (!_moderator) {
+			throw new Error(Errors.CASE_INVALID_MODERATOR);
+		}
+		// The reason resolveID isn't being used is to ensure the ID belongs to a valid user
+		data.moderator = _moderator.id;
+		// same as above
+		const _users = [];
+		for (const idOrUser of users) {
+			if (idOrUser instanceof User) {
+				_users.push(idOrUser.id);
+				continue;
+			}
+			try {
+				const id = this.client.users.resolveID(idOrUser);
+				if (!id) throw null;
+				const user = await this.client.users.fetch(
+					id
+				);
+				_users.push(user.id);
+			} catch {
+				throw new Error(Errors.CASE_RESOLVE_USER(users.indexOf(idOrUser)));
+			}
+		}
+
+		await this.rawDatabase.run(
+			// cases table should have an auto-incrementing unique key, id
+			`INSERT INTO cases (action, extras, message_id, moderator, reason, screenshots, users)
+			VALUES (?, ?, ?, ?, ?, ?, ?)`,
+			data.action = action,
+			data.extras = extras ? stringify(extras) : '{}',
+			data.message_id = message.id,
+			// this was converted into a `string`
+			data.moderator,
+			data.reason,
+			data.screenshot_urls = JSON.stringify(screenshots),
+			data.users = JSON.stringify(_users)
+		);
+
+		const { seq: caseID } = await this.rawDatabase.get('SELECT seq FROM sqlite_sequence WHERE name = ?', 'cases');
+		data.id = caseID;
+		return new Case(this.client, data);
 	}
 }
