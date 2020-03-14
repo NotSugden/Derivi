@@ -2,11 +2,9 @@ import { join } from 'path';
 /* eslint-disable sort-keys */
 export const Defaults = {
 	CLIENT_CONFIG: {
-		commandsDir: join(__dirname, '..', 'commands'),
-		prefix: '+',
+		commands_dir: join(__dirname, '..', 'commands'),
 		database: 'database.sqlite',
-		token: null,
-		webhooks: [],
+		files_dir: join(__dirname, '..', 'saved_files'),
 	},
 };
 
