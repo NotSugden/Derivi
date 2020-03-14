@@ -14,7 +14,7 @@ export default class CommandManager extends Collection<string, Command> {
 		super();
 		Object.defineProperties(this, {
 			_directory: { value: directory },
-			client: { value: client },
+			client: { value: client }
 		});
 	}
 

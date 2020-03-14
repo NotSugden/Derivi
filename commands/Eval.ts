@@ -17,17 +17,15 @@ export default class Eval extends Command {
 			category: 'Dev',
 			cooldown: 0,
 			name: 'eval',
-			permissions(member) {
-				return member.id === '381694604187009025';
-			},
+			permissions: member => member.id === '381694604187009025',
 			usages: [{
-				type: 'code',
-			}],
-		}, __dirname);
+				type: 'code'
+			}]
+		}, __filename);
 	}
 
 	public async run(message: Message, args: CommandArguments, {
-		send,
+		send
 	}: CommandData): Promise<Message | void> {
 		const finish = async (result: unknown) => {
 			const inspected = util.inspect(result);
@@ -35,15 +33,19 @@ export default class Eval extends Command {
 				const { key } = await fetch(URLs.HASTEBIN('documents'), {
 					body: inspected,
 					headers: {
-						'Content-Type': 'application/json',
+						'Content-Type': 'application/json'
 					},
-					method: 'POST',
+					method: 'POST'
 
 				}).then(response => response.json());
-				return send(key ? `Output was too long, posted to ${URLs.HASTEBIN(key)}` : 'Output was too long for hastebin.');
+				return send(
+					key ?
+						`Output was too long, posted to ${URLs.HASTEBIN(key)}` :
+						'Output was too long for hastebin.'
+				);
 			}
 			return send(inspected, {
-				code: 'js', disableMentions: 'everyone',
+				code: 'js', disableMentions: 'everyone'
 			});
 		};
 		try {

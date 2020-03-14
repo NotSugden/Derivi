@@ -3,15 +3,21 @@ import { promises as fs } from 'fs';
 import { join } from 'path';
 import { Extendable, Structures } from 'discord.js';
 import Client from './util/Client';
+const extended: (keyof Extendable)[] = ['Message', 'Guild'];
+for (const className of extended) {
+	Structures.extend(className, () => require(join(__dirname, 'structures', 'discord.js', className)).default);
+}
 const config = require(join(__dirname, 'config.json'));
 const client = new Client(config, {
 	partials: ['REACTION', 'MESSAGE'],
 	presence: {
 		activity: {
-			name: `${config.prefix}help`,
-		},
-	},
+			name: `${config.prefix}help`
+		}
+	}
 });
+client.on('error', console.error);
+client.on('warn', console.warn);
 client.connect();
 
 /**
@@ -21,7 +27,7 @@ client.connect();
 fs.readdir(join(__dirname, 'events')).then(files => {
 	for (const file of files) {
 		const fn: (...args: unknown[]) => void = require(
-			join(__dirname, 'events', file),
+			join(__dirname, 'events', file)
 		).default;
 		client.on(file.split('.')[0], fn);
 	}
@@ -29,8 +35,3 @@ fs.readdir(join(__dirname, 'events')).then(files => {
 	console.error(err);
 	process.exit(1);
 });
-
-const extended: (keyof Extendable)[] = ['Message', 'Guild'];
-for (const className of extended) {
-	Structures.extend(className, () => require(join(__dirname, 'structures', 'discord.js', className)).default);
-}

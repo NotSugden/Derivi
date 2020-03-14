@@ -1,7 +1,7 @@
 /* eslint-disable consistent-return */
 import { promises as fs } from 'fs';
 import { join } from 'path';
-import { MessageOptions, MessageEditOptions } from 'discord.js';
+import { MessageOptions, MessageEditOptions, StringResolvable, MessageAdditions } from 'discord.js';
 import fetch from 'node-fetch';
 import { CommandData } from '../structures/Command';
 import CommandArguments from '../structures/CommandArguments';
@@ -25,7 +25,7 @@ export default async (message: Message) => {
 					const extension = url.split('.').pop();
 					const name = join(
 						client.config.filesDir,
-						`${message.id}-${i}${extension ? `.${extension}` : ''}`,
+						`${message.id}-${i}${extension ? `.${extension}` : ''}`
 					);
 					const buffer = await fetch(url)
 						.then(response => response.buffer())
@@ -41,7 +41,11 @@ export default async (message: Message) => {
 		const command = client.commands.resolve(plainCommand);
 		if (!command) return;
 		const { permissions } = command;
-		const send: CommandData['send'] = async (content, options) => {
+
+		const send = (async (
+			content: StringResolvable,
+			options?: MessageOptions | MessageEditOptions | MessageAdditions
+		) => {
 			if (typeof message.commandID === 'string') {
 				const msg = message.channel.messages.cache.get(message.commandID);
 				// Lazy fix here casting it to MessageEditOptions, TS complains otherwise.
@@ -49,10 +53,12 @@ export default async (message: Message) => {
 			}
 
 			// Lazy fix here casting it to MessageOptions, TS complains otherwise.
-			const msg = await message.channel.send(content, (options as MessageOptions)) as Message;
+			const msg = await message.channel.send(content, options as MessageOptions | MessageAdditions) as Message;
 			message.commandID = msg.id;
 			return msg;
-		};
+		}) as CommandData['send'];
+
+
 		let hasPermissions: boolean;
 		if (typeof permissions === 'function') {
 			hasPermissions = await permissions(message.member!, message.channel);
@@ -63,16 +69,16 @@ export default async (message: Message) => {
 
 		await command.run(message, args, {
 			edited,
-			send,
+			send
 		});
 	} catch (error) {
 		await message.channel.send([
 			`An unexpected error has occoured: \`${error.name}\``,
-			`\`\`\`js\n${error.message}\`\`\``,
+			`\`\`\`js\n${error.message}\`\`\``
 		], {
 			files: [
-				'https://cdn.discordapp.com/attachments/594924795632549908/687837066058399780/Icons8_flat_delete_generic.png',
-			],
+				'https://cdn.discordapp.com/attachments/539359924464123940/688494798214266932/error.png'
+			]
 		}).catch(console.error);
 		console.error(error);
 	}

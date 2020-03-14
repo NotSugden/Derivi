@@ -1,7 +1,7 @@
 import {
 	PermissionResolvable, GuildMember,
 	TextChannel, Snowflake, MessageAdditions,
-	MessageOptions, StringResolvable, MessageEditOptions,
+	MessageOptions, StringResolvable, MessageEditOptions
 } from 'discord.js';
 import CommandArguments from './CommandArguments';
 import Message from './discord.js/Message';
@@ -23,7 +23,7 @@ export default class Command {
 	constructor(manager: CommandManager, options: CommandOptions, path: string) {
 		Object.defineProperties(this, {
 			client: { value: manager.client },
-			manager: { value: manager },
+			manager: { value: manager }
 		});
 		this.category = options.category;
 		this.cooldown = options.cooldown || 3;
@@ -39,7 +39,7 @@ export default class Command {
 			usage =>
 				(usage.required ? '[' : '<') +
 				(usage.extras ? [usage.type, ...usage.extras].join(' | ') : usage.type) +
-				(usage.required ? ']' : '>'),
+				(usage.required ? ']' : '>')
 		);
 	}
 
@@ -51,17 +51,20 @@ export default class Command {
 
 	public run(message: Message, args: CommandArguments, {
 		send,
-		edited = false,
+		edited = false
 	}: CommandData): Promise<Message | void> {
 		if (edited) return Promise.resolve();
 		return send('No implementation for command');
 	}
 }
 
-export interface CommandData<T = boolean> {
-	edited?: T;
+export interface CommandData<> {
+	edited?: boolean;
 	send(
-		content: StringResolvable | MessageAdditions | MessageEditOptions | MessageOptions,
+		options: MessageAdditions | MessageEditOptions | MessageOptions
+	): Promise<Message>;
+	send(
+		content: StringResolvable,
 		options?: MessageAdditions | MessageOptions | MessageEditOptions
 	): Promise<Message>;
 }
