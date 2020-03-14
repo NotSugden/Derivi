@@ -21,6 +21,7 @@ export default class Util {
 		return Buffer.concat([decipher.update(data), decipher.final()]);
 	}
 
+	/* eslint-disable no-await-in-loop */
 	static async reason(message: Message) {
 		const { client } = message;
 		const users = new Collection<Snowflake, User>();
@@ -31,7 +32,7 @@ export default class Util {
 			content.shift();
 			let user: User;
 			try {
-				user = await client.users.fetch(id); // eslint-disable-line no-await-in-loop
+				user = await client.users.fetch(id);
 			} catch {
 				throw new Error(Errors.RESOLVE_ID(id));
 			}
@@ -41,11 +42,12 @@ export default class Util {
 			const members = new Collection<Snowflake, GuildMember>();
 			for (const user of users.values()) {
 				try {
-					const member = await message.guild!.members.fetch(user); // eslint-disable-line no-await-in-loop
+					const member = await message.guild!.members.fetch(user);
 					members.set(member.id, member);
 				} catch { } // eslint-disable-line no-empty
 			}
 			return members;
 		}, reason: content, users };
 	}
+	/* eslint-enable no-await-in-loop */
 }

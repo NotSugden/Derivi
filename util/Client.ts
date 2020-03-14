@@ -4,7 +4,6 @@ import { Defaults } from './Constants';
 import DatabaseManager from './DatabaseManager';
 import Guild from '../structures/discord.js/Guild';
 
-
 export interface ClientConfig {
 	attachment_logging: boolean;
 	commands_dir?: string;

@@ -44,11 +44,11 @@ export default async (message: Message) => {
 		const send: CommandData['send'] = async (content, options) => {
 			if (typeof message.commandID === 'string') {
 				const msg = message.channel.messages.cache.get(message.commandID);
-				// Lazy fix here casting it to MessageEditOptions, TS complains otherwise
+				// Lazy fix here casting it to MessageEditOptions, TS complains otherwise.
 				if (msg) return msg.edit(content, options as MessageEditOptions) as Promise<Message>;
 			}
 
-			// Lazy fix here casting it to MessageOptions, TS complains otherwise
+			// Lazy fix here casting it to MessageOptions, TS complains otherwise.
 			const msg = await message.channel.send(content, (options as MessageOptions)) as Message;
 			message.commandID = msg.id;
 			return msg;
