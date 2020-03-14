@@ -2,6 +2,7 @@ import { promises as fs } from 'fs';
 import { join } from 'path';
 import { Collection } from 'discord.js';
 import Client from './Client';
+import { Errors } from './Constants';
 import Command from '../structures/Command';
 
 export default class CommandManager extends Collection<string, Command> {
@@ -19,7 +20,7 @@ export default class CommandManager extends Collection<string, Command> {
 
 	public reload(command: CommandResolvable) {
 		const resolved = this.resolve(command);
-		if (!resolved) throw new Error('The command passed couldn\'t be resolved');
+		if (!resolved) throw new Error(Errors.RESOLVE_COMMAND);
 		this.delete(resolved.name);
 		delete require.cache[resolved.path];
 		return this.load(command);
@@ -41,13 +42,13 @@ export default class CommandManager extends Collection<string, Command> {
 	public load(command: CommandResolvable | CommandResolvable[]) {
 		if (Array.isArray(command)) return command.map(cmd => this.load(cmd));
 		const resolved = this.resolve(command);
-		if (!resolved) throw new Error('The command passed couldn\'t be resolved');
+		if (!resolved) throw new Error(Errors.RESOLVE_COMMAND);
 		try {
 			const cmd = new (require(resolved.path) as (new (manager: CommandManager) => Command))(this);
 			this.set(cmd.name, cmd);
 			return cmd;
 		} catch {
-			throw new Error(`Failed to load command ${resolved.name}`);
+			throw new Error(Errors.COMMAND_LOAD_FAILED(resolved.name));
 		}
 	}
 

@@ -2,11 +2,9 @@ import { join } from 'path';
 /* eslint-disable sort-keys */
 export const Defaults = {
 	CLIENT_CONFIG: {
-		commandsDir: join(__dirname, '..', 'commands'),
-		prefix: '+',
+		commands_dir: join(__dirname, '..', 'commands'),
 		database: 'database.sqlite',
-		token: null,
-		webhooks: [],
+		files_dir: join(__dirname, '..', 'saved_files'),
 	},
 };
 
@@ -17,6 +15,10 @@ export const Errors = {
 	NEGATIVE_NUMBER: (variable: string) => `Provided '${variable}' is negative, and should be positive.`,
 	RESOLVE_ID: (id: string) =>
 		`An ID or user mention was provided, but the user couldn't be resolved, are you sure its valid? (${id})`,
+	RESOLVE_COMMAND: 'The command passed couldn\'t be resolved',
+
+	COMMAND_LOAD_FAILED: (name: string) => `Failed to load command ${name}`,
+	INVALID_TYPE: (parameter: string, type: string) => `Provided '${parameter}' should be a '${type}'`,
 };
 
 export const Responses = {

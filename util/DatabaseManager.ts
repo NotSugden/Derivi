@@ -14,7 +14,7 @@ export default class DatabaseManager {
 	}
 
 	/**
-   * Warning: database file will need to be properly configured
+   * Warning: database file will need to be properly configured.
    */
 	public open() {
 		return sqlite.open(this.client.config.database, {
@@ -97,7 +97,7 @@ export default class DatabaseManager {
 	public async setLevels(user: UserResolvable, { level, xp }: { level: number; xp?: number }): Promise<Levels>;
 	public async setLevels(user: UserResolvable, { level, xp }: { level?: number; xp?: number }) {
 		const id = this.client.users.resolveID(user);
-		const error = new Error('Couldn\'t resolve the User ID to set the levels of.');
+		const error = new Error(Errors.LEVELS_RESOLVE_ID(false));
 		if (!id) throw error;
 		let existing: Levels;
 		try {
@@ -114,9 +114,11 @@ export default class DatabaseManager {
 			xp = Levels.levelCalc(level) + 1;
 		}
 
-		if (typeof level !== 'number' || typeof xp !== 'number') throw new TypeError('level and/or xp must be a number.');
+		if (typeof level !== 'number' || typeof xp !== 'number') {
+			throw new TypeError(Errors.INVALID_TYPE('level\' or \'xp', 'number'));
+		}
 		if (level < 0 || xp < 0) {
-			throw new RangeError(`${level < 0 ? 'level' : 'xp'} is a negative number, and should be positive`);
+			throw new RangeError(Errors.NEGATIVE_NUMBER(level < 0 ? 'level' : 'xp'));
 		}
 
 		await this.rawDatabase.run('UPDATE levels SET level = ?, xp = ? WHERE id = ?',
@@ -132,7 +134,7 @@ export default class DatabaseManager {
 	public async levels(user: UserResolvable | UserResolvable[]) {
 		if (Array.isArray(user)) return Promise.all(user.map(u => this.levels(u)));
 		const id = this.client.users.resolveID(user);
-		if (!id) throw new Error('Couldn\'t resolve the User ID to fetch levels from.');
+		if (!id) throw new Error(Errors.LEVELS_RESOLVE_ID());
 		let data: RawLevels = await this.rawDatabase.get('SELECT * FROM levels WHERE id = ?', id);
 		if (!data) {
 			await this.rawDatabase.run('INSERT INTO levels (id, level, xp) VALUES (?, ?, ?)', id, 0, 0);
