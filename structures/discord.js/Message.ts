@@ -1,6 +1,7 @@
 import { Message as DJSMessage, Snowflake, GuildMember } from 'discord.js';
 import Guild from './Guild';
 import Client from '../../util/Client';
+
 export default class Message extends DJSMessage {
 	public client!: Client;
 	public commandID?: Snowflake;
