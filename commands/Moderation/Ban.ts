@@ -73,7 +73,7 @@ export default class Ban extends Command {
 					return send(Responses.ALREADY_REMOVED_USERS(users.size > 1, false));
 				}
 				extras.Note =
-					`${alreadyBanned.length} User${
+					`${alreadyBanned.length} Other user${
 						alreadyBanned.length > 1 ? 's were' : ' was'
 					} attempted to be banned, however they were already banned.`;
 			}

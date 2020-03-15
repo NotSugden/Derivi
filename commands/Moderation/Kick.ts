@@ -49,7 +49,7 @@ export default class Kick extends Command {
 
 			if (members.size !== users.size) {
 				const left = users.filter(user => !members.has(user.id));
-				extras.Note = `${left.size} Users were attempted to be kicked, however they had already left`;
+				extras.Note = `${left.size} Other users were attempted to be kicked, however they had already left`;
 			}
 
 			const { id: caseID } = await Util.sendLog(

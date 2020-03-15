@@ -96,7 +96,7 @@ export const Responses = {
 			const amount = users.length - array.length;
 			content.push(`Couldn't ${
 				kick ? 'kick' : 'ban'
-			} ${amount} user${amount > 1 ? 's' : ''}, as they had already ${
+			} ${amount} other user${amount > 1 ? 's' : ''}, as they had already ${
 				kick ? 'left/been kicked' : 'been banned'
 			}.`);
 		}
