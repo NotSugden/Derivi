@@ -38,8 +38,8 @@ export default class Kick extends Command {
 
 			if (!reason) return send(Responses.PROVIDE_REASON);
 			if (!members.size) {
-				if (!users.size) return send(Responses.MENTION_MEMBERS);
-				return send(Responses.ALREADY_KICKED_USERS(users.size > 1));
+				if (!users.size) return send(Responses.MENTION_USERS(false));
+				return send(Responses.ALREADY_REMOVED_USERS(users.size > 1, true));
 			}
 
 			const extras: {
@@ -60,10 +60,10 @@ export default class Kick extends Command {
 			);
 
 			for (const member of members.values()) {
-				await member.kick(Responses.AUDIT_LOG_MEMBER_REMOVE(message.author, caseID, true));
+				await member.kick(Responses.AUDIT_LOG_MEMBER_REMOVE(message.author, caseID));
 			}
 
-			return send(Responses.KICK_SUCCESSFUL(members.array(), users.array()));
+			return send(Responses.MEMBER_REMOVE_SUCCESSFUL({ members: members.array(), users: users.array() }, true));
 
 		} catch (error) {
 			if (error.name === 'Error') return send(error.message);

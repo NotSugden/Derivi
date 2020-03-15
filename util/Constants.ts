@@ -38,11 +38,18 @@ export const Errors = {
 };
 
 export const Responses = {
-	ALREADY_KICKED_USERS: (multiple: boolean) =>
-		`${multiple ? 'All of the members' : 'The member'} you mentioned have already left or been kicked.`,
+	ALREADY_REMOVED_USERS: (multiple: boolean, kick = true) =>
+		`${multiple ? 'All of the members' : 'The member'} you mentioned ${multiple ? 'have' : 'has'} already ${
+			kick ?
+				'left or been kicked' :
+				'been banned'
+		}.`,
 	INSUFFICIENT_PERMISSIONS: 'You have insufficient permissions to perform this action.',
-	MENTION_MEMBERS: 'Please mention at least 1 member.',
+	MENTION_USERS: (users = true) => `Please mention at least 1 ${users ? 'user' : 'member'}.`,
 	PROVIDE_REASON: 'Please supply a reason for this action.',
+	INVALID_FLAG_TYPE: (flag: string, type: string) => `Flag ${flag} must be ${type}`,
+	INVALID_FLAG: (provided: string, valid: string[]) =>
+		`Provided flag '${provided}' is not valid, valid flags for this command are: ${valid.join(', ')}`,
 
 	MODERATION_LOG_FIELDS: (moderator: User, users: User[]): EmbedFieldData[] => [{
 		name: 'Moderator',
@@ -64,12 +71,34 @@ export const Responses = {
 
 	AUDIT_LOG_MEMBER_REMOVE: (moderator: User, caseID: number, kick = true) =>
 		`${kick ? 'Kicked' : 'Banned'} by ${moderator.tag}: Case ${caseID}`,
-	KICK_SUCCESSFUL: (members: GuildMember[], users: User[]) => {
+
+	/**
+   * Big spaghetti code ;(
+	 * if someone wants to prettify this be my guest
+	 */
+	MEMBER_REMOVE_SUCCESSFUL: ({ filteredUsers, members, users }: {
+		filteredUsers?: User[];
+		members?: GuildMember[];
+		users: User[];
+	}, kick = true) => {
+
 		const content = [
-			`Kicked ${members.length > 1 ? members[0].user.tag : `${members.length} members`}.`
+			`${kick ? 'Kicked' : 'Banned'} ${
+				(members || users).length === 1 ?
+					(members ? members[0].user : users[0]).tag :
+					`${(members || users).length} members`
+			}.`
 		];
-		if (members.length !== users.length) {
-			content.push(`Couldn't kick ${users.length - members.length} users, as they had already left.`);
+
+		const array = members || filteredUsers!;
+
+		if (array.length !== users.length) {
+			const amount = users.length - array.length;
+			content.push(`Couldn't ${
+				kick ? 'kick' : 'ban'
+			} ${amount} user${amount > 1 ? 's' : ''}, as they had already ${
+				kick ? 'left/been kicked' : 'been banned'
+			}.`);
 		}
 		return content;
 	}
@@ -78,3 +107,5 @@ export const Responses = {
 export const URLs = {
 	HASTEBIN: (endpointOrID?: string) => `https://hasteb.in${endpointOrID ? `/${endpointOrID}` : ''}`
 };
+
+export const FLAGS_REGEX = /--([a-z]+)=("[^"]*"|[0-9a-z]*)/gi;

@@ -1,7 +1,7 @@
 import * as crypto from 'crypto';
-import { Collection, User, GuildMember, Snowflake, MessageEmbed } from 'discord.js';
+import { Collection, User, GuildMember, Snowflake, MessageEmbed, Util as DJSUtil } from 'discord.js';
 import Client from './Client';
-import { Errors, ModerationActionTypes, Responses } from './Constants';
+import { Errors, ModerationActionTypes, Responses, FLAGS_REGEX } from './Constants';
 import Message from '../structures/discord.js/Message';
 
 const getCipherKey = (password: string) => crypto.createHash('sha256')
@@ -9,6 +9,23 @@ const getCipherKey = (password: string) => crypto.createHash('sha256')
 	.digest();
 
 export default class Util {
+
+	static extractFlags(string: string): {
+		flags: FlagData;
+		string: string;
+	} {
+		const flags = [...string.matchAll(FLAGS_REGEX)]
+			.map(arr => arr.slice(1));
+		const flagsObj: { [key: string]: string } = {};
+		for (const [name, value] of flags) {
+			flagsObj[name] = value.startsWith('"') ? value.slice(1, value.length - 1) : value;
+		}
+		return {
+			flags: flagsObj, 
+			string: string.replace(FLAGS_REGEX, '').replace(/\s\s+/g, ' ')
+		};
+	}
+
 	static encrypt(data: Buffer, password: string) {
 		const iv = crypto.randomBytes(16);
 		const cipher = crypto.createCipheriv('aes256', getCipherKey(password), iv);
@@ -106,7 +123,11 @@ export default class Util {
 	}
 }
 
-interface ReasonData {
+export interface ReasonData {
 	reason: string;
 	users: Collection<Snowflake, User>;
+}
+
+export interface FlagData {
+	[key: string]: string | undefined;
 }
