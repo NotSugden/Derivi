@@ -19,3 +19,5 @@ const smth = object ? object.something : undefined
 ```
 just compiles as-is and is will throw a syntax error when trying to run the bot
 so be aware that for whatever reason that feature of TS is unavailable
+
+I will look into this and possibly fix it at another date, or if there is something wrong with my `tsconfig.json` then someone can make a PR to fix it up
