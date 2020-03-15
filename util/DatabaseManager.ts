@@ -24,6 +24,10 @@ export default class DatabaseManager {
 		Object.defineProperty(this, 'client', { value: client });
 	}
 
+	public close() {
+		return this.rawDatabase.close();
+	}
+
 	/**
    * Warning: database file will need to be properly configured.
    */

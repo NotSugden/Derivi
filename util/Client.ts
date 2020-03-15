@@ -97,17 +97,33 @@ export default class Client extends DJSClient {
 							await this._validateConfig();
 							resolve(this);
 						} catch (error) {
-							reject(error);
+							this.disconnect()
+								.then(() => reject(error))
+								.catch(err => {
+									console.error(err);
+									reject(error);
+								});
 						}
 					};
 					this.once(Constants.Events.CLIENT_READY, handler);
 					this.login(token).catch(error => {
 						this.off(Constants.Events.CLIENT_READY, handler);
-						reject(error);
+						this.disconnect()
+							.then(() => reject(error))
+							.catch(err => {
+								console.error(err);
+								reject(error);
+							});
 					});
 				})
 			).catch(reject)
 		);
+	}
+
+	public async disconnect() {
+		await this.database.close();
+		this.commands.clear();
+		return this.destroy();
 	}
 
 	private async _validateConfig() {
