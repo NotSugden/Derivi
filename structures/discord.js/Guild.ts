@@ -2,8 +2,8 @@ import { Guild as DJSGuild, Collection, Invite, User } from 'discord.js';
 import Client from '../../util/Client';
 export default class Guild extends DJSGuild {
 	public bans = new Collection<string, {
-		user: User & { client: Client };
 		reason: string | null;
+		user: User & { client: Client };
 	}>()
 	public client!: Client;
 	public invites = new Collection<string, Invite & { client: Client }>();
@@ -15,8 +15,8 @@ export default class Guild extends DJSGuild {
 			.then(bans => {
 				for (const ban of bans.values()) {
 					this.bans.set(ban.user.id, ban as {
-						user: User & { client: Client };
 						reason: string | null;
+						user: User & { client: Client };
 					});
 				}
 			});

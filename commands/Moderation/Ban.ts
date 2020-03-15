@@ -90,6 +90,10 @@ export default class Ban extends Command {
 			banOptions.reason = Responses.AUDIT_LOG_MEMBER_REMOVE(message.author, caseID, false);
 
 			for (const user of filteredUsers) {
+				guild.bans.set(user.id, {
+					reason: banOptions.reason,
+					user
+				});
 				await guild.members.ban(user, banOptions);
 			}
 

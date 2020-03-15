@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
 import { promises as fs } from 'fs';
 import { join } from 'path';
-import { Extendable, Structures, User } from 'discord.js';
+import { Constants, Extendable, Structures, User } from 'discord.js';
 import Guild from './structures/discord.js/Guild';
 import Client from './util/Client';
 const extended: (keyof Extendable)[] = ['Message', 'Guild'];
@@ -24,7 +24,7 @@ client.on('warn', console.warn);
  * properties added in the custom extended Guild structure
  * `user` shouldn't be a partial, so it is typed as such
  */
-client.on('guildBanAdd', async (guild: Guild, user: User) => {
+client.on(Constants.Events.GUILD_BAN_ADD, async (guild: Guild, user: User) => {
 	if (guild.bans.has(user.id)) return;
 	try {
 		const ban = await guild.fetchBan(user) as {
@@ -36,7 +36,7 @@ client.on('guildBanAdd', async (guild: Guild, user: User) => {
 		client.emit('warn', 'Recieved an error fetching a ban in the \'guildBanAdd\' event, this should not happen');
 	}
 });
-client.on('guildBanRemove', async (guild: Guild, user: User) => {
+client.on(Constants.Events.GUILD_BAN_REMOVE, async (guild: Guild, user: User) => {
 	guild.bans.delete(user.id);
 });
 client.connect();

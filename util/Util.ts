@@ -1,5 +1,5 @@
 import * as crypto from 'crypto';
-import { Collection, User, GuildMember, Snowflake, MessageEmbed, Util as DJSUtil } from 'discord.js';
+import { Collection, User, GuildMember, Snowflake, MessageEmbed } from 'discord.js';
 import Client from './Client';
 import { Errors, ModerationActionTypes, Responses, FLAGS_REGEX } from './Constants';
 import Message from '../structures/discord.js/Message';
@@ -43,19 +43,19 @@ export default class Util {
 	/* eslint-disable no-await-in-loop */
 	static async reason(message: Message, fetchMembers?: false): Promise<ReasonData>;
 	static async reason(message: Message, fetchMembers: true): Promise<ReasonData & {
-		members: Collection<Snowflake, GuildMember>;
+		members: Collection<Snowflake, GuildMember & { client: Client }>;
 	}>;
 	static async reason(message: Message, fetchMembers = false) {
 		const { client } = message;
-		const users = new Collection<Snowflake, User>();
+		const users = new Collection<Snowflake, User & { client: Client }>();
 		const [, ...content] = message.content.split(' ');
 		for (const word of [...content]) {
 			const [id] = word.match(/\d{17,19}/) || [];
 			if (!id) break;
 			content.shift();
-			let user: User;
+			let user: User & { client: Client };
 			try {
-				user = await client.users.fetch(id);
+				user = await client.users.fetch(id) as User & { client: Client };
 			} catch {
 				throw new Error(Errors.RESOLVE_ID(id));
 			}
@@ -63,16 +63,16 @@ export default class Util {
 		}
 
 		const data: {
-			members?: Collection<Snowflake, GuildMember>;
+			members?: Collection<Snowflake, GuildMember & { client: Client }>;
 			reason: string;
-			users: Collection<Snowflake, User>;
+			users: Collection<Snowflake, User & { client: Client }>;
 		} = { reason: content.join(' '), users };
 
 		if (fetchMembers) {
-			const members = data.members = new Collection<Snowflake, GuildMember>();
+			const members = data.members = new Collection<Snowflake, GuildMember & { client: Client }>();
 			for (const user of users.values()) {
 				try {
-					const member = await message.guild!.members.fetch(user);
+					const member = await message.guild!.members.fetch(user) as GuildMember & { client: Client };
 					members.set(member.id, member);
 				} catch { } // eslint-disable-line no-empty
 			}
@@ -125,7 +125,7 @@ export default class Util {
 
 export interface ReasonData {
 	reason: string;
-	users: Collection<Snowflake, User>;
+	users: Collection<Snowflake, User & { client: Client }>;
 }
 
 export interface FlagData {
