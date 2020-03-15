@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
 import { promises as fs } from 'fs';
 import { join } from 'path';
-import { Constants, Extendable, Structures, User } from 'discord.js';
+import { Constants, Extendable, Structures, User, Intents } from 'discord.js';
 import Guild from './structures/discord.js/Guild';
 import Client from './util/Client';
 const extended: (keyof Extendable)[] = ['Message', 'Guild'];
@@ -10,11 +10,21 @@ for (const className of extended) {
 }
 const config = require(join(__dirname, 'config.json'));
 const client = new Client(config, {
+	disableMentions: 'everyone',
 	partials: ['REACTION', 'MESSAGE'],
 	presence: {
 		activity: {
 			name: `${config.prefix}help`
 		}
+	},
+	ws: {
+		intents: [
+			Intents.FLAGS.DIRECT_MESSAGES,
+			Intents.FLAGS.GUILDS,
+			Intents.FLAGS.GUILD_INVITES,
+			Intents.FLAGS.GUILD_MESSAGES,
+			Intents.FLAGS.GUILD_MESSAGE_REACTIONS
+		]
 	}
 });
 client.on('error', console.error);

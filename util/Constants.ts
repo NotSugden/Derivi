@@ -23,12 +23,14 @@ export const Errors = {
 		`Client config option '${option}' couldn't be resolved to a valid ${className}.`,
 
 	CASE_RESOLVE_USER: (index: number) => `Couldn't resolve a User from 'users[${index}]'.`,
-	CASE_INVALID_MODERATOR: 'Couldn\'t resolve the User from the provided \'moderator\' for a new case.',
+
+	RESOLVE_PROVIDED: (parameter: string) => `Couldn't resolve the User from the provided '${parameter}'.`,
 
 	LEVELS_RESOLVE_ID: (fetch = true) => `Couldn't resolve the User ID to ${fetch ? 'fetch' : 'set'} levels of.`,
 	POINTS_RESOLVE_ID: (fetch = true) => `Couldn't resolve the User ID to ${fetch ? 'fetch' : 'set'} points of.`,
+	WARNS_RESOLVE_ID: 'Couldn\'t resolve the User ID to fetch warns from.',
 
-	NEGATIVE_NUMBER: (variable: string) => `Provided '${variable}' is negative, and should be positive.`,
+	NEGATIVE_NUMBER: (variable: string) =>`Provided '${variable}' is negative, and should be positive.`,
 	RESOLVE_ID: (id: string) =>
 		`An ID or user mention was provided, but the user couldn't be resolved, are you sure its valid? (${id})`,
 	RESOLVE_COMMAND: 'The command passed couldn\'t be resolved',
@@ -101,7 +103,10 @@ export const Responses = {
 			}.`);
 		}
 		return content;
-	}
+	},
+
+	WARN_SUCCESS: (users: User[], reason: string) =>
+		`${users.length > 1 ? `${users.length} Users where` : `${users[0].tag} was`} warned for ${reason}.`
 };
 
 export const URLs = {

@@ -41,11 +41,18 @@ export default class Util {
 	}
 
 	/* eslint-disable no-await-in-loop */
-	static async reason(message: Message, fetchMembers?: false): Promise<ReasonData>;
-	static async reason(message: Message, fetchMembers: true): Promise<ReasonData & {
+	static async reason(message: Message, options?: { fetchMembers?: false; withFlags?: false }): Promise<ReasonData>;
+	static async reason(message: Message, options: { fetchMembers?: false; withFlags: true }): Promise<ReasonData & {
+		flags: FlagData;
+	}>;
+	static async reason(message: Message, options: { fetchMembers: true; withFlags?: false }): Promise<ReasonData & {
 		members: Collection<Snowflake, GuildMember & { client: Client }>;
 	}>;
-	static async reason(message: Message, fetchMembers = false) {
+	static async reason(message: Message, options: { fetchMembers: true; withFlags: true }): Promise<ReasonData & {
+		flags: FlagData;
+		members: Collection<Snowflake, GuildMember & { client: Client }>;
+	}>;
+	static async reason(message: Message, { fetchMembers = false, withFlags = false } = {}) {
 		const { client } = message;
 		const users = new Collection<Snowflake, User & { client: Client }>();
 		const [, ...content] = message.content.split(' ');
@@ -63,6 +70,7 @@ export default class Util {
 		}
 
 		const data: {
+			flags?: FlagData;
 			members?: Collection<Snowflake, GuildMember & { client: Client }>;
 			reason: string;
 			users: Collection<Snowflake, User & { client: Client }>;
@@ -76,6 +84,12 @@ export default class Util {
 					members.set(member.id, member);
 				} catch { } // eslint-disable-line no-empty
 			}
+		}
+
+		if (withFlags) {
+			const { flags, string: newReason } = Util.extractFlags(data.reason);
+			data.reason = newReason;
+			data.flags = flags;
 		}
 		
 		return data;

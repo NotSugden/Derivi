@@ -36,8 +36,7 @@ export default class Ban extends Command {
 
 	public async run(message: Message, args: CommandArguments, { send }: CommandData) {
 		try {
-			const { users, reason: _reason } = await Util.reason(message);
-			const { flags, string: reason } = Util.extractFlags(_reason);
+			const { users, reason, flags } = await Util.reason(message, { withFlags: true });
 			
 			// have to non-null assert it
 			const guild = message.guild!;

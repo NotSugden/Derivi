@@ -21,13 +21,17 @@ export default class Case {
 		this.extras = JSON.parse(data.extras);
 		this.id = data.id;
 		this.logMessageID = data.message_id;
-		this.moderatorID = data.moderator;
+		this.moderatorID = data.moderator_id;
 		this.reason = data.reason;
 		this.screenshot_urls = JSON.parse(data.screenshot_urls);
-		this.userIDs = JSON.parse(data.users);
+		this.userIDs = JSON.parse(data.user_ids);
 	}
 
-	logMessage() {
+	public logMessage() {
+		/**
+		 * Using a function here as its more likely than not
+		 * that the log message would be uncached
+		 */
 		return this.client.config.punishmentChannel.messages.fetch(this.logMessageID);
 	}
 
@@ -35,8 +39,12 @@ export default class Case {
 		return this.client.users.resolve(this.moderatorID);
 	}
 
-	public users() {
-		return Promise.all(this.userIDs.map(userID => this.client.users.fetch(userID)));
+	get users() {
+		/**
+		 * Opted for a getter over a function here. if any of the users are null
+		 * then they'll have to be accounted for and fetched
+		 */
+		return this.userIDs.map(id => this.client.users.resolve(id));
 	}
 }
 
@@ -45,8 +53,8 @@ export interface RawCase {
 	extras: string;
 	id: number;
 	message_id: string;
-	moderator: Snowflake;
+	moderator_id: Snowflake;
 	reason: string;
 	screenshot_urls: string;
-	users: string;
+	user_ids: string;
 }

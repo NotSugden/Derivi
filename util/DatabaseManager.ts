@@ -5,6 +5,7 @@ import { Errors, ModerationActionTypes } from './Constants';
 import Case, { RawCase } from '../structures/Case';
 import Levels, { RawLevels } from '../structures/Levels';
 import Points, { RawPoints } from '../structures/Points';
+import Warn, { RawWarn } from '../structures/Warn';
 import Message from '../structures/discord.js/Message';
 
 const stringify = (json: object) => {
@@ -34,11 +35,11 @@ export default class DatabaseManager {
 
 	public async setPoints(
 		user: UserResolvable,
-		{ points, vault, daily }: { points?: number; vault: number; daily?: boolean | number },
+		options: { points?: number; vault: number; daily?: boolean | number },
 	): Promise<Points>;
 	public async setPoints(
 		user: UserResolvable,
-		{ points, vault, daily }: { points: number; vault?: number; daily?: boolean | number },
+		options: { points: number; vault?: number; daily?: boolean | number },
 	): Promise<Points>;
 	public async setPoints(
 		user: UserResolvable,
@@ -46,7 +47,7 @@ export default class DatabaseManager {
 	) {
 		const id = this.client.users.resolveID(user);
 		const error = new Error(Errors.POINTS_RESOLVE_ID(false));
-		if (!id) throw error;
+		if (!id || !/^\d{17,19}$/.test(id)) throw error;
 		let existing: Points;
 		try {
 			existing = await this.points(id);
@@ -83,8 +84,9 @@ export default class DatabaseManager {
 	public async points(user: UserResolvable | UserResolvable[]) {
 		if (Array.isArray(user)) return Promise.all(user.map(u => this.points(u)));
 		const id = this.client.users.resolveID(user);
-		if (!id || !/^\d{17,19}$/.test(id)) throw new Error('Couldn\'t resolve the User ID to fetch points from.');
-		let data: RawPoints = await this.rawDatabase.get('SELECT * FROM points WHERE id = ?', id);
+		if (!id || !/^\d{17,19}$/.test(id)) throw new Error(Errors.POINTS_RESOLVE_ID(true));
+		
+		let data = await this.rawDatabase.get<RawPoints>('SELECT * FROM points WHERE id = ?', id);
 		if (!data) {
 			await this.rawDatabase.run(
 				'INSERT INTO points (id, last_daily, points, vault) VALUES (?, ?, ?, ?)',
@@ -103,12 +105,13 @@ export default class DatabaseManager {
 		return new Points(this.client, data);
 	}
 
-	public async setLevels(user: UserResolvable, { level, xp }: { level?: number; xp: number }): Promise<Levels>;
-	public async setLevels(user: UserResolvable, { level, xp }: { level: number; xp?: number }): Promise<Levels>;
+	public async setLevels(user: UserResolvable, options: { level?: number; xp: number }): Promise<Levels>;
+	public async setLevels(user: UserResolvable, options: { level: number; xp?: number }): Promise<Levels>;
 	public async setLevels(user: UserResolvable, { level, xp }: { level?: number; xp?: number }) {
 		const id = this.client.users.resolveID(user);
 		const error = new Error(Errors.LEVELS_RESOLVE_ID(false));
-		if (!id) throw error;
+		if (!id || !/^\d{17,19}$/.test(id)) throw error;
+
 		let existing: Levels;
 		try {
 			existing = await this.levels(id);
@@ -144,8 +147,9 @@ export default class DatabaseManager {
 	public async levels(user: UserResolvable | UserResolvable[]) {
 		if (Array.isArray(user)) return Promise.all(user.map(u => this.levels(u)));
 		const id = this.client.users.resolveID(user);
-		if (!id) throw new Error(Errors.LEVELS_RESOLVE_ID());
-		let data: RawLevels = await this.rawDatabase.get('SELECT * FROM levels WHERE id = ?', id);
+		if (!id || !/^\d{17,19}$/.test(id)) throw new Error(Errors.LEVELS_RESOLVE_ID());
+
+		let data = await this.rawDatabase.get<RawLevels>('SELECT * FROM levels WHERE id = ?', id);
 		if (!data) {
 			await this.rawDatabase.run('INSERT INTO levels (id, level, xp) VALUES (?, ?, ?)', id, 0, 0);
 			data = {
@@ -161,7 +165,7 @@ export default class DatabaseManager {
 	public async case(id: number[]): Promise<(Case | null)[]>;
 	public async case(id: number | number[]) {
 		if (Array.isArray(id)) return Promise.all(id.map(i => this.case(i)));
-		const data: RawCase | undefined = await this.rawDatabase.get('SELECT * FROM cases WHERE id = ?', id);
+		const data = await this.rawDatabase.get<RawCase>('SELECT * FROM cases WHERE id = ?', id);
 		if (!data) return null;
 		return new Case(this.client, data);
 	}
@@ -184,15 +188,17 @@ export default class DatabaseManager {
 		users: UserResolvable[];
 	}) {
 		const data = { reason } as RawCase;
-		/* Couldn't come up with a better soloution here
-		 * because `User | null` isn't assignable to `UserResolvable`
-		 */
-		const _moderator = this.client.users.resolve(moderator);
-		if (!_moderator) {
-			throw new Error(Errors.CASE_INVALID_MODERATOR);
+		const error = new Error(Errors.RESOLVE_PROVIDED('moderator'));
+		try {
+			const id = this.client.users.resolveID(moderator);
+			if (!id || !/^\d{17,19}$/.test(id)) {
+				throw error;
+			}
+			const user = await this.client.users.fetch(id);
+			data.moderator_id = user.id;
+		} catch {
+			throw error;
 		}
-		// The reason resolveID isn't being used is to ensure the ID belongs to a valid user
-		data.moderator = _moderator.id;
 		// same as above
 		const _users = [];
 		for (const idOrUser of users) {
@@ -214,20 +220,94 @@ export default class DatabaseManager {
 
 		await this.rawDatabase.run(
 			// cases table should have an auto-incrementing unique key, id
-			`INSERT INTO cases (action, extras, message_id, moderator, reason, screenshots, users)
+			`INSERT INTO cases (action, extras, message_id, moderator_id, reason, screenshots, user_ids)
 			VALUES (?, ?, ?, ?, ?, ?, ?)`,
 			data.action = action,
 			data.extras = extras ? stringify(extras) : '{}',
 			data.message_id = message.id,
 			// this was converted into a `string`
-			data.moderator,
+			data.moderator_id,
 			data.reason,
 			data.screenshot_urls = JSON.stringify(screenshots),
-			data.users = JSON.stringify(_users)
+			data.user_ids = JSON.stringify(_users)
 		);
 
-		const { seq: caseID } = await this.rawDatabase.get('SELECT seq FROM sqlite_sequence WHERE name = ?', 'cases');
+		const { seq: caseID } = await this.rawDatabase.get<{ name: 'cases'; seq: number }>(
+			'SELECT seq FROM sqlite_sequence WHERE name = ?',
+			'cases'
+		);
 		data.id = caseID;
 		return new Case(this.client, data);
+	}
+
+	public async warns(caseID: number): Promise<Warn[] | null>;
+	public async warns(caseIDs: number[]): Promise<{ [key: number]: Warn[] | null }>;
+	public async warns(user: UserResolvable[]): Promise<{ [key: string]: Warn[] | null }>;
+	public async warns(user: UserResolvable): Promise<Warn[]>;
+	public async warns(caseOrUser: UserResolvable | number | UserResolvable[] | number[]): Promise<
+		Warn[] |
+		{ [key: number]: Warn[] | null } |
+		{ [key: string]: Warn[] | null } | null
+	> {
+		if (Array.isArray(caseOrUser)) {
+			/**
+			 * HOLY SHIT, This is some real spaghetti code right here
+			 * i'm not sure if all the types are correct internally in that mess
+			 * but it should return them properly which is what matters
+			 */
+			const objects = await Promise.all((caseOrUser as (number | UserResolvable)[])
+				.map((id: number | UserResolvable) => this.warns(id as number)
+					.then(data => ({
+						[id as string | number]: data
+					}))));
+			const object = Object.assign(objects[0], ...objects.slice(1)) as { [key: number]: Warn[] | null };
+			return object;
+		}
+		if (typeof caseOrUser === 'number') {
+			const rawWarns = await this.rawDatabase.all<RawWarn>(
+				'SELECT * FROM warnings WHERE case_id = ?',
+				caseOrUser
+			);
+			if (!rawWarns.length) return null;
+			return rawWarns.map(data => new Warn(this.client, data));
+		}
+		const id = this.client.users.resolveID(caseOrUser);
+		if (!id || !/^\d{17,19}$/.test(id)) throw new Error(Errors.WARNS_RESOLVE_ID);
+
+		const rawWarns = await this.rawDatabase.all<RawWarn>('SELECT * FROM warnings WHERE user_id = ?', id);
+		if (!rawWarns.length) return null;
+		return rawWarns.map(data => new Warn(this.client, data));
+	}
+
+	public async newWarn(user: UserResolvable, moderator: UserResolvable, { caseID, reason, timestamp = new Date() }: {
+		caseID: number;
+		reason: string;
+		timestamp?: Date;
+	}) {
+		const data = { case_id: caseID, reason } as RawWarn;
+		const resolve = (resolvable: UserResolvable, error: Error) => {
+			try {
+				const id = this.client.users.resolveID(resolvable);
+				if (!id || !/^\d{17,19}$/.test(id)) {
+					throw error;
+				}
+				return this.client.users.fetch(id);
+			} catch {
+				throw error;
+			}
+		};
+		data.moderator_id = (await resolve(moderator, new Error(Errors.RESOLVE_PROVIDED('moderator')))).id;
+		data.user_id = (await resolve(user, new Error(Errors.RESOLVE_PROVIDED('user')))).id;
+
+		await this.rawDatabase.run(
+			'INSERT INTO warnings (case_id, moderator_id, reason, user_id, timestamp) VALUES (?, ?, ?, ?, ?)',
+			caseID,
+			data.moderator_id,
+			reason,
+			data.user_id,
+			data.timestamp = timestamp.toISOString()
+		);
+
+		return new Warn(this.client, data);
 	}
 }
