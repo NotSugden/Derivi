@@ -1,4 +1,4 @@
-import { Snowflake } from 'discord.js';
+import { Snowflake, MessageEmbed } from 'discord.js';
 import Client from '../util/Client';
 import { ModerationActionTypes } from '../util/Constants';
 
@@ -10,7 +10,7 @@ export default class Case {
 	public logMessageID: Snowflake;
 	public moderatorID: Snowflake;
 	public reason: string;
-	public screenshot_urls: string[];
+	public screenshots: string[];
 	public userIDs: Snowflake[];
 	
 
@@ -23,7 +23,7 @@ export default class Case {
 		this.logMessageID = data.message_id;
 		this.moderatorID = data.moderator_id;
 		this.reason = data.reason;
-		this.screenshot_urls = JSON.parse(data.screenshot_urls);
+		this.screenshots = JSON.parse(data.screenshots);
 		this.userIDs = JSON.parse(data.user_ids);
 	}
 
@@ -46,6 +46,27 @@ export default class Case {
 		 */
 		return this.userIDs.map(id => this.client.users.resolve(id));
 	}
+
+	public async update(urls: string[], add = true) {
+		urls = urls.filter(url => this.screenshots.includes(url) === !add);
+		if (!urls.length) return Promise.resolve(this);
+		if (add) {
+			this.screenshots.push(...urls);
+		} else {
+			this.screenshots = this.screenshots.filter(url => !urls.includes(url));
+		}
+		await this.client.database.updateCase(this.id, this.screenshots);
+		const message = await this.logMessage();
+		const embed = new MessageEmbed(message.embeds[0]);
+		const field = embed.fields.find(field => field.name === 'Screenshots');
+		if (field) {
+			field.value = urls.join('\n');
+		} else {
+			embed.addField('Screenshots', urls.join('\n'));
+		}
+		await message.edit(`Case ${this.id}`, embed);
+		return this;
+	}
 }
 
 export interface RawCase {
@@ -55,6 +76,6 @@ export interface RawCase {
 	message_id: string;
 	moderator_id: Snowflake;
 	reason: string;
-	screenshot_urls: string;
+	screenshots: string;
 	user_ids: string;
 }

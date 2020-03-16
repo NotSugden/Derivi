@@ -13,7 +13,7 @@ export default class Kick extends Command {
 			category: 'Moderation',
 			cooldown: 5,
 			name: 'kick',
-			permissions: (member) => {
+			permissions: member => {
 				if (member.guild.id !== member.client.config.defaultGuildID) return false;
 				if (
 					// Checking for the `Chat Moderator` role
@@ -34,6 +34,7 @@ export default class Kick extends Command {
 
 	public async run(message: Message, args: CommandArguments, { send }: CommandData) {
 		try {
+			await message.delete();
 			const { members, users, reason } = await Util.reason(message, { fetchMembers: true });
 
 			if (!reason) return send(Responses.PROVIDE_REASON);

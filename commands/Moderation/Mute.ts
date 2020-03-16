@@ -20,7 +20,7 @@ export default class Mute extends Command {
 			category: 'Moderation',
 			cooldown: 5,
 			name: 'mute',
-			permissions: (member) => {
+			permissions: member => {
 				if (member.guild.id !== member.client.config.defaultGuildID) return false;
 				if (
 					// Checking for the `Staff Team` role
@@ -41,6 +41,7 @@ export default class Mute extends Command {
 
 	public async run(message: Message, args: CommandArguments, { send }: CommandData) {
 		try {
+			await message.delete();
 			const { members, users, reason, time } = parseMS(await Util.reason(message, { fetchMembers: true }));
 
 			if (!reason) return send(Responses.PROVIDE_REASON);

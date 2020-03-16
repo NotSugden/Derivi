@@ -59,13 +59,17 @@ export default async (message: Message) => {
 		}) as CommandData['send'];
 
 
-		let hasPermissions: boolean;
+		let hasPermissions: boolean | string;
 		if (typeof permissions === 'function') {
 			hasPermissions = await permissions(message.member!, message.channel);
 		} else {
 			hasPermissions = message.member!.hasPermission(permissions);
 		}
-		if (!hasPermissions) return send(Responses.INSUFFICIENT_PERMISSIONS);
+		if (!hasPermissions || typeof hasPermissions === 'string') {
+			return send(typeof hasPermissions === 'string' ?
+				hasPermissions : Responses.INSUFFICIENT_PERMISSIONS
+			);
+		}
 
 		await command.run(message, args, {
 			edited,
@@ -75,11 +79,7 @@ export default async (message: Message) => {
 		await message.channel.send([
 			`An unexpected error has occoured: \`${error.name}\``,
 			`\`\`\`js\n${error.message}\`\`\``
-		], {
-			files: [
-				'https://cdn.discordapp.com/attachments/539359924464123940/688494798214266932/error.png'
-			]
-		}).catch(console.error);
+		]).catch(console.error);
 		console.error(error);
 	}
 };

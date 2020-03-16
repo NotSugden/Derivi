@@ -20,6 +20,7 @@ export default class Client extends DJSClient {
 	public commands: CommandManager;
 	public readonly config!: {
 		attachmentLogging: boolean;
+		attachmentsURL?: string;
 		readonly encryptionPassword: string;
 		database: string;
 		/**
@@ -33,8 +34,13 @@ export default class Client extends DJSClient {
 		/**
 		 * This *could* be null if the client is kicked out of the guild,
 		 * however im not documenting that as the client isn't meant to be kicked.
+		 * 
+		 * Warning: this channel should be locked to staff members only.
 		 */
 		readonly punishmentChannel: TextChannel;
+		/**
+		 * Warning: this channel should be locked to staff members only.
+		 */
 		punishmentChannelID: Snowflake;
 	};
 	public database: DatabaseManager;
@@ -58,6 +64,7 @@ export default class Client extends DJSClient {
 
 		Object.defineProperty(this, 'config', { value: {
 			attachmentLogging: config.attachment_logging as boolean,
+			attachmentsURL: config.attachment_files_url,
 			database: config.database as string,
 			get defaultGuild() {
 				return commandManager.client.guilds.resolve(this.defaultGuildID);
@@ -144,6 +151,7 @@ export default class Client extends DJSClient {
 }
 
 export interface ClientConfig {
+	attachment_files_url?: string;
 	attachment_logging: boolean;
 	commands_dir?: string;
 	encryption_password: string;

@@ -138,6 +138,7 @@ export default class Util {
 
 	static makePromiseObject<T>() {
 		const promise = new Promise<T>((resolve, reject) => {
+			// setImmediate has to be used here, otherwise an error is thrown
 			setImmediate(() => {
 				promise.resolve = resolve;
 				promise.reject = reject;

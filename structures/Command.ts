@@ -87,4 +87,4 @@ export type CommandUsage = {
 type PermissionsFunction = (
 	member: GuildMember & { client: Client },
 	channel: TextChannel & { client: Client },
-) => boolean | Promise<boolean>;
+) => boolean | string | Promise<boolean | string>;

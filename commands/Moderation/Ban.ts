@@ -13,7 +13,7 @@ export default class Ban extends Command {
 			category: 'Moderation',
 			cooldown: 5,
 			name: 'ban',
-			permissions: (member) => {
+			permissions: member => {
 				if (member.guild.id !== member.client.config.defaultGuildID) return false;
 				if (
 					// Checking for the `Chat Moderator` role
@@ -36,6 +36,7 @@ export default class Ban extends Command {
 
 	public async run(message: Message, args: CommandArguments, { send }: CommandData) {
 		try {
+			await message.delete();
 			const { users, reason, flags, members } = await Util.reason(message, {
 				fetchMembers: true, withFlags: true
 			});

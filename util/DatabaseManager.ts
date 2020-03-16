@@ -175,6 +175,18 @@ export default class DatabaseManager {
 		return new Case(this.client, data);
 	}
 
+	/**
+	 * TODO: change this to accept an object for multiple misc changes
+	 */
+	public async updateCase(caseID: number, urls: string[]) {
+		await this.rawDatabase.run(
+			'UPDATE cases SET screenshots = ? WHERE id = ?',
+			JSON.stringify(urls),
+			caseID
+		);
+		return;
+	}
+
 	public async newCase({
 		action,
 		extras,
@@ -233,7 +245,7 @@ export default class DatabaseManager {
 			// this was converted into a `string`
 			data.moderator_id,
 			data.reason,
-			data.screenshot_urls = JSON.stringify(screenshots),
+			data.screenshots = JSON.stringify(screenshots),
 			data.user_ids = JSON.stringify(_users)
 		);
 

@@ -67,7 +67,13 @@ export const Responses = {
 	INVALID_FLAG_TYPE: (flag: string, type: string) => `Flag ${flag} must be ${type}`,
 	INVALID_FLAG: (provided: string, valid: string[]) =>
 		`Provided flag '${provided}' is not valid, valid flags for this command are: ${valid.join(', ')}`,
+	INVALID_CASE_ID: (provided: string) => `'${provided}' isn't a valid case number.`,
+	PROVIDE_ATTACHMENT: (valid: string[]) =>
+		`Please upload an attachment with one of the following extensions: ${
+			valid.map(ext => `\`${ext}\``).join(', ')
+		}.`,
 
+	
 	MODERATION_LOG_FIELDS: (moderator: User, users: User[]): EmbedFieldData[] => [{
 		name: 'Moderator',
 		value: moderator.tag
