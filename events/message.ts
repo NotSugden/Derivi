@@ -1,6 +1,6 @@
 /* eslint-disable consistent-return */
 import { promises as fs } from 'fs';
-import { join } from 'path';
+import { join, extname } from 'path';
 import { MessageOptions, MessageEditOptions, StringResolvable, MessageAdditions } from 'discord.js';
 import fetch from 'node-fetch';
 import { CommandData } from '../structures/Command';
@@ -18,14 +18,14 @@ export default async (message: Message) => {
 		) return;
 		if (message.guild!.id === client.config.defaultGuildID) {
 			if (client.config.attachmentLogging && !edited && message.attachments.size) {
-				const urls = message.attachments.map(({ url }) => url);
+				const urls = message.attachments.map(({ proxyURL }) => proxyURL);
 				/* eslint-disable no-await-in-loop */
 				for (let i = 0; i < urls.length; i++) {
 					const url = urls[i];
-					const extension = url.split('.').pop();
+					const extension = extname(url);
 					const name = join(
 						client.config.filesDir,
-						`${message.id}-${i}${extension ? `.${extension}` : ''}`
+						`${message.id}-${i}${extension}`
 					);
 					const buffer = await fetch(url)
 						.then(response => response.buffer())
