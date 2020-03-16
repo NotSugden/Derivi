@@ -18,3 +18,14 @@
 | Auto Increment? | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: |
 | Unique?         | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: |
 | Default Value   |                    |                    |                    |                    |                    |
+
+
+### Table: `mutes`
+| Column          | user_id            | start              | end                |
+|-----------------|--------------------|--------------------|--------------------|
+| Type            | INTEGER            | TEXT               | TEXT               |
+| Not Null?       | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: |
+| Primary Key?    | :heavy_check_mark: | :white_check_mark: | :white_check_mark: |
+| Auto Increment? | :white_check_mark: | :white_check_mark: | :white_check_mark: |
+| Unique?         | :heavy_check_mark: | :white_check_mark: | :white_check_mark: |
+| Default Value   |                    |                    |                    |

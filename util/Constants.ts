@@ -1,11 +1,11 @@
 import { join } from 'path';
-import { Constants, User, EmbedFieldData, GuildMember } from 'discord.js';
+import { Constants, User, EmbedFieldData, GuildMember, RoleData } from 'discord.js';
 /* eslint-disable sort-keys */
 
 export enum ModerationActionTypes {
 	BAN = Constants.Colors.RED,
 	KICK = Constants.Colors.ORANGE,
-	MUTE = Constants.Colors.GREEN,
+	MUTE = Constants.Colors.GREY,
 	WARN = Constants.Colors.YELLOW
 }
 
@@ -15,6 +15,16 @@ export const Defaults = {
 		commands_dir: join(__dirname, '..', 'commands'),
 		database: 'database.sqlite',
 		files_dir: join(__dirname, '..', 'saved_files')
+	},
+	// this is a getter for now, incase djs modifies the object
+	get MUTE_ROLE_DATA() {
+		return {
+			color: 'DARKER_GREY',
+			hoist: false,
+			mentionable: false,
+			name: 'Muted',
+			permissions: 0
+		} as RoleData;
 	}
 };
 
@@ -29,6 +39,8 @@ export const Errors = {
 	LEVELS_RESOLVE_ID: (fetch = true) => `Couldn't resolve the User ID to ${fetch ? 'fetch' : 'set'} levels of.`,
 	POINTS_RESOLVE_ID: (fetch = true) => `Couldn't resolve the User ID to ${fetch ? 'fetch' : 'set'} points of.`,
 	WARNS_RESOLVE_ID: 'Couldn\'t resolve the User ID to fetch warns from.',
+	MUTE_RESOLVE_ID: (fetch = true) =>
+		`Couldn't resolve the User ID to ${fetch ? 'fetch the mute of' : 'delete the mute'}.`,
 
 	NEGATIVE_NUMBER: (variable: string) =>`Provided '${variable}' is negative, and should be positive.`,
 	RESOLVE_ID: (id: string) =>
@@ -40,6 +52,7 @@ export const Errors = {
 };
 
 export const Responses = {
+	ALL_MUTED: 'All of the mentioned members are muted.',
 	ALREADY_REMOVED_USERS: (multiple: boolean, kick = true) =>
 		`${multiple ? 'All of the members' : 'The member'} you mentioned ${multiple ? 'have' : 'has'} already ${
 			kick ?
@@ -106,7 +119,9 @@ export const Responses = {
 	},
 
 	WARN_SUCCESS: (users: User[], reason: string) =>
-		`${users.length > 1 ? `${users.length} Users where` : `${users[0].tag} was`} warned for ${reason}.`
+		`${users.length > 1 ? `${users.length} Users where` : `${users[0].tag} was`} warned for ${reason}.`,
+	MUTE_SUCCESS: (members: GuildMember[], reason: string) =>
+		`${members.length > 1 ? `${members.length} Members were` : `${members[0].user.tag} was`} muted for ${reason}.`
 };
 
 export const URLs = {

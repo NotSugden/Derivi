@@ -135,7 +135,22 @@ export default class Util {
 		await message.edit(`Case ${caseData.id}`, embed);
 		return caseData; 
 	}
+
+	static makePromiseObject<T>() {
+		const promise = new Promise<T>((resolve, reject) => {
+			setImmediate(() => {
+				promise.resolve = resolve;
+				promise.reject = reject;
+			});
+		}) as PromiseObject<T>;
+		return promise;
+	}
 }
+
+export type PromiseObject<T> = Promise<T> & {
+	resolve: (value?: T | PromiseLike<T>) => void;
+	reject: (reason?: unknown) => void;
+};
 
 export interface ReasonData {
 	reason: string;

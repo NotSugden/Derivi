@@ -7,28 +7,14 @@ import {
 	Util as DJSUtil,
 	Snowflake,
 	TextChannel,
-	WebhookClient
+	WebhookClient,
+	Collection
 } from 'discord.js';
 import CommandManager from './CommandManager';
 import { Defaults, Errors } from './Constants';
 import DatabaseManager from './DatabaseManager';
+import Mute from '../structures/Mute';
 import Guild from '../structures/discord.js/Guild';
-export interface ClientConfig {
-	attachment_logging: boolean;
-	commands_dir?: string;
-	encryption_password: string;
-	database?: string;
-	default_guild: Snowflake;
-	files_dir?: string;
-	prefix: string;
-	punishment_channel: Snowflake;
-	token: string;
-	webhooks: {
-		name: string;
-		id: Snowflake;
-		token: string;
-	}[];
-}
 
 export default class Client extends DJSClient {
 	public commands: CommandManager;
@@ -52,6 +38,7 @@ export default class Client extends DJSClient {
 		punishmentChannelID: Snowflake;
 	};
 	public database: DatabaseManager;
+	public mutes = new Collection<Snowflake, Mute>();
 	public token: string;
 	public webhooks = new Map<string, WebhookClient>();
 
@@ -88,36 +75,44 @@ export default class Client extends DJSClient {
 		});
 	}
 
-	public connect(token = this.token) {
-		return new Promise<this>((resolve, reject) =>
-			this.database.open().then(() =>
-				this.commands.loadAll().then(() => {
-					const handler = async () => {
-						try {
-							await this._validateConfig();
-							resolve(this);
-						} catch (error) {
-							this.disconnect()
-								.then(() => reject(error))
-								.catch(err => {
-									console.error(err);
-									reject(error);
-								});
-						}
-					};
-					this.once(Constants.Events.CLIENT_READY, handler);
-					this.login(token).catch(error => {
-						this.off(Constants.Events.CLIENT_READY, handler);
-						this.disconnect()
-							.then(() => reject(error))
-							.catch(err => {
-								console.error(err);
-								reject(error);
-							});
-					});
-				})
-			).catch(reject)
-		);
+	public async connect(token = this.token) {
+		try {
+			await this.database.open();
+			await this.commands.loadAll();
+			const mutes = await this.database.mute(true);
+			for (const mute of mutes) {
+				this.mutes.set(mute.userID, mute);
+			}
+		} catch (error) {
+			await this.database.close().catch(console.error);
+		}
+		return new Promise<this>((resolve, reject) => {
+			const handler = async () => {
+				try {
+					await this._validateConfig();
+					resolve(this);
+				} catch (error) {
+					this.disconnect()
+						.then(() => reject(error))
+						.catch(err => {
+							console.error(err);
+							reject(error);
+						});
+				}
+			};
+			this.once(Constants.Events.CLIENT_READY, handler);
+			this.login(token)
+				.then(() => resolve(this))
+				.catch(error => {
+					this.off(Constants.Events.CLIENT_READY, handler);
+					this.disconnect()
+						.then(() => reject(error))
+						.catch(err => {
+							console.error(err);
+							reject(error);
+						});
+				});
+		});
 	}
 
 	public async disconnect() {
@@ -146,4 +141,21 @@ export default class Client extends DJSClient {
 			throw new TypeError(Errors.INVALID_CLIENT_OPTION('punishment_channel', 'TextChannel'));
 		}
 	}
+}
+
+export interface ClientConfig {
+	attachment_logging: boolean;
+	commands_dir?: string;
+	encryption_password: string;
+	database?: string;
+	default_guild: Snowflake;
+	files_dir?: string;
+	prefix: string;
+	punishment_channel: Snowflake;
+	token: string;
+	webhooks: {
+		name: string;
+		id: Snowflake;
+		token: string;
+	}[];
 }

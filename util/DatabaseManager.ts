@@ -4,6 +4,7 @@ import Client from './Client';
 import { Errors, ModerationActionTypes } from './Constants';
 import Case, { RawCase } from '../structures/Case';
 import Levels, { RawLevels } from '../structures/Levels';
+import Mute, { RawMute } from '../structures/Mute';
 import Points, { RawPoints } from '../structures/Points';
 import Warn, { RawWarn } from '../structures/Warn';
 import Message from '../structures/discord.js/Message';
@@ -84,7 +85,7 @@ export default class DatabaseManager {
 	}
 
 	public async points(user: UserResolvable): Promise<Points>;
-	public async points(user: UserResolvable[]): Promise<Points[]>;
+	public async points(users: UserResolvable[]): Promise<Points[]>;
 	public async points(user: UserResolvable | UserResolvable[]) {
 		if (Array.isArray(user)) return Promise.all(user.map(u => this.points(u)));
 		const id = this.client.users.resolveID(user);
@@ -147,7 +148,7 @@ export default class DatabaseManager {
 	}
 
 	public async levels(user: UserResolvable): Promise<Levels>;
-	public async levels(user: UserResolvable[]): Promise<Levels[]>;
+	public async levels(users: UserResolvable[]): Promise<Levels[]>;
 	public async levels(user: UserResolvable | UserResolvable[]) {
 		if (Array.isArray(user)) return Promise.all(user.map(u => this.levels(u)));
 		const id = this.client.users.resolveID(user);
@@ -166,7 +167,7 @@ export default class DatabaseManager {
 	}
 
 	public async case(id: number): Promise<Case | null>;
-	public async case(id: number[]): Promise<(Case | null)[]>;
+	public async case(ids: number[]): Promise<(Case | null)[]>;
 	public async case(id: number | number[]) {
 		if (Array.isArray(id)) return Promise.all(id.map(i => this.case(i)));
 		const data = await this.rawDatabase.get<RawCase>('SELECT * FROM cases WHERE id = ?', id);
@@ -246,7 +247,7 @@ export default class DatabaseManager {
 
 	public async warns(caseID: number): Promise<Warn[] | null>;
 	public async warns(caseIDs: number[]): Promise<{ [key: number]: Warn[] | null }>;
-	public async warns(user: UserResolvable[]): Promise<{ [key: string]: Warn[] | null }>;
+	public async warns(users: UserResolvable[]): Promise<{ [key: string]: Warn[] | null }>;
 	public async warns(user: UserResolvable): Promise<Warn[]>;
 	public async warns(caseOrUser: UserResolvable | number | UserResolvable[] | number[]): Promise<
 		Warn[] |
@@ -313,5 +314,49 @@ export default class DatabaseManager {
 		);
 
 		return new Warn(this.client, data);
+	}
+
+	public async mute(all: true): Promise<Mute[]>;
+	public async mute(user: UserResolvable): Promise<Mute | null>;
+	public async mute(users: UserResolvable[]): Promise<(Mute | null)[]>;
+	public async mute(user: true | UserResolvable | UserResolvable[]) {
+		if (typeof user === 'boolean'){
+			const rawData = await this.rawDatabase.all<RawMute>('SELECT * FROM mutes');
+			return rawData.map(data => new Mute(this.client, data));
+		}
+		if (Array.isArray(user)) return Promise.all(user.map(u => this.mute(u)));
+		const id = this.client.users.resolveID(user);
+		if (!id || !/^\d{17,19}$/.test(id)) throw new Error(Errors.MUTE_RESOLVE_ID(true));
+
+		if (this.client.mutes.has(id)) return this.client.mutes.get(id);
+
+		const data = await this.rawDatabase.get<RawMute>('SELECT * FROM mutes WHERE user_id = ?', id);
+		if (!data) return null;
+		return new Mute(this.client, data);
+	}
+
+	public async newMute(user: UserResolvable, start: Date, end: Date) {
+		const id = this.client.users.resolveID(user);
+		if (!id || !/^\d{17,19}$/.test(id)) throw new Error(Errors.RESOLVE_PROVIDED('user'));
+
+		const data = { user_id: id } as RawMute;
+
+		await this.rawDatabase.run(
+			'INSERT INTO mutes (user_id, start, end) VALUES (?, ?, ?)',
+			id,
+			data.start = start.toISOString(),
+			data.end = end.toISOString()
+		);
+
+		return new Mute(this.client, data);
+	}
+
+	public async deleteMute(user: UserResolvable) {
+		const id = this.client.users.resolveID(user);
+		if (!id || !/^\d{17,19}$/.test(id)) throw new Error(Errors.MUTE_RESOLVE_ID(false));
+
+		const { changes } = await this.rawDatabase.run('DELETE FROM mutes WHERE user_id = ?', id);
+
+		return Boolean(changes);
 	}
 }
