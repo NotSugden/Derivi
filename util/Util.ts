@@ -145,6 +145,14 @@ export default class Util {
 		}) as PromiseObject<T>;
 		return promise;
 	}
+
+	static manageable(member: GuildMember, by: GuildMember) {
+		if (member.id === member.guild.ownerID) return false;
+		if (by.id === member.guild.ownerID) return true;
+		const position = member.roles.highest.comparePositionTo(by.roles.highest);
+		if (position < 0) return true;
+		return false;
+	}
 }
 
 export type PromiseObject<T> = Promise<T> & {

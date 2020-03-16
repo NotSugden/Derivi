@@ -44,9 +44,12 @@ export default class Mute extends Command {
 			const { members, users, reason, time } = parseMS(await Util.reason(message, { fetchMembers: true }));
 
 			if (!reason) return send(Responses.PROVIDE_REASON);
-			if (!users.size) {
-				return send(Responses.MENTION_USERS(false));
+			if (!members.size) {
+				return send(Responses.MENTION_USERS(true));
 			}
+
+			const notManageable = members.filter(member => !Util.manageable(member, message.member!));
+			if (notManageable.size) return send(Responses.CANNOT_ACTION_USER('MUTE', members.size > 1));
 
 			const extras: {
 				[key: string]: unknown;

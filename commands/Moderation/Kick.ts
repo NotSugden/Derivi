@@ -42,6 +42,9 @@ export default class Kick extends Command {
 				return send(Responses.ALREADY_REMOVED_USERS(users.size > 1, true));
 			}
 
+			const notManageable = members.filter(member => !Util.manageable(member, message.member!));
+			if (notManageable.size) return send(Responses.CANNOT_ACTION_USER('KICK', members.size > 1));
+
 			const extras: {
 				[key: string]: unknown;
 				reason: string;

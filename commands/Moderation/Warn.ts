@@ -34,10 +34,13 @@ export default class Warn extends Command {
 
 	public async run(message: Message, args: CommandArguments, { send }: CommandData) {
 		try {
-			const { users, reason } = await Util.reason(message);
+			const { users, reason, members } = await Util.reason(message, { fetchMembers: true});
 
 			if (!reason) return send(Responses.PROVIDE_REASON);
 			if (!users.size) return send(Responses.MENTION_USERS());
+
+			const notManageable = members.filter(member => !Util.manageable(member, message.member!));
+			if (notManageable.size) return send(Responses.CANNOT_ACTION_USER('WARN', members.size > 1));
 
 			const timestamp = new Date();
 

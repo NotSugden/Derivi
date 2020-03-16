@@ -59,6 +59,8 @@ export const Responses = {
 				'left or been kicked' :
 				'been banned'
 		}.`,
+	CANNOT_ACTION_USER: (action: keyof typeof ModerationActionTypes, multiple = false) =>
+		`You cannot perform a ${action.toLowerCase()} on ${multiple ? 'one of the users you mentioned' : 'this user'}`,
 	INSUFFICIENT_PERMISSIONS: 'You have insufficient permissions to perform this action.',
 	MENTION_USERS: (users = true) => `Please mention at least 1 ${users ? 'user' : 'member'}.`,
 	PROVIDE_REASON: 'Please supply a reason for this action.',

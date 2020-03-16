@@ -36,13 +36,18 @@ export default class Ban extends Command {
 
 	public async run(message: Message, args: CommandArguments, { send }: CommandData) {
 		try {
-			const { users, reason, flags } = await Util.reason(message, { withFlags: true });
+			const { users, reason, flags, members } = await Util.reason(message, {
+				fetchMembers: true, withFlags: true
+			});
 			
 			// have to non-null assert it
 			const guild = message.guild!;
 
 			if (!reason) return send(Responses.PROVIDE_REASON);
 			if (!users.size) return send(Responses.MENTION_USERS());
+
+			const notManageable = members.filter(member => !Util.manageable(member, message.member!));
+			if (notManageable.size) return send(Responses.CANNOT_ACTION_USER('BAN', members.size > 1));
 
 			const extras: {
 				[key: string]: unknown;
