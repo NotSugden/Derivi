@@ -27,8 +27,26 @@ export default class Eval extends Command {
 	public async run(message: Message, args: CommandArguments, {
 		send
 	}: CommandData): Promise<Message | void> {
+		const reverse = (string: string) => string.split('').reverse().join('');
 		const finish = async (result: unknown) => {
-			const inspected = util.inspect(result);
+			const inspected = (typeof result === 'string' ? result : util.inspect(result))
+				.replace(
+					new RegExp(`${this.client.token}|${reverse(this.client.token)}`, 'gi'),
+					'[TOKEN]'
+				).replace(
+					new RegExp(
+						[...this.client.webhooks.values()]
+							.map(hook => `${hook.token}|${reverse(hook.token)}`).join('|'),
+						'gi'
+					),
+					'[WEBHOOK TOKEN]'
+				).replace(
+					new RegExp(
+						`${this.client.config.encryptionPassword}|${reverse(this.client.config.encryptionPassword)}`,
+						'gi'
+					),
+					'[ENCRYPTION PASSWORD]'
+				);
 			if (inspected.length > 1250) {
 				const { key } = await fetch(URLs.HASTEBIN('documents'), {
 					body: inspected,
