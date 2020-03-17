@@ -1,5 +1,6 @@
 import { join } from 'path';
-import { Constants, User, EmbedFieldData, GuildMember, RoleData } from 'discord.js';
+import { Constants, User, EmbedFieldData, GuildMember, RoleData, Invite, MessageEmbed } from 'discord.js';
+import * as moment from 'moment';
 /* eslint-disable sort-keys */
 
 export enum ModerationActionTypes {
@@ -137,3 +138,39 @@ export const URLs = {
 };
 
 export const FLAGS_REGEX = /--([a-z]+)=("[^"]*"|[0-9a-z]*)/gi;
+
+const hyperlink = (name: string, url: string) => `[${name}](${url})`;
+
+export const EventResponses = {
+	INVITE_CREATE: (invite: Invite) => {
+		return new MessageEmbed()
+			.setAuthor(`Invite created in #${invite.channel.name} by ${
+				invite.inviter ? invite.inviter.tag : 'Unknown User#0000'
+			}`)
+			.setColor(Constants.Colors.GREEN)
+			.setDescription([
+				`Invite Code: ${hyperlink(invite.code, invite.url)}`,
+				`Expires at: ${invite.expiresTimestamp ? moment.utc(invite.expiresAt!).format(
+					'DD/MM/YYYY HH:MM A'
+				) : 'Never'}`,
+				`Inviter: ${invite.inviter ? `${invite.inviter} (${invite.inviter.id})` : 'Unknown User#0000'}`,
+				`Max Uses: ${invite.maxUses || 'Infinite'}`,
+				`Temporary?: ${invite.temporary ? 'Yes' : 'No'}`
+			]).setTimestamp(invite.createdAt!);
+	},
+	INVITE_DELETE: (invite: Invite) => {
+		return new MessageEmbed()
+			.setAuthor(`Invite deleted in #${invite.channel.name}, created by ${
+				invite.inviter ? invite.inviter.tag : 'Unknown User#0000'
+			}`)
+			.setColor(Constants.Colors.RED)
+			.setDescription([
+				`Inivte Code: ${invite.code}`,
+				// Could check for `invite.uses === invite.maxUses` here however it's never updated so there's no point
+				`Expired?: ${invite.expiresTimestamp && invite.expiresTimestamp < Date.now() ? 'Yes' : 'No'}`,
+				`Inviter: ${invite.inviter ? `${invite.inviter} (${invite.inviter.id})` : 'Unknown User#0000'}`,
+				`Max Uses: ${invite.maxUses || 'Infinite'}`,
+				`Temporary?: ${invite.temporary ? 'Yes' : 'No'}`
+			]).setTimestamp();
+	}
+};

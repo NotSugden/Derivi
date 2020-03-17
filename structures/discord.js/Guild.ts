@@ -6,7 +6,7 @@ export default class Guild extends DJSGuild {
 		user: User & { client: Client };
 	}>()
 	public client!: Client;
-	public invites = new Collection<string, Invite & { client: Client }>();
+	public invites = new Collection<string, Invite & { client: Client; guild: Guild }>();
 
 	constructor(client: Client, data: object) {
 		super(client, data);
@@ -24,7 +24,7 @@ export default class Guild extends DJSGuild {
 		this.fetchInvites()
 			.then(invites => {
 				for (const invite of invites.values()) {
-					this.invites.set(invite.code, invite as Invite & { client: Client });
+					this.invites.set(invite.code, invite as Invite & { client: Client; guild: Guild });
 				}
 			}).catch(error => console.error(error));
 	}
