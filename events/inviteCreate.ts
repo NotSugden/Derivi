@@ -15,10 +15,11 @@ export default async (invite: Invite & { guild: Guild | null }) => {
 	if (!invite.guild.invites.has(invite.code)) {
 		invite.guild.invites.set(invite.code, invite as Invite & { guild: Guild });
 	}
+
 	const webhook = client.webhooks.get('invite-logs');
 	if (!webhook) return;
+	
 	const embed = EventResponses.INVITE_CREATE(invite);
-
 	webhook.send(embed)
 		.catch(console.error);
 };
