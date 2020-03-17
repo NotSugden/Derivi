@@ -80,3 +80,5 @@ fs.readdir(join(__dirname, 'events')).then(files => {
 	console.error(err);
 	process.exit(1);
 });
+
+client.on('ready', () => console.log('Ready'));

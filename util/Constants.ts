@@ -156,7 +156,9 @@ export const EventResponses = {
 				`Inviter: ${invite.inviter ? `${invite.inviter} (${invite.inviter.id})` : 'Unknown User#0000'}`,
 				`Max Uses: ${invite.maxUses || 'Infinite'}`,
 				`Temporary?: ${invite.temporary ? 'Yes' : 'No'}`
-			]).setTimestamp(invite.createdAt!);
+			])
+			.setFooter(`User ID: ${invite.inviter ? invite.inviter.id : '00000000000000000'}`)
+			.setTimestamp(invite.createdAt!);
 	},
 	INVITE_DELETE: (invite: Invite) => {
 		return new MessageEmbed()
@@ -171,6 +173,60 @@ export const EventResponses = {
 				`Inviter: ${invite.inviter ? `${invite.inviter} (${invite.inviter.id})` : 'Unknown User#0000'}`,
 				`Max Uses: ${invite.maxUses || 'Infinite'}`,
 				`Temporary?: ${invite.temporary ? 'Yes' : 'No'}`
-			]).setTimestamp();
+			])
+			.setFooter(`User ID: ${invite.inviter ? invite.inviter.id : '00000000000000000'}`)
+			.setTimestamp(invite.createdAt!);
+	},
+
+	GUILD_MEMBER_UPDATE: (oldMember: GuildMember, newMember: GuildMember) => {
+		const { user } = newMember;
+		const data = [];
+
+		if (oldMember.displayColor !== newMember.displayColor) {
+			data.push(`Display Color Changed: ${oldMember.displayHexColor} to ${newMember.displayHexColor}`);
+		}
+
+		if (oldMember.nickname !== newMember.nickname) {
+
+			if (!oldMember.nickname || !newMember.nickname) {
+				data.push(
+					`Nickname ${oldMember.nickname ? 'Removed' : 'Set'}: ${newMember.nickname || oldMember.nickname}`
+				);
+			} else {
+				data.push(`Nickname Changed: ${oldMember.nickname} to ${newMember.nickname}`);
+			}
+
+		}
+		
+		if (oldMember.premiumSinceTimestamp !== newMember.premiumSinceTimestamp) {
+			data.push(`User is ${oldMember.premiumSinceTimestamp ? 'no longer' : 'now'} boosting`);
+		}
+
+		if (!oldMember.roles.cache.equals(newMember.roles.cache)) {
+
+			const addedRoles = newMember.roles.cache.filter(role => !oldMember.roles.cache.has(role.id));
+			const removedRoles = oldMember.roles.cache.filter(role => !newMember.roles.cache.has(role.id));
+			if (addedRoles.size) {
+			// I'm not using role mentions here as the log channel is in a different guild
+				data.push(`Roles Added: ${addedRoles.map(role => role.name).join(', ')}`);
+			}
+			/** 
+		 	 * Not using an else if as roles can be both removed and added
+		 	 * see https://discordapp.com/developers/docs/resources/guild#modify-guild-member
+		 	 */
+			if (removedRoles.size) {
+			// I'm not using role mentions here as the log channel is in a different guild
+				data.push(`Roles Removed: ${removedRoles.map(role => role.name).join(', ')}`);
+			}
+
+		}
+
+		if (!data.length) data.push('Unkown change or changes');
+
+		return new MessageEmbed()
+			.setColor(Constants.Colors.GREEN)
+			.setDescription(data)
+			.setFooter(`User ID: ${user.id}`)
+			.setThumbnail(user.displayAvatarURL({ dynamic: true }));
 	}
 };
