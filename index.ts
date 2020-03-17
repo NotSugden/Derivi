@@ -6,7 +6,7 @@ import {
 	Extendable,
 	Structures,
 	User,
-	Intents,
+	// Intents,
 	Guild as DJSGuild,
 	PartialUser,
 	ClientEvents
@@ -27,6 +27,7 @@ const client = new Client(config, {
 		}
 	},
 	ws: {
+		// Intents are borked? idk not recieving GUILD_MEMBER_UPDATE events
 		/*intents: [
 			Intents.FLAGS.DIRECT_MESSAGES,
 			Intents.FLAGS.GUILDS,
