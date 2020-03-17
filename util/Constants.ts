@@ -197,7 +197,7 @@ export const EventResponses = {
 			}
 
 		}
-		
+
 		if (oldMember.premiumSinceTimestamp !== newMember.premiumSinceTimestamp) {
 			data.push(`User is ${oldMember.premiumSinceTimestamp ? 'no longer' : 'now'} boosting`);
 		}
@@ -224,6 +224,7 @@ export const EventResponses = {
 		if (!data.length) data.push('Unkown change or changes');
 
 		return new MessageEmbed()
+			.setAuthor(user.tag)
 			.setColor(Constants.Colors.GREEN)
 			.setDescription(data)
 			.setFooter(`User ID: ${user.id}`)
