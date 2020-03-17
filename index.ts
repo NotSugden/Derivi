@@ -1,7 +1,16 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
 import { promises as fs } from 'fs';
 import { join } from 'path';
-import { Constants, Extendable, Structures, User, Intents } from 'discord.js';
+import {
+	Constants,
+	Extendable,
+	Structures,
+	User,
+	Intents,
+	Guild as DJSGuild,
+	PartialUser,
+	ClientEvents
+} from 'discord.js';
 import Guild from './structures/discord.js/Guild';
 import Client from './util/Client';
 const extended: (keyof Extendable)[] = ['Message', 'Guild'];
@@ -34,7 +43,7 @@ client.on('warn', console.warn);
  * properties added in the custom extended Guild structure
  * `user` shouldn't be a partial, so it is typed as such
  */
-client.on(Constants.Events.GUILD_BAN_ADD, async (guild: Guild, user: User) => {
+client.on(Constants.Events.GUILD_BAN_ADD, (async (guild: Guild, user: User) => {
 	if (guild.bans.has(user.id)) return;
 	try {
 		const ban = await guild.fetchBan(user) as {
@@ -45,10 +54,12 @@ client.on(Constants.Events.GUILD_BAN_ADD, async (guild: Guild, user: User) => {
 	} catch {
 		client.emit('warn', 'Recieved an error fetching a ban in the \'guildBanAdd\' event, this should not happen');
 	}
-});
-client.on(Constants.Events.GUILD_BAN_REMOVE, async (guild: Guild, user: User) => {
+}) as (guild: DJSGuild, user: User | PartialUser) => Promise<void>);
+
+client.on(Constants.Events.GUILD_BAN_REMOVE, (async (guild: Guild, user: User) => {
 	guild.bans.delete(user.id);
-});
+}) as (guild: DJSGuild, user: User | PartialUser) => Promise<void>);
+
 client.connect();
 
 /**
@@ -60,7 +71,7 @@ fs.readdir(join(__dirname, 'events')).then(files => {
 		const fn: (...args: unknown[]) => void = require(
 			join(__dirname, 'events', file)
 		).default;
-		client.on(file.split('.')[0], fn);
+		client.on(file.split('.')[0] as keyof ClientEvents, fn);
 	}
 }, err => {
 	console.error(err);
