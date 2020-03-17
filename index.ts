@@ -27,13 +27,15 @@ const client = new Client(config, {
 		}
 	},
 	ws: {
-		intents: [
+		/*intents: [
 			Intents.FLAGS.DIRECT_MESSAGES,
 			Intents.FLAGS.GUILDS,
 			Intents.FLAGS.GUILD_INVITES,
+			// The below intent must be enabled in your application settings
+			Intents.FLAGS.GUILD_MEMBERS,
 			Intents.FLAGS.GUILD_MESSAGES,
 			Intents.FLAGS.GUILD_MESSAGE_REACTIONS
-		]
+		]*/
 	}
 });
 client.on('error', console.error);
