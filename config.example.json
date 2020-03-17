@@ -5,6 +5,7 @@
 	"encryption_password": "A secure password",
 	"prefix": "+",
 	"punishment_channel": "123456789012345678",
+	"rules_channel": "123456789012345678",
 	"token": "Your bot token",
 	"webhooks": [{
 		"name": "audit-logs",

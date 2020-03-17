@@ -1,6 +1,7 @@
 import { join } from 'path';
-import { Constants, User, EmbedFieldData, GuildMember, RoleData, Invite, MessageEmbed } from 'discord.js';
+import { Constants, User, EmbedFieldData, GuildMember, RoleData, Invite, MessageEmbed, Snowflake } from 'discord.js';
 import * as moment from 'moment';
+import Client from './Client';
 /* eslint-disable sort-keys */
 
 export enum ModerationActionTypes {
@@ -141,6 +142,9 @@ export const FLAGS_REGEX = /--([a-z]+)=("[^"]*"|[0-9a-z]*)/gi;
 
 const hyperlink = (name: string, url: string) => `[${name}](${url})`;
 
+const messageURL = (guildID: Snowflake, channelID: Snowflake, messageID: Snowflake) =>
+	`https://discordapp.com/channels/${guildID}/${channelID}/${messageID}`;
+
 export const EventResponses = {
 	INVITE_CREATE: (invite: Invite) => {
 		return new MessageEmbed()
@@ -178,6 +182,12 @@ export const EventResponses = {
 			.setTimestamp(invite.createdAt!);
 	},
 
+	GUILD_MEMBER_ADD: (member: GuildMember & { client: Client }, webhook = true) => 
+		`<@&539532117781118987> to ${member.guild.name} ${member.guild.name}, You can click ${
+			webhook ? `[here](${
+				messageURL('539355100397699092', '635215364950851659', '635228291556704320')
+			})` : `<#${member.client.config.rulesChannelID}>`
+		} to read the rules!`,
 	GUILD_MEMBER_UPDATE: (oldMember: GuildMember, newMember: GuildMember) => {
 		const { user } = newMember;
 		const data = [];

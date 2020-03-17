@@ -3,7 +3,8 @@ import Guild from '../structures/discord.js/Guild';
 import Client from '../util/Client';
 import { EventResponses } from '../util/Constants';
 
-type Member = GuildMember & { client: Client; guild: Guild }
+// Lazy
+export type Member = GuildMember & { client: Client; guild: Guild }
 
 /**
  * To enable logging for this event, a webhook with the name `audit-logs`

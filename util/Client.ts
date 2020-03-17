@@ -42,6 +42,8 @@ export default class Client extends DJSClient {
 		 * Warning: this channel should be locked to staff members only.
 		 */
 		punishmentChannelID: Snowflake;
+		readonly rulesChannel: TextChannel | null;
+		rulesChannelID: Snowflake;
 	};
 	public database: DatabaseManager;
 	public mutes = new Collection<Snowflake, Mute>();
@@ -75,7 +77,11 @@ export default class Client extends DJSClient {
 			get punishmentChannel() {
 				return commandManager.client.channels.resolve(this.punishmentChannelID);
 			},
-			punishmentChannelID: config.punishment_channel
+			punishmentChannelID: config.punishment_channel,
+			get rulesChannel() {
+				return commandManager.client.channels.resolve(this.rulesChannelID);
+			},
+			rulesChannelID: config.rules_channel
 		} });
 		Object.defineProperty(this.config, 'encryptionPassword', {
 			value: config.encryption_password
@@ -160,6 +166,7 @@ export interface ClientConfig {
 	files_dir?: string;
 	prefix: string;
 	punishment_channel: Snowflake;
+	rules_channel: Snowflake;
 	token: string;
 	webhooks: {
 		name: string;
