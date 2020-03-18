@@ -5,7 +5,7 @@ import Message from './Message';
 import Client from '../../util/Client';
 
 export default class TextChannel extends DJSTextChannel {
-	public client!: Client;
+	public readonly client!: Client;
 	public guild!: Guild;
 	public lastMessage!: Message | null;
 	public members!: Collection<Snowflake, GuildMember>;

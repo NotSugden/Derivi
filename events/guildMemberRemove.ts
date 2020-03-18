@@ -1,11 +1,10 @@
 import { MessageEmbed, Constants } from 'discord.js';
 import GuildMember from '../structures/discord.js/GuildMember';
 
-// TODO: change `invite-logs` to `welcome-messages` and `member-logs` respectively
 export default async (member: GuildMember) => {
 	const { client, user } = member;
 	if (member.guild.id !== client.config.defaultGuildID) return;
-	const hook = client.webhooks.get('invite-logs');
+	const hook = client.webhooks.get('member-logs');
 	if (!hook) return;
 	// This will be added to constants at a later date
 	const embed = new MessageEmbed()

@@ -8,7 +8,7 @@ export default class Guild extends DJSGuild {
 		reason: string | null;
 		user: User;
 	}>()
-	public client!: Client;
+	public readonly client!: Client;
 	public invites = new Collection<string, Invite>();
 
 	constructor(client: Client, data: object) {

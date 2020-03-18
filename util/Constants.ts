@@ -2,8 +2,9 @@ import { join } from 'path';
 import { Constants, EmbedFieldData, RoleData, MessageEmbed, Snowflake } from 'discord.js';
 import * as moment from 'moment';
 import Client from './Client';
-import { Invite } from './Types';
+import { Invite, PartialMessage } from './Types';
 import GuildMember from '../structures/discord.js/GuildMember';
+import Message from '../structures/discord.js/Message';
 import TextChannel from '../structures/discord.js/TextChannel';
 import User from '../structures/discord.js/User';
 /* eslint-disable sort-keys */
@@ -243,5 +244,25 @@ export const EventResponses = {
 			.setDescription(data)
 			.setFooter(`User ID: ${user.id}`)
 			.setThumbnail(user.displayAvatarURL({ dynamic: true }));
+	},
+
+	MESSAGE_DELETE: (message: Message | PartialMessage, options: { files: string[]; previous: Message }) => {
+		const embed = new MessageEmbed()
+			.setAuthor(`Message Deleted in #${
+				(message.channel as TextChannel).name
+			} by ${message.author ? message.author.tag : 'Unkown User#0000'}`)
+			.setDescription([
+				hyperlink('Previous Message', options.previous.url),
+				`Author ID: ${message.author ? message.author.id : '00000000000000000'}`
+			])
+			.setColor(Constants.Colors.RED)
+			.addField('Content', message.partial ?
+				'Message content was not cached' : message.content || 'No content'
+			).setFooter(`${message.id} | Created at`)
+			.setTimestamp(message.createdAt);
+		if (options.files.length) {
+			embed.addField(`File${options.files.length > 1 ? 's' : ''}`, options.files);
+		}
+		return embed;
 	}
 };

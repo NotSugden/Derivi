@@ -11,7 +11,7 @@ export default class Message extends DJSMessage {
 	public channel!: (Exclude<DJSMessage['channel'], DJSDMChannel | DJSTextChannel>) & {
 		client: Client;
 	} | DMChannel | TextChannel;
-	public client!: Client;
+	public readonly client!: Client;
 	public commandID?: Snowflake;
 	public guild!: Guild | null;
 	public readonly member!: GuildMember | null;
