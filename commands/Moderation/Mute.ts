@@ -1,5 +1,5 @@
 import ms from '@naval-base/ms';
-import { Permissions, GuildMember, PermissionOverwriteOption } from 'discord.js';
+import { Permissions, PermissionOverwriteOption } from 'discord.js';
 import Command, { CommandData } from '../../structures/Command';
 import CommandArguments from '../../structures/CommandArguments';
 import Message from '../../structures/discord.js/Message';
@@ -126,7 +126,7 @@ export default class Mute extends Command {
 				this.client.mutes.set(member.id, mute);
 			}
 
-			return send(Responses.MUTE_SUCCESS(filtered.array() as GuildMember[], reason));
+			return send(Responses.MUTE_SUCCESS(filtered.array(), reason));
 		} catch (error) {
 			if (error.name === 'Error') return send(error.message);
 			throw error;

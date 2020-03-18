@@ -5,15 +5,19 @@ import {
 	Constants,
 	Extendable,
 	Structures,
-	User,
+	User as DJSUser,
 	// Intents,
 	Guild as DJSGuild,
 	PartialUser,
 	ClientEvents
 } from 'discord.js';
 import Guild from './structures/discord.js/Guild';
+import User from './structures/discord.js/User';
 import Client from './util/Client';
-const extended: (keyof Extendable)[] = ['Message', 'Guild'];
+const extended: (keyof Extendable)[] = [
+	'Message', 'Guild', 'GuildMember', 'User',
+	'DMChannel', 'TextChannel'
+];
 for (const className of extended) {
 	Structures.extend(className, () => require(join(__dirname, 'structures', 'discord.js', className)).default);
 }
@@ -50,18 +54,18 @@ client.on(Constants.Events.GUILD_BAN_ADD, (async (guild: Guild, user: User) => {
 	if (guild.bans.has(user.id)) return;
 	try {
 		const ban = await guild.fetchBan(user) as {
-			user: User & { client: Client };
+			user: User;
 			reason: string | null;
 		};
 		guild.bans.set(user.id, ban);
 	} catch {
 		client.emit('warn', 'Recieved an error fetching a ban in the \'guildBanAdd\' event, this should not happen');
 	}
-}) as (guild: DJSGuild, user: User | PartialUser) => Promise<void>);
+}) as (guild: DJSGuild, user: DJSUser | PartialUser) => Promise<void>);
 
 client.on(Constants.Events.GUILD_BAN_REMOVE, (async (guild: Guild, user: User) => {
 	guild.bans.delete(user.id);
-}) as (guild: DJSGuild, user: User | PartialUser) => Promise<void>);
+}) as (guild: DJSGuild, user: DJSUser | PartialUser) => Promise<void>);
 
 client.connect();
 

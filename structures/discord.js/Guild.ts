@@ -1,12 +1,15 @@
-import { Guild as DJSGuild, Collection, Invite, User } from 'discord.js';
+import { Guild as DJSGuild, Collection } from 'discord.js';
+import User from './User';
 import Client from '../../util/Client';
+import { Invite } from '../../util/Types';
+
 export default class Guild extends DJSGuild {
 	public bans = new Collection<string, {
 		reason: string | null;
-		user: User & { client: Client };
+		user: User;
 	}>()
 	public client!: Client;
-	public invites = new Collection<string, Invite & { client: Client; guild: Guild }>();
+	public invites = new Collection<string, Invite>();
 
 	constructor(client: Client, data: object) {
 		super(client, data);
@@ -16,7 +19,7 @@ export default class Guild extends DJSGuild {
 				for (const ban of bans.values()) {
 					this.bans.set(ban.user.id, ban as {
 						reason: string | null;
-						user: User & { client: Client };
+						user: User;
 					});
 				}
 			});
@@ -24,7 +27,7 @@ export default class Guild extends DJSGuild {
 		this.fetchInvites()
 			.then(invites => {
 				for (const invite of invites.values()) {
-					this.invites.set(invite.code, invite as Invite & { client: Client; guild: Guild });
+					this.invites.set(invite.code, invite as Invite);
 				}
 			}).catch(error => console.error(error));
 	}

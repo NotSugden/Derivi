@@ -1,8 +1,9 @@
 import * as crypto from 'crypto';
-import { Collection, User, GuildMember, Snowflake, MessageEmbed } from 'discord.js';
-import Client from './Client';
+import { Collection, Snowflake, MessageEmbed } from 'discord.js';
 import { Errors, ModerationActionTypes, Responses, FLAGS_REGEX } from './Constants';
+import GuildMember from '../structures/discord.js/GuildMember';
 import Message from '../structures/discord.js/Message';
+import User from '../structures/discord.js/User';
 
 const getCipherKey = (password: string) => crypto.createHash('sha256')
 	.update(password)
@@ -46,23 +47,23 @@ export default class Util {
 		flags: FlagData;
 	}>;
 	static async reason(message: Message, options: { fetchMembers: true; withFlags?: false }): Promise<ReasonData & {
-		members: Collection<Snowflake, GuildMember & { client: Client }>;
+		members: Collection<Snowflake, GuildMember>;
 	}>;
 	static async reason(message: Message, options: { fetchMembers: true; withFlags: true }): Promise<ReasonData & {
 		flags: FlagData;
-		members: Collection<Snowflake, GuildMember & { client: Client }>;
+		members: Collection<Snowflake, GuildMember>;
 	}>;
 	static async reason(message: Message, { fetchMembers = false, withFlags = false } = {}) {
 		const { client } = message;
-		const users = new Collection<Snowflake, User & { client: Client }>();
+		const users = new Collection<Snowflake, User>();
 		const [, ...content] = message.content.split(' ');
 		for (const word of [...content]) {
 			const [id] = word.match(/\d{17,19}/) || [];
 			if (!id) break;
 			content.shift();
-			let user: User & { client: Client };
+			let user: User;
 			try {
-				user = await client.users.fetch(id) as User & { client: Client };
+				user = await client.users.fetch(id) as User;
 			} catch {
 				throw new Error(Errors.RESOLVE_ID(id));
 			}
@@ -71,16 +72,16 @@ export default class Util {
 
 		const data: {
 			flags?: FlagData;
-			members?: Collection<Snowflake, GuildMember & { client: Client }>;
+			members?: Collection<Snowflake, GuildMember>;
 			reason: string;
-			users: Collection<Snowflake, User & { client: Client }>;
+			users: Collection<Snowflake, User>;
 		} = { reason: content.join(' '), users };
 
 		if (fetchMembers) {
-			const members = data.members = new Collection<Snowflake, GuildMember & { client: Client }>();
+			const members = data.members = new Collection<Snowflake, GuildMember>();
 			for (const user of users.values()) {
 				try {
-					const member = await message.guild!.members.fetch(user) as GuildMember & { client: Client };
+					const member = await message.guild!.members.fetch(user) as GuildMember;
 					members.set(member.id, member);
 				} catch { } // eslint-disable-line no-empty
 			}
@@ -100,7 +101,7 @@ export default class Util {
 		[key: string]: unknown;
 		reason: string;
 	}) {
-		const { client } = moderator as User & { client: Client };
+		const { client } = moderator as User;
 		const { reason, screenshots } = extras;
 		delete extras.reason;
 		delete extras.screenshots;
@@ -163,7 +164,7 @@ export type PromiseObject<T> = Promise<T> & {
 
 export interface ReasonData {
 	reason: string;
-	users: Collection<Snowflake, User & { client: Client }>;
+	users: Collection<Snowflake, User>;
 }
 
 export interface FlagData {

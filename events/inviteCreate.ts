@@ -1,19 +1,15 @@
-import { Invite as DJSInvite } from 'discord.js';
-import Guild from '../structures/discord.js/Guild';
-import Client from '../util/Client';
 import { EventResponses } from '../util/Constants';
-
-type Invite = DJSInvite & { client: Client }
+import { Invite } from '../util/Types';
 
 /**
  * To enable logging for this event, a webhook with the name `invite-logs`
  * should be in the config.json
  */
-export default async (invite: Invite & { guild: Guild | null }) => {
+export default async (invite: Invite) => {
 	const { client } = invite;
 	if (!invite.guild || invite.guild.id !== client.config.defaultGuildID) return;
 	if (!invite.guild.invites.has(invite.code)) {
-		invite.guild.invites.set(invite.code, invite as Invite & { guild: Guild });
+		invite.guild.invites.set(invite.code, invite);
 	}
 
 	const webhook = client.webhooks.get('invite-logs');

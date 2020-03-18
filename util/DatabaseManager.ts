@@ -1,4 +1,4 @@
-import { UserResolvable, User } from 'discord.js';
+import { UserResolvable } from 'discord.js';
 import * as sqlite from 'sqlite';
 import Client from './Client';
 import { Errors, ModerationActionTypes } from './Constants';
@@ -8,6 +8,7 @@ import Mute, { RawMute } from '../structures/Mute';
 import Points, { RawPoints } from '../structures/Points';
 import Warn, { RawWarn } from '../structures/Warn';
 import Message from '../structures/discord.js/Message';
+import User from '../structures/discord.js/User';
 
 const stringify = (json: object) => {
 	try {

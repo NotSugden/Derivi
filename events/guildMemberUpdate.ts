@@ -1,16 +1,11 @@
-import { GuildMember } from 'discord.js';
-import Guild from '../structures/discord.js/Guild';
-import Client from '../util/Client';
+import GuildMember from '../structures/discord.js/GuildMember';
 import { EventResponses } from '../util/Constants';
-
-// Lazy
-export type Member = GuildMember & { client: Client; guild: Guild }
 
 /**
  * To enable logging for this event, a webhook with the name `audit-logs`
  * should be in the config.json
  */
-export default async (oldMember: Member, newMember: Member) => {
+export default async (oldMember: GuildMember, newMember: GuildMember) => {
 	const { client, guild } = newMember;
 	if (guild.id !== client.config.defaultGuildID) return;
 	// TODO: change `invite-logs` to `audit-logs` before commiting

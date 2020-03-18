@@ -6,7 +6,6 @@ import {
 	Constants,
 	Util as DJSUtil,
 	Snowflake,
-	TextChannel,
 	WebhookClient,
 	Collection
 } from 'discord.js';
@@ -15,6 +14,7 @@ import { Defaults, Errors } from './Constants';
 import DatabaseManager from './DatabaseManager';
 import Mute from '../structures/Mute';
 import Guild from '../structures/discord.js/Guild';
+import TextChannel from '../structures/discord.js/TextChannel';
 
 export default class Client extends DJSClient {
 	public commands: CommandManager;
@@ -42,7 +42,11 @@ export default class Client extends DJSClient {
 		 * Warning: this channel should be locked to staff members only.
 		 */
 		punishmentChannelID: Snowflake;
-		readonly rulesChannel: TextChannel | null;
+		/**
+		 * This *could* be null if the client is kicked out of the guild,
+		 * however im not documenting that as the client isn't meant to be kicked.
+		 */
+		readonly rulesChannel: TextChannel;
 		rulesChannelID: Snowflake;
 	};
 	public database: DatabaseManager;

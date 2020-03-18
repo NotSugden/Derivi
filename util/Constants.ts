@@ -1,7 +1,11 @@
 import { join } from 'path';
-import { Constants, User, EmbedFieldData, GuildMember, RoleData, Invite, MessageEmbed, Snowflake } from 'discord.js';
+import { Constants, EmbedFieldData, RoleData, MessageEmbed, Snowflake } from 'discord.js';
 import * as moment from 'moment';
 import Client from './Client';
+import { Invite } from './Types';
+import GuildMember from '../structures/discord.js/GuildMember';
+import TextChannel from '../structures/discord.js/TextChannel';
+import User from '../structures/discord.js/User';
 /* eslint-disable sort-keys */
 
 export enum ModerationActionTypes {
@@ -148,7 +152,7 @@ const messageURL = (guildID: Snowflake, channelID: Snowflake, messageID: Snowfla
 export const EventResponses = {
 	INVITE_CREATE: (invite: Invite) => {
 		return new MessageEmbed()
-			.setAuthor(`Invite created in #${invite.channel.name} by ${
+			.setAuthor(`Invite created in #${(invite.channel as TextChannel).name} by ${
 				invite.inviter ? invite.inviter.tag : 'Unknown User#0000'
 			}`)
 			.setColor(Constants.Colors.GREEN)
@@ -166,7 +170,7 @@ export const EventResponses = {
 	},
 	INVITE_DELETE: (invite: Invite) => {
 		return new MessageEmbed()
-			.setAuthor(`Invite deleted in #${invite.channel.name}, created by ${
+			.setAuthor(`Invite deleted in #${(invite.channel as TextChannel).name}, created by ${
 				invite.inviter ? invite.inviter.tag : 'Unknown User#0000'
 			}`)
 			.setColor(Constants.Colors.RED)

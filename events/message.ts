@@ -1,14 +1,15 @@
 /* eslint-disable consistent-return */
 import { promises as fs } from 'fs';
 import { join, extname } from 'path';
-import { MessageOptions, MessageEditOptions, StringResolvable, MessageAdditions, TextChannel } from 'discord.js';
+import { MessageOptions, MessageEditOptions, StringResolvable, MessageAdditions } from 'discord.js';
 import fetch from 'node-fetch';
 import { CommandData } from '../structures/Command';
 import CommandArguments from '../structures/CommandArguments';
 import Message from '../structures/discord.js/Message';
-import Client from '../util/Client';
+import TextChannel from '../structures/discord.js/TextChannel';
 import { Responses } from '../util/Constants';
 import Util from '../util/Util';
+
 export default async (message: Message) => {
 	try {
 		const { client } = message;
@@ -62,7 +63,7 @@ export default async (message: Message) => {
 
 		let hasPermissions: boolean | string;
 		if (typeof permissions === 'function') {
-			hasPermissions = await permissions(message.member!, message.channel as TextChannel & { client: Client });
+			hasPermissions = await permissions(message.member!, message.channel as TextChannel);
 		} else {
 			hasPermissions = message.member!.hasPermission(permissions);
 		}

@@ -1,10 +1,11 @@
 import {
-	PermissionResolvable, GuildMember,
-	TextChannel, Snowflake, MessageAdditions,
+	PermissionResolvable, Snowflake, MessageAdditions,
 	MessageOptions, StringResolvable, MessageEditOptions
 } from 'discord.js';
 import CommandArguments from './CommandArguments';
+import GuildMember from './discord.js/GuildMember';
 import Message from './discord.js/Message';
+import TextChannel from './discord.js/TextChannel';
 import Client from '../util/Client';
 import CommandManager from '../util/CommandManager';
 
@@ -85,6 +86,6 @@ export type CommandUsage = {
 };
 
 type PermissionsFunction = (
-	member: GuildMember & { client: Client },
-	channel: TextChannel & { client: Client },
+	member: GuildMember,
+	channel: TextChannel,
 ) => boolean | string | Promise<boolean | string>;
