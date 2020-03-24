@@ -5,7 +5,10 @@ import { PartialMessage } from '../util/Types';
 
 export default async (message: Message | PartialMessage) => {
 	const { client } = message;
-	if (!message.guild) return;
+	if (
+		!message.guild || (message.guild.id !== client.config.defaultGuildID) ||
+		(message.author && message.author.bot)
+	) return;
 	
 	const webhook = client.webhooks.get('audit-logs');
 	if (!webhook) return;

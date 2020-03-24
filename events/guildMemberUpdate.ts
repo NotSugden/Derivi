@@ -7,12 +7,13 @@ import { EventResponses } from '../util/Constants';
  */
 export default async (oldMember: GuildMember, newMember: GuildMember) => {
 	const { client, guild } = newMember;
-	if (guild.id !== client.config.defaultGuildID) return;
-	// TODO: change `invite-logs` to `audit-logs` before commiting
+	if (guild.id !== client.config.defaultGuildID || newMember.user.bot) return;
 	const webhook = client.webhooks.get('audit-logs');
 	if (!webhook) return;
 	
 	const embed = EventResponses.GUILD_MEMBER_UPDATE(oldMember, newMember);
+	if (!embed) return;
+	
 	webhook.send(embed)
 		.catch(console.error);
 };

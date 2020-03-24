@@ -21,7 +21,6 @@ export default async (message: Message) => {
 		if (message.guild!.id === client.config.defaultGuildID) {
 			if (client.config.attachmentLogging && !edited && message.attachments.size) {
 				const urls = message.attachments.map(({ proxyURL }) => proxyURL);
-				/* eslint-disable no-await-in-loop */
 				for (let i = 0; i < urls.length; i++) {
 					const url = urls[i];
 					const extension = extname(url);
@@ -34,7 +33,6 @@ export default async (message: Message) => {
 						.then(data => Util.encrypt(data, client.config.encryptionPassword));
 					await fs.writeFile(name, buffer);
 				}
-				/* eslint-enable no-await-in-loop */
 			}
 		}
 		if (!message.content.startsWith(client.config.prefix)) return;

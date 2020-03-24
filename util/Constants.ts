@@ -196,13 +196,11 @@ export const EventResponses = {
 	GUILD_MEMBER_UPDATE: (oldMember: GuildMember, newMember: GuildMember) => {
 		const { user } = newMember;
 		const data = [];
-
 		if (oldMember.displayColor !== newMember.displayColor) {
 			data.push(`Display Color Changed: ${oldMember.displayHexColor} to ${newMember.displayHexColor}`);
 		}
 
 		if (oldMember.nickname !== newMember.nickname) {
-
 			if (!oldMember.nickname || !newMember.nickname) {
 				data.push(
 					`Nickname ${oldMember.nickname ? 'Removed' : 'Set'}: ${newMember.nickname || oldMember.nickname}`
@@ -210,7 +208,6 @@ export const EventResponses = {
 			} else {
 				data.push(`Nickname Changed: ${oldMember.nickname} to ${newMember.nickname}`);
 			}
-
 		}
 
 		if (oldMember.premiumSinceTimestamp !== newMember.premiumSinceTimestamp) {
@@ -218,7 +215,6 @@ export const EventResponses = {
 		}
 
 		if (!oldMember.roles.cache.equals(newMember.roles.cache)) {
-
 			const addedRoles = newMember.roles.cache.filter(role => !oldMember.roles.cache.has(role.id));
 			const removedRoles = oldMember.roles.cache.filter(role => !newMember.roles.cache.has(role.id));
 			if (addedRoles.size) {
@@ -233,10 +229,9 @@ export const EventResponses = {
 			// I'm not using role mentions here as the log channel is in a different guild
 				data.push(`Roles Removed: ${removedRoles.map(role => role.name).join(', ')}`);
 			}
-
 		}
 
-		if (!data.length) data.push('Unkown change or changes');
+		if (!data.length) return null;
 
 		return new MessageEmbed()
 			.setAuthor(user.tag)
@@ -264,5 +259,24 @@ export const EventResponses = {
 			embed.addField(`File${options.files.length > 1 ? 's' : ''}`, options.files);
 		}
 		return embed;
+	},
+
+	MESSAGE_UPDATE: (oldMessage: Message | PartialMessage, newMessage: Message) => {
+		return new MessageEmbed()
+			.setAuthor(`Message Edited in #${(newMessage.channel as TextChannel).name} by ${newMessage.author.tag}`)
+			.setDescription([
+				hyperlink('Jump', newMessage.url),
+				`Author ID: ${newMessage.author.id}`
+			])
+			.setColor(Constants.Colors.YELLOW)
+			.setFooter(`${newMessage.id} | Created at`)
+			.setTimestamp()
+			.addFields({
+				name: 'Old Content',
+				value: oldMessage.partial ? 'Old content wasn\'t cached' : (oldMessage.content || 'No content')
+			}, {
+				name: 'New Content',
+				value: newMessage.content || 'No content'
+			});
 	}
 };

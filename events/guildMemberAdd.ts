@@ -5,7 +5,7 @@ import { EventResponses } from '../util/Constants';
 
 export default async (member: GuildMember) => {
 	const { client, user } = member;
-	if (member.guild.id !== client.config.defaultGuildID) return;
+	if (member.guild.id !== client.config.defaultGuildID || user.bot) return;
 	const hookOrChannel = client.webhooks.get('welcome-messages') ||
 		(member.guild.channels.cache.find(ch => ch.type === 'text' && ch.name === 'general') as TextChannel);
 	const isWebhook = hookOrChannel instanceof WebhookClient;
