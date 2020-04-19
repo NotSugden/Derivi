@@ -77,6 +77,7 @@ export default class Client extends DJSClient {
 		 * Warning: this channel should be locked to staff members only.
 		 */
 		punishmentChannelID: Snowflake;
+		reactionRoles: Map<Snowflake, Map<string, Snowflake>>;
 		/**
 		 * This *could* be null if the client is kicked out of the guild,
 		 * however im not documenting that as the client isn't meant to be kicked.
@@ -117,6 +118,13 @@ export default class Client extends DJSClient {
 				return commandManager.client.channels.resolve(this.punishmentChannelID);
 			},
 			punishmentChannelID: config.punishment_channel,
+			reactionRoles: new Map(config.reaction_roles.map(data => [
+				data.message,
+				new Map(data.emojis.map(emojiData => [
+					emojiData.id,
+					emojiData.role
+				]))
+			])),
 			get rulesChannel() {
 				return commandManager.client.channels.resolve(this.rulesChannelID);
 			},
@@ -209,6 +217,13 @@ export interface ClientConfig {
 	files_dir?: string;
 	prefix: string;
 	punishment_channel: Snowflake;
+	reaction_roles: {
+		message: Snowflake;
+		emojis: {
+			id: Snowflake;
+			role: Snowflake;
+		}[];
+	}[];
 	rules_channel: Snowflake;
 	token: string;
 	webhooks: {

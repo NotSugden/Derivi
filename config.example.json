@@ -11,5 +11,12 @@
 		"name": "audit-logs",
 		"id": "123456789012345678",
 		"token": "Webhook token"
+	}],
+	"reaction_roles": [{
+		"message": "123456789012345678",
+		"emojis": [{
+			"id": "123456789012345678",
+			"role": "123456789012345678"
+		}]
 	}]
 }
