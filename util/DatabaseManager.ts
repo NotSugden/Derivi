@@ -26,6 +26,10 @@ export default class DatabaseManager {
 		Object.defineProperty(this, 'client', { value: client });
 	}
 
+	public async rawQuery(sql: string, ...params: unknown[]) {
+		return this.rawDatabase.all(sql, ...params);
+	}
+
 	public close() {
 		return this.rawDatabase.close();
 	}
