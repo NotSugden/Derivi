@@ -4,27 +4,20 @@ import Guild from '../structures/discord.js/Guild';
 import Message from '../structures/discord.js/Message';
 import User from '../structures/discord.js/User';
 
-export type Invite = Extend<djs.Invite, {
+export interface Invite extends djs.Invite {
 	readonly client: Client;
-	channel: Exclude<djs.GuildChannelTypes, djs.CategoryChannel> & {
-		client: Client;
-		guild: Guild;
-	} | Omit<djs.PartialDMChannel, 'client'> & {
+	channel: (
+		(djs.GuildChannel & { guild: Guild }) |
+		djs.PartialGroupDMChannel
+	) & {
 		client: Client;
 	};
 	guild: Guild | null;
 	inviter: User | null;
-}>;
+}
 
-export type PartialMessage = Extend<djs.PartialMessage, {
+export interface PartialMessage extends djs.PartialMessage {
 	author: User | null;
 	channel: Message['channel'];
 	readonly client: Client;
-}>
-
-
-type Extend<C, P extends object> = {
-	[K in keyof Omit<C, keyof P>]: C[K];
-} & {
-	[K in keyof P]: P[K]
-};
+}

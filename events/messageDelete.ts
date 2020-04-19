@@ -1,9 +1,9 @@
 import { promises as fs } from 'fs';
 import Message from '../structures/discord.js/Message';
+import { Events } from '../util/Client';
 import { EventResponses } from '../util/Constants';
-import { PartialMessage } from '../util/Types';
 
-export default async (message: Message | PartialMessage) => {
+export default (async message => {
 	const { client } = message;
 	if (
 		!message.guild || (message.guild.id !== client.config.defaultGuildID) ||
@@ -32,4 +32,4 @@ export default async (message: Message | PartialMessage) => {
 
 	webhook.send(embed)
 		.catch(console.error);
-};
+}) as (...args: Events['messageDelete']) => void;

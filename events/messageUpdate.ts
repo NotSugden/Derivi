@@ -1,8 +1,7 @@
-import Message from '../structures/discord.js/Message';
+import { Events } from '../util/Client';
 import { EventResponses } from '../util/Constants';
-import { PartialMessage } from '../util/Types';
 
-export default async (oldMessage: Message | PartialMessage, newMessage: Message | PartialMessage) => {
+export default (async (oldMessage, newMessage) => {
 	const { guild, client } = newMessage;
 	if (
 		!guild || guild.id !== client.config.defaultGuildID ||
@@ -22,4 +21,4 @@ export default async (oldMessage: Message | PartialMessage, newMessage: Message 
 	const embed = EventResponses.MESSAGE_UPDATE(oldMessage, newMessage);
 	webhook.send(embed)
 		.catch(console.error);
-};
+}) as (...args: Events['messageUpdate']) => void;

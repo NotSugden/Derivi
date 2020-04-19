@@ -1,9 +1,9 @@
 import { WebhookClient, MessageEmbed, Constants } from 'discord.js';
-import GuildMember from '../structures/discord.js/GuildMember';
 import TextChannel from '../structures/discord.js/TextChannel';
+import { Events } from '../util/Client';
 import { EventResponses } from '../util/Constants';
 
-export default async (member: GuildMember) => {
+export default (async member => {
 	const { client, user } = member;
 	if (member.guild.id !== client.config.defaultGuildID || user.bot) return;
 	const hookOrChannel = client.webhooks.get('welcome-messages') ||
@@ -32,4 +32,4 @@ export default async (member: GuildMember) => {
 		embeds: [embed],
 		username: 'Member Joined'
 	}).catch(console.error);
-};
+}) as (...args: Events['guildMemberAdd']) => void;

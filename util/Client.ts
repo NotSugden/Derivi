@@ -7,14 +7,49 @@ import {
 	Util as DJSUtil,
 	Snowflake,
 	WebhookClient,
-	Collection
+	Collection,
+	ClientEvents,
+	MessageReaction
 } from 'discord.js';
 import CommandManager from './CommandManager';
 import { Defaults, Errors } from './Constants';
 import DatabaseManager from './DatabaseManager';
+import { Invite, PartialMessage } from './Types';
 import Mute from '../structures/Mute';
+import DMChannel from '../structures/discord.js/DMChannel';
 import Guild from '../structures/discord.js/Guild';
+import GuildMember from '../structures/discord.js/GuildMember';
+import ASCMessage from '../structures/discord.js/Message';
 import TextChannel from '../structures/discord.js/TextChannel';
+import User from '../structures/discord.js/User';
+
+type Message = ASCMessage & {
+	channel: Exclude<ASCMessage['channel'], DMChannel>;
+	guild: Guild;
+	member: GuildMember;
+} | ASCMessage & {
+	channel: DMChannel;
+	guild: null;
+	member: null;
+}
+
+export interface Events extends ClientEvents {
+	guildBanAdd: [Guild, User];
+	guildBanRemove: [Guild, User];
+	guildMemberAdd: [GuildMember];
+	guildMemberRemove: [GuildMember];
+	guildMemberUpdate: [GuildMember, GuildMember];
+	inviteCreate: [Invite];
+	inviteDelete: [Invite];
+	message: [Message];
+	messageDelete: [Message | PartialMessage];
+	messageReactionRemoveAll: [Message | PartialMessage];
+	messageReactionRemoveEmoji: [MessageReaction & { message: Message }];
+	messageDeleteBulk: [Collection<Snowflake, Message | PartialMessage>];
+	messageReactionAdd: [MessageReaction & { message: Message }, User];
+	messageReactionRemove: [MessageReaction & { message: Message }, User];
+	messageUpdate: [Message | PartialMessage, Message | PartialMessage];
+}
 
 export default class Client extends DJSClient {
 	public commands: CommandManager;
@@ -90,6 +125,10 @@ export default class Client extends DJSClient {
 		Object.defineProperty(this.config, 'encryptionPassword', {
 			value: config.encryption_password
 		});
+	}
+
+	public on<K extends keyof Events>(event: K, listener: (...args: Events[K]) => void): this {
+		return super.on(event, listener as (...args: ClientEvents[K]) => void);
 	}
 
 	public async connect(token = this.token) {

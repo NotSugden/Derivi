@@ -1,11 +1,11 @@
+import { Events } from '../util/Client';
 import { EventResponses } from '../util/Constants';
-import { Invite } from '../util/Types';
 
 /**
  * To enable logging for this event, a webhook with the name `invite-logs`
  * should be in the config.json
  */
-export default async (invite: Invite) => {
+export default (async invite => {
 	const { client } = invite;
 	if (!invite.guild || invite.guild.id !== client.config.defaultGuildID) return;
 	if (!invite.guild.invites.has(invite.code)) {
@@ -18,4 +18,4 @@ export default async (invite: Invite) => {
 	const embed = EventResponses.INVITE_CREATE(invite);
 	webhook.send(embed)
 		.catch(console.error);
-};
+}) as (...args: Events['inviteCreate']) => void;

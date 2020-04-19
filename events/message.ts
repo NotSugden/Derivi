@@ -7,10 +7,11 @@ import { CommandData } from '../structures/Command';
 import CommandArguments from '../structures/CommandArguments';
 import Message from '../structures/discord.js/Message';
 import TextChannel from '../structures/discord.js/TextChannel';
+import { Events } from '../util/Client';
 import { Responses } from '../util/Constants';
 import Util from '../util/Util';
 
-export default async (message: Message) => {
+export default (async message => {
 	try {
 		const { client } = message;
 		const edited = Boolean(message.editedTimestamp);
@@ -82,4 +83,4 @@ export default async (message: Message) => {
 		]).catch(console.error);
 		console.error(error);
 	}
-};
+}) as (...args: Events['message']) => void;

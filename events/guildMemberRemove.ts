@@ -1,7 +1,7 @@
 import { MessageEmbed, Constants } from 'discord.js';
-import GuildMember from '../structures/discord.js/GuildMember';
+import { Events } from '../util/Client';
 
-export default async (member: GuildMember) => {
+export default (async member => {
 	const { client, user } = member;
 	if (member.guild.id !== client.config.defaultGuildID || user.bot) return;
 	const hook = client.webhooks.get('member-logs');
@@ -22,4 +22,4 @@ export default async (member: GuildMember) => {
 		embeds: [embed],
 		username: 'Member Left'
 	}).catch(console.error);
-};
+}) as (...args: Events['guildMemberRemove']) => void;
