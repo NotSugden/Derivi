@@ -29,7 +29,7 @@ export default class Warnings extends Command {
 	public async run(message: Message, args: CommandArguments, { send }: CommandData) {
 		const { users } = await Util.reason(message);
 		
-		if (!users.size) throw new CommandError('MENTION_USERS', true);
+		if (!users.size) throw new CommandError('MENTION_USERS');
 
 		const warnings = Object.entries(await this.client.database.warns(users.map(user => user.id)))
 			.flatMap(([userID, warns]) => {
