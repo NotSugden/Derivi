@@ -53,7 +53,9 @@ export default class Mute extends Command {
 				type: 'boolean'
 			}]
 		}));
-
+		
+		if (time < 120e3) throw new CommandError('INVALID_TIME');
+		
 		if (!reason) throw new CommandError('PROVIDE_REASON');
 		if (!members.size) {
 			throw new CommandError('MENTION_USERS', true);

@@ -67,6 +67,7 @@ export const CommandErrors = {
 		}.`,
 	CANNOT_ACTION_USER: (action: keyof typeof ModerationActionTypes, multiple = false) =>
 		`You cannot perform a ${action.toLowerCase()} on ${multiple ? 'one of the users you mentioned' : 'this user'}`,
+	INVALID_TIME: (time = '2 minutes') => `The time you provided is less than ${time}, which is the minimum.`,
 	INSUFFICIENT_PERMISSIONS: 'You have insufficient permissions to perform this action.',
 	MENTION_USERS: (users = true) => `Please mention at least 1 ${users ? 'user' : 'member'}.`,
 	PROVIDE_REASON: 'Please supply a reason for this action.',
