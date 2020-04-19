@@ -6,13 +6,13 @@ import CommandManager from '../../util/CommandManager';
 import { Responses } from '../../util/Constants';
 import Util from '../../util/Util';
 
-export default class Warn extends Command {
+export default class Warnings extends Command {
 	constructor(manager: CommandManager) {
 		super(manager, {
-			aliases: [],
+			aliases: ['warns'],
 			category: 'Moderation',
 			cooldown: 5,
-			name: 'warn',
+			name: 'warnings',
 			permissions: (member, channel) => {
 				const channelID = member.client.config.punishmentChannelID;
 				if (member.guild.id === member.client.config.defaultGuildID) {
