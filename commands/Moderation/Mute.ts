@@ -34,6 +34,9 @@ export default class Mute extends Command {
 				required: true,
 				type: 'member'
 			}, {
+				required: true,
+				type: 'time'
+			}, {
 				type: '--silent=true'
 			}, {
 				required: true,
