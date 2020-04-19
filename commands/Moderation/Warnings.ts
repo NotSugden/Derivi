@@ -27,7 +27,6 @@ export default class Warnings extends Command {
 	}
 
 	public async run(message: Message, args: CommandArguments, { send }: CommandData) {
-		await message.delete();
 		const { users } = await Util.reason(message);
 		
 		if (!users.size) throw new CommandError('MENTION_USERS', true);
