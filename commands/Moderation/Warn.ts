@@ -27,6 +27,8 @@ export default class Warn extends Command {
 				required: true,
 				type: 'user'
 			}, {
+				type: '--silent=true'
+			}, {
 				required: true,
 				type: 'reason'
 			}]

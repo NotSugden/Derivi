@@ -3,6 +3,7 @@ import { Constants, EmbedFieldData, RoleData, MessageEmbed, Snowflake } from 'di
 import * as moment from 'moment';
 import Client from './Client';
 import { Invite, PartialMessage } from './Types';
+import Warn from '../structures/Warn';
 import GuildMember from '../structures/discord.js/GuildMember';
 import Message from '../structures/discord.js/Message';
 import TextChannel from '../structures/discord.js/TextChannel';
@@ -82,6 +83,11 @@ export const CommandErrors = {
 };
 
 export const Responses = {
+	WARNINGS: (warns: Warn[]) => {
+		return warns.map(warn => `(${warn.caseID}) ${
+			warn.moderator ? warn.moderator.tag : warn.moderatorID
+		} (${moment(warn.timestamp).format('DD/MM/YYYY HH:MM A')}): ${warn.reason}`);
+	},
 	MODERATION_LOG_FIELDS: (moderator: User, users: User[]): EmbedFieldData[] => [{
 		name: 'Moderator',
 		value: moderator.tag

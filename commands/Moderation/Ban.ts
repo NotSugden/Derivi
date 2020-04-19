@@ -29,6 +29,8 @@ export default class Ban extends Command {
 			}, {
 				type: '--days=7'
 			}, {
+				type: '--silent=true'
+			}, {
 				required: true,
 				type: 'reason'
 			}]

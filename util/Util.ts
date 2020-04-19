@@ -23,7 +23,7 @@ export default class Util {
 			flagsObj[name] = value.startsWith('"') ? value.slice(1, value.length - 1) : value;
 			if (flagTypes) {
 				const data = flagTypes.find(flag => flag.name === name);
-				if (!data) throw new CommandError('INVALID_FLAG', flagTypes.map(flag => flag.name));
+				if (!data) throw new CommandError('INVALID_FLAG', name, flagTypes.map(flag => flag.name));
 				if (data.type === 'boolean') {
 					if (value === 'true' || value === 'false') flagsObj[name] = value === 'true';
 
@@ -56,7 +56,7 @@ export default class Util {
 		const decipher = crypto.createDecipheriv('aes256', getCipherKey(password), iv);
 		return Buffer.concat([decipher.update(data), decipher.final()]);
 	}
-	
+
 	static async reason(message: Message, options?: { fetchMembers?: false; withFlags?: false }): Promise<ReasonData>;
 	static async reason(message: Message, options: { fetchMembers?: false; withFlags: Flag[] }): Promise<ReasonData & {
 		flags: FlagData;

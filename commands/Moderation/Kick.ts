@@ -27,6 +27,8 @@ export default class Kick extends Command {
 				required: true,
 				type: 'member'
 			}, {
+				type: '--silent=true'
+			}, {
 				required: true,
 				type: 'reason'
 			}]
