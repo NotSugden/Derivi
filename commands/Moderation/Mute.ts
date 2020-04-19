@@ -8,11 +8,11 @@ import CommandManager from '../../util/CommandManager';
 import { Responses, Defaults } from '../../util/Constants';
 import Util from '../../util/Util';
 
-function parseMS<T extends { reason: string }>(data: T): T & { time: number } {
+const parseMS = <T extends { reason: string }>(data: T): T & { time: number } => {
 	const reason = data.reason.split(' ');
 	const time = ms(reason.shift() || '');
 	return Object.assign(data, { reason: reason.join(' '), time });
-}
+};
 
 export default class Mute extends Command {
 	constructor(manager: CommandManager) {
