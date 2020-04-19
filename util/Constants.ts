@@ -141,7 +141,7 @@ export const Responses = {
 	},
 
 	WARN_SUCCESS: (users: User[], reason: string) =>
-		`${users.length > 1 ? `${users.length} Users where` : `${users[0].tag} was`} warned for ${reason}.`,
+		`${users.length > 1 ? `${users.length} Users were` : `${users[0].tag} was`} warned for ${reason}.`,
 	MUTE_SUCCESS: (members: GuildMember[], reason: string) =>
 		`${members.length > 1 ? `${members.length} Members were` : `${members[0].user.tag} was`} muted for ${reason}.`
 };
