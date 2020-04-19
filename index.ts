@@ -23,7 +23,9 @@ for (const className of extended) {
 }
 const config = require(join(__dirname, 'config.json'));
 const client = new Client(config, {
-	disableMentions: 'everyone',
+	allowedMentions: {
+		parse: []
+	},
 	partials: ['REACTION', 'MESSAGE'],
 	presence: {
 		activity: {

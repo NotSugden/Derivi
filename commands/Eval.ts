@@ -63,7 +63,7 @@ export default class Eval extends Command {
 				);
 			}
 			return send(inspected, {
-				code: 'js', disableMentions: 'everyone'
+				code: 'js'
 			});
 		};
 		try {
