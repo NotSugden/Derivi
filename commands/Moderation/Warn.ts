@@ -2,6 +2,7 @@ import { Permissions } from 'discord.js';
 import Command, { CommandData } from '../../structures/Command';
 import CommandArguments from '../../structures/CommandArguments';
 import Message from '../../structures/discord.js/Message';
+import CommandError from '../../util/CommandError';
 import CommandManager from '../../util/CommandManager';
 import { Responses } from '../../util/Constants';
 import Util from '../../util/Util';
@@ -33,35 +34,37 @@ export default class Warn extends Command {
 	}
 
 	public async run(message: Message, args: CommandArguments, { send }: CommandData) {
-		try {
-			await message.delete();
-			const { users, reason, members } = await Util.reason(message, { fetchMembers: true});
+		await message.delete();
+		const { users, reason, members, flags: { silent } } = await Util.reason(message, {
+			fetchMembers: true, withFlags: [{
+				name: 'silent',
+				type: 'boolean'
+			}]
+		});
 
-			if (!reason) return send(Responses.PROVIDE_REASON);
-			if (!users.size) return send(Responses.MENTION_USERS());
+		if (!reason) throw new CommandError('PROVIDE_REASON');
+		if (!users.size) throw new CommandError('MENTION_USERS');
 
-			const notManageable = members.filter(member => !Util.manageable(member, message.member!));
-			if (notManageable.size) return send(Responses.CANNOT_ACTION_USER('WARN', members.size > 1));
+		const notManageable = members.filter(member => !Util.manageable(member, message.member!));
+		if (notManageable.size) throw new CommandError(
+			'CANNOT_ACTION_USER', 'WARN', members.size > 1
+		);
 
-			const timestamp = new Date();
+		const timestamp = new Date();
 
-			const { id: caseID } = await Util.sendLog(
-				message.author,
-				users.array(),
-				'WARN',
-				{ reason }
-			);
+		const { id: caseID } = await Util.sendLog(
+			message.author,
+			users.array(),
+			'WARN',
+			{ reason }
+		);
 
-			await Promise.all(
-				users.map(user => this.client.database.newWarn(
-					user, message.author, { caseID, reason, timestamp }
-				))
-			);
+		await Promise.all(
+			users.map(user => this.client.database.newWarn(
+				user, message.author, { caseID, reason, timestamp }
+			))
+		);
 
-			return send(Responses.WARN_SUCCESS(users.array(), reason));
-		} catch (error) {
-			if (error.name === 'Error') return send(error.message);
-			throw error;
-		}
+		if (!silent) return send(Responses.WARN_SUCCESS(users.array(), reason));
 	}
 }

@@ -2,6 +2,7 @@ import { Permissions, BanOptions } from 'discord.js';
 import Command, { CommandData } from '../../structures/Command';
 import CommandArguments from '../../structures/CommandArguments';
 import Message from '../../structures/discord.js/Message';
+import CommandError from '../../util/CommandError';
 import CommandManager from '../../util/CommandManager';
 import { Responses } from '../../util/Constants';
 import Util from '../../util/Util';
@@ -35,78 +36,83 @@ export default class Ban extends Command {
 	}
 
 	public async run(message: Message, args: CommandArguments, { send }: CommandData) {
-		try {
-			await message.delete();
-			const { users, reason, flags, members } = await Util.reason(message, {
-				fetchMembers: true, withFlags: true
-			});
+		await message.delete();
+		const { users, reason, flags, members } = await Util.reason(message, {
+			fetchMembers: true, withFlags: [{
+				name: 'days',
+				type: 'number'
+			}, {
+				name: 'silent',
+				type: 'boolean'
+			}]
+		});
 			
-			// have to non-null assert it
-			const guild = message.guild!;
+		// have to non-null assert it
+		const guild = message.guild!;
 
-			if (!reason) return send(Responses.PROVIDE_REASON);
-			if (!users.size) return send(Responses.MENTION_USERS());
+		if (!reason) throw new CommandError('PROVIDE_REASON');
+		if (!users.size) throw new CommandError('MENTION_USERS');
 
-			const notManageable = members.filter(member => !Util.manageable(member, message.member!));
-			if (notManageable.size) return send(Responses.CANNOT_ACTION_USER('BAN', members.size > 1));
+		const notManageable = members.filter(member => !Util.manageable(member, message.member!));
+		if (notManageable.size) throw new CommandError(
+			'CANNOT_ACTION_USER', 'BAN', members.size > 1
+		);
 
-			const extras: {
+		const extras: {
 				[key: string]: unknown;
 				reason: string;
 			} = { reason };
 
-			const banOptions = {} as BanOptions;
+		const banOptions = {} as BanOptions;
 
-			if (flags.days) {
-				const days = parseInt(flags.days);
-				if (isNaN(days) || days < 1 || days > 7 ) {
-					return send(Responses.INVALID_FLAG_TYPE('days', 'an integer bigger than 0 and lower than 8'));
-				}
-				banOptions.days = days;
-				extras['Days of Messages Deleted'] = days.toString();
+		if (typeof flags.days === 'number') {
+			const { days } = flags;
+			if (days < 1 || days > 7 ) {
+				throw new CommandError(
+					'INVALID_FLAG_TYPE',
+					'days', 'an integer bigger than 0 and lower than 8'
+				);
 			}
-			const flagKeys = Object.keys(flags);
-			if (flagKeys.some(key => key !== 'days')) {
-				return send(Responses.INVALID_FLAG(flagKeys.find(key => key !== 'days') as string, ['days']));
-			}
+			banOptions.days = days;
+			extras['Days of Messages Deleted'] = days.toString();
+		}
 
-			const alreadyBanned = users
-				.filter(user => guild.bans.has(user.id))
-				.map(user => guild.bans.get(user.id)!);
-			if (alreadyBanned.length) {
-				if (alreadyBanned.length === users.size) {
-					return send(Responses.ALREADY_REMOVED_USERS(users.size > 1, false));
-				}
-				extras.Note =
+		const alreadyBanned = users
+			.filter(user => guild.bans.has(user.id))
+			.map(user => guild.bans.get(user.id)!);
+		if (alreadyBanned.length) {
+			if (alreadyBanned.length === users.size) {
+				throw new CommandError('ALREADY_REMOVED_USERS', users.size > 1, false);
+			}
+			extras.Note =
 					`${alreadyBanned.length} Other user${
 						alreadyBanned.length > 1 ? 's were' : ' was'
 					} attempted to be banned, however they were already banned.`;
-			}
+		}
 
-			const filteredUsers = users.array().filter(user => !alreadyBanned.some(data => data.user.id === user.id));
+		const filteredUsers = users.array().filter(user => !alreadyBanned.some(data => data.user.id === user.id));
 
-			const { id: caseID } = await Util.sendLog(
-				message.author,
-				filteredUsers,
-				'BAN',
-				extras
-			);
+		const { id: caseID } = await Util.sendLog(
+			message.author,
+			filteredUsers,
+			'BAN',
+			extras
+		);
 
-			banOptions.reason = Responses.AUDIT_LOG_MEMBER_REMOVE(message.author, caseID, false);
+		banOptions.reason = Responses.AUDIT_LOG_MEMBER_REMOVE(message.author, caseID, false);
 
-			for (const user of filteredUsers) {
-				guild.bans.set(user.id, {
-					reason: banOptions.reason,
-					user
-				});
-				await guild.members.ban(user, banOptions);
-			}
+		for (const user of filteredUsers) {
+			guild.bans.set(user.id, {
+				reason: banOptions.reason,
+				user
+			});
+			await guild.members.ban(user, banOptions);
+		}
 
-			return send(Responses.MEMBER_REMOVE_SUCCESSFUL({ filteredUsers, users: users.array() }, false));
-
-		} catch (error) {
-			if (error.name === 'Error') return send(error.message);
-			throw error;
+		if (!flags.silent) {
+			return send(Responses.MEMBER_REMOVE_SUCCESSFUL({
+				filteredUsers, users: users.array()
+			}, false));
 		}
 	}
 }

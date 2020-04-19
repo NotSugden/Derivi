@@ -8,7 +8,8 @@ import CommandArguments from '../structures/CommandArguments';
 import Message from '../structures/discord.js/Message';
 import TextChannel from '../structures/discord.js/TextChannel';
 import { Events } from '../util/Client';
-import { Responses } from '../util/Constants';
+import CommandError from '../util/CommandError';
+import { CommandErrors } from '../util/Constants';
 import Util from '../util/Util';
 
 export default (async message => {
@@ -68,7 +69,7 @@ export default (async message => {
 		}
 		if (!hasPermissions || typeof hasPermissions === 'string') {
 			return send(typeof hasPermissions === 'string' ?
-				hasPermissions : Responses.INSUFFICIENT_PERMISSIONS
+				hasPermissions : CommandErrors.INSUFFICIENT_PERMISSIONS
 			);
 		}
 
@@ -77,6 +78,9 @@ export default (async message => {
 			send
 		});
 	} catch (error) {
+		if (error instanceof CommandError) {
+			return message.channel.send(error.message);
+		}
 		await message.channel.send([
 			`An unexpected error has occoured: \`${error.name}\``,
 			`\`\`\`js\n${error.message}\`\`\``

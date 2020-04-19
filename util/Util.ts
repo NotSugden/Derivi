@@ -1,6 +1,7 @@
 import * as crypto from 'crypto';
 import { Collection, Snowflake, MessageEmbed } from 'discord.js';
-import { Errors, ModerationActionTypes, Responses, FLAGS_REGEX } from './Constants';
+import CommandError from './CommandError';
+import { ModerationActionTypes, Responses, FLAGS_REGEX } from './Constants';
 import GuildMember from '../structures/discord.js/GuildMember';
 import Message from '../structures/discord.js/Message';
 import User from '../structures/discord.js/User';
@@ -11,15 +12,30 @@ const getCipherKey = (password: string) => crypto.createHash('sha256')
 
 export default class Util {
 
-	static extractFlags(string: string): {
+	static extractFlags(string: string, flagTypes?: Flag[]): {
 		flags: FlagData;
 		string: string;
 	} {
 		const flags = [...string.matchAll(FLAGS_REGEX)]
 			.map(arr => arr.slice(1));
-		const flagsObj: { [key: string]: string } = {};
+		const flagsObj: { [key: string]: string | boolean | number } = {};
 		for (const [name, value] of flags) {
 			flagsObj[name] = value.startsWith('"') ? value.slice(1, value.length - 1) : value;
+			if (flagTypes) {
+				const data = flagTypes.find(flag => flag.name === name);
+				if (!data) throw new CommandError('INVALID_FLAG', flagTypes.map(flag => flag.name));
+				if (data.type === 'boolean') {
+					if (value === 'true' || value === 'false') flagsObj[name] = value === 'true';
+
+				} else if (data.type === 'number') {
+					const number = parseInt(value);
+					if (!isNaN(number)) flagsObj[name] = number;
+				}
+
+				if (typeof flagsObj[name] !== data.type) {
+					throw new CommandError('INVALID_FLAG_TYPE', data.name, data.type);
+				}
+			}
 		}
 		return {
 			flags: flagsObj, 
@@ -40,20 +56,22 @@ export default class Util {
 		const decipher = crypto.createDecipheriv('aes256', getCipherKey(password), iv);
 		return Buffer.concat([decipher.update(data), decipher.final()]);
 	}
-
-	/* eslint-disable no-await-in-loop */
+	
 	static async reason(message: Message, options?: { fetchMembers?: false; withFlags?: false }): Promise<ReasonData>;
-	static async reason(message: Message, options: { fetchMembers?: false; withFlags: true }): Promise<ReasonData & {
+	static async reason(message: Message, options: { fetchMembers?: false; withFlags: Flag[] }): Promise<ReasonData & {
 		flags: FlagData;
 	}>;
 	static async reason(message: Message, options: { fetchMembers: true; withFlags?: false }): Promise<ReasonData & {
 		members: Collection<Snowflake, GuildMember>;
 	}>;
-	static async reason(message: Message, options: { fetchMembers: true; withFlags: true }): Promise<ReasonData & {
+	static async reason(message: Message, options: { fetchMembers: true; withFlags: Flag[] }): Promise<ReasonData & {
 		flags: FlagData;
 		members: Collection<Snowflake, GuildMember>;
 	}>;
-	static async reason(message: Message, { fetchMembers = false, withFlags = false } = {}) {
+	static async reason(message: Message, { fetchMembers = false, withFlags = false }: {
+		fetchMembers?: boolean;
+		withFlags?: false | Flag[];
+	} = {}) {
 		const { client } = message;
 		const users = new Collection<Snowflake, User>();
 		const [, ...content] = message.content.split(' ');
@@ -65,7 +83,7 @@ export default class Util {
 			try {
 				user = await client.users.fetch(id) as User;
 			} catch {
-				throw new Error(Errors.RESOLVE_ID(id));
+				throw new CommandError('RESOLVE_ID', id);
 			}
 			users.set(user.id, user);
 		}
@@ -95,7 +113,6 @@ export default class Util {
 		
 		return data;
 	}
-	/* eslint-enable no-await-in-loop */
 
 	static async sendLog(moderator: User, users: User[], action: keyof typeof ModerationActionTypes, extras: {
 		[key: string]: unknown;
@@ -168,5 +185,10 @@ export interface ReasonData {
 }
 
 export interface FlagData {
-	[key: string]: string;
+	[key: string]: string | boolean | number;
+}
+
+export interface Flag {
+	type: 'string' | 'number' | 'boolean';
+	name: string;
 }

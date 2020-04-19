@@ -49,16 +49,14 @@ export const Errors = {
 	MUTE_RESOLVE_ID: (fetch = true) =>
 		`Couldn't resolve the User ID to ${fetch ? 'fetch the mute of' : 'delete the mute'}.`,
 
-	NEGATIVE_NUMBER: (variable: string) =>`Provided '${variable}' is negative, and should be positive.`,
-	RESOLVE_ID: (id: string) =>
-		`An ID or user mention was provided, but the user couldn't be resolved, are you sure its valid? (${id})`,
+	NEGATIVE_NUMBER: (variable: string) => `Provided '${variable}' is negative, and should be positive.`,
 	RESOLVE_COMMAND: 'The command passed couldn\'t be resolved',
 
 	COMMAND_LOAD_FAILED: (name: string) => `Failed to load command ${name}`,
 	INVALID_TYPE: (parameter: string, type: string) => `Provided '${parameter}' should be a '${type}'`
 };
 
-export const Responses = {
+export const CommandErrors = {
 	ALL_MUTED: 'All of the mentioned members are muted.',
 	ALREADY_REMOVED_USERS: (multiple: boolean, kick = true) =>
 		`${multiple ? 'All of the members' : 'The member'} you mentioned ${multiple ? 'have' : 'has'} already ${
@@ -79,8 +77,11 @@ export const Responses = {
 		`Please upload an attachment with one of the following extensions: ${
 			valid.map(ext => `\`${ext}\``).join(', ')
 		}.`,
+	RESOLVE_ID: (id: string) =>
+		`An ID or user mention was provided, but the user couldn't be resolved, are you sure its valid? (${id})`
+};
 
-	
+export const Responses = {
 	MODERATION_LOG_FIELDS: (moderator: User, users: User[]): EmbedFieldData[] => [{
 		name: 'Moderator',
 		value: moderator.tag
