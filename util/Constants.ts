@@ -256,7 +256,10 @@ export const EventResponses = {
 			).setFooter(`${message.id} | Created at`)
 			.setTimestamp(message.createdAt);
 		if (options.files.length) {
-			embed.addField(`File${options.files.length > 1 ? 's' : ''}`, options.files);
+			embed.addField(
+				`File${options.files.length > 1 ? 's' : ''}`,
+				options.files.map(file => `${message.client.config.attachmentsURL}/${file}`)
+			);
 		}
 		return embed;
 	},
