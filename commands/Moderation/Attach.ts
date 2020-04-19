@@ -27,11 +27,13 @@ export default class Attach extends Command {
 			cooldown: 5,
 			name: 'attach',
 			permissions: (member, channel) => {
+				const channelID = member.client.config.punishmentChannelID;
 				if (member.guild.id === member.client.config.defaultGuildID) {
-					return 'This channel shouldn\'t be in the default guild.';
+					return channelID ?
+						`This command can only be used in <#${channelID}>.` :
+						'The `punishments` channel has not been configured.';
 				}
-				if (channel.id === member.client.config.punishmentChannelID) return true;
-				return false;
+				return channel.id === channelID;
 			},
 			usages: [{
 				required: true,
