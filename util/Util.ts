@@ -168,5 +168,5 @@ export interface ReasonData {
 }
 
 export interface FlagData {
-	[key: string]: string | undefined;
+	[key: string]: string;
 }
