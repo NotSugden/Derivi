@@ -84,6 +84,12 @@ export default class Client extends DJSClient {
 		 */
 		readonly rulesChannel: TextChannel;
 		rulesChannelID: Snowflake;
+		/**
+		 * This *could* be null if the client is kicked out of the guild,
+		 * however im not documenting that as the client isn't meant to be kicked.
+		 */
+		readonly staffCommandsChannel: TextChannel;
+		staffCommandsChannelID: Snowflake;
 	};
 	public database: DatabaseManager;
 	public mutes = new Collection<Snowflake, Mute>();
@@ -128,7 +134,11 @@ export default class Client extends DJSClient {
 			get rulesChannel() {
 				return commandManager.client.channels.resolve(this.rulesChannelID);
 			},
-			rulesChannelID: config.rules_channel
+			rulesChannelID: config.rules_channel,
+			get staffCommandsChannel() {
+				return commandManager.client.channels.resolve(this.staffCommandsChannelID);
+			},
+			staffCommandsChannelID: config.staff_commands_channel
 		} });
 		Object.defineProperty(this.config, 'encryptionPassword', {
 			value: config.encryption_password
@@ -225,6 +235,7 @@ export interface ClientConfig {
 		}[];
 	}[];
 	rules_channel: Snowflake;
+	staff_commands_channel: Snowflake;
 	token: string;
 	webhooks: {
 		name: string;

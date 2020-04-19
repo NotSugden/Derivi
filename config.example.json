@@ -6,6 +6,7 @@
 	"prefix": "+",
 	"punishment_channel": "123456789012345678",
 	"rules_channel": "123456789012345678",
+	"staff_commands_channel": "123456789012345678",
 	"token": "Your bot token",
 	"webhooks": [{
 		"name": "audit-logs",
