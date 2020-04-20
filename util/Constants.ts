@@ -217,7 +217,7 @@ export const EventResponses = {
 	},
 
 	GUILD_MEMBER_ADD: (member: GuildMember & { client: Client }, webhook = true) => 
-		`<@&539532117781118987> to ${member.guild.name} ${member.guild.name}, You can click ${
+		`<@&539532117781118987> to ${member.guild.name} ${member.user}, You can click ${
 			webhook ? `[here](${
 				messageURL('539355100397699092', '635215364950851659', '635228291556704320')
 			})` : `<#${member.client.config.rulesChannelID}>`
