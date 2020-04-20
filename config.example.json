@@ -13,6 +13,11 @@
 		"id": "123456789012345678",
 		"token": "Webhook token"
 	}],
+	"reports_channel": "123456789012345678",
+	"report_regex": [
+		"bad_w(o|0)rd",
+		"w(o|0)rd_bad"
+	],
 	"reaction_roles": [{
 		"message": "123456789012345678",
 		"emojis": [{

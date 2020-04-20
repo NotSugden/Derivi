@@ -18,6 +18,10 @@ export enum ModerationActionTypes {
 	WARN = Constants.Colors.YELLOW
 }
 
+const hyperlink = (name: string, url: string) => `[${name}](${url})`;
+
+const messageURL = (guildID: Snowflake, channelID: Snowflake, messageID: Snowflake) =>
+	`https://discordapp.com/channels/${guildID}/${channelID}/${messageID}`;
 
 export const Defaults = {
 	CLIENT_CONFIG: {
@@ -85,6 +89,19 @@ export const CommandErrors = {
 };
 
 export const Responses = {
+	AUTO_REPORT_EMBED: (message: Message) => {
+		return new MessageEmbed()
+			.setAuthor('Alert')
+			.setColor('RED')
+			.setDescription(
+				`${message.author.tag} (${message.author}) has __${
+					message.edits.length > 1 ? 'edited' : 'sent'
+				}__ a ${hyperlink('message', message.url)} with a possible restricted term`
+			).addFields({
+				name: 'Message Content',
+				value: message.content
+			});
+	},
 	HISTORY: (cases: Case[]) => {
 		return cases.flatMap(caseData => [
 			`${caseData.id}: ${caseData.action.charAt(0) + caseData.action.slice(1).toLowerCase()} ${
@@ -161,11 +178,6 @@ export const URLs = {
 };
 
 export const FLAGS_REGEX = /--([a-z]+)=("[^"]*"|[0-9a-z]*)/gi;
-
-const hyperlink = (name: string, url: string) => `[${name}](${url})`;
-
-const messageURL = (guildID: Snowflake, channelID: Snowflake, messageID: Snowflake) =>
-	`https://discordapp.com/channels/${guildID}/${channelID}/${messageID}`;
 
 export const EventResponses = {
 	INVITE_CREATE: (invite: Invite) => {

@@ -53,41 +53,26 @@ export interface Events extends ClientEvents {
 
 export default class Client extends DJSClient {
 	public commands: CommandManager;
+	/**
+	 * The configured channels here could be null, however they aren't supposed to be
+	 */
 	public readonly config!: {
 		attachmentLogging: boolean;
 		attachmentsURL?: string;
 		readonly encryptionPassword: string;
 		database: string;
-		/**
-		 * This *could* be null if the client is kicked out of the guild,
-		 * however im not documenting that as the client isn't meant to be kicked.
-		 */
 		readonly defaultGuild: Guild;
 		defaultGuildID: Snowflake;
 		filesDir: string;
 		prefix: string;
-		/**
-		 * This *could* be null if the client is kicked out of the guild,
-		 * however im not documenting that as the client isn't meant to be kicked.
-		 * 
-		 * Warning: this channel should be locked to staff members only.
-		 */
-		readonly punishmentChannel: TextChannel;
-		/**
-		 * Warning: this channel should be locked to staff members only.
-		 */
-		punishmentChannelID: Snowflake;
 		reactionRoles: Map<Snowflake, Map<string, Snowflake>>;
-		/**
-		 * This *could* be null if the client is kicked out of the guild,
-		 * however im not documenting that as the client isn't meant to be kicked.
-		 */
+		reportsRegex: RegExp[];
+		readonly punishmentChannel: TextChannel;
+		punishmentChannelID: Snowflake;
+		readonly reportsChannel: TextChannel;
+		reportsChannelID: Snowflake;
 		readonly rulesChannel: TextChannel;
 		rulesChannelID: Snowflake;
-		/**
-		 * This *could* be null if the client is kicked out of the guild,
-		 * however im not documenting that as the client isn't meant to be kicked.
-		 */
 		readonly staffCommandsChannel: TextChannel;
 		staffCommandsChannelID: Snowflake;
 	};
@@ -131,6 +116,11 @@ export default class Client extends DJSClient {
 					emojiData.role
 				]))
 			])),
+			get reportsChannel() {
+				return commandManager.client.channels.resolve(this.reportsChannelID);
+			},
+			reportsChannelID: config.reports_channel,
+			reportsRegex: config.report_regex.map(str => new RegExp(str, 'gi')),
 			get rulesChannel() {
 				return commandManager.client.channels.resolve(this.rulesChannelID);
 			},
@@ -139,7 +129,7 @@ export default class Client extends DJSClient {
 				return commandManager.client.channels.resolve(this.staffCommandsChannelID);
 			},
 			staffCommandsChannelID: config.staff_commands_channel
-		} });
+		} as Client['config'] });
 		Object.defineProperty(this.config, 'encryptionPassword', {
 			value: config.encryption_password
 		});
@@ -216,6 +206,15 @@ export default class Client extends DJSClient {
 		if (config.punishmentChannel && config.punishmentChannel.type !== 'text') {
 			throw new TypeError(Errors.INVALID_CLIENT_OPTION('punishment_channel', 'TextChannel'));
 		}
+		if (config.rulesChannel && config.rulesChannel.type !== 'text') {
+			throw new TypeError(Errors.INVALID_CLIENT_OPTION('rules_channel', 'TextChannel'));
+		}
+		if (config.staffCommandsChannel && config.staffCommandsChannel.type !== 'text') {
+			throw new TypeError(Errors.INVALID_CLIENT_OPTION('staff_commands_channel', 'TextChannel'));
+		}
+		if (config.reportsChannel && config.reportsChannel.type !== 'text') {
+			throw new TypeError(Errors.INVALID_CLIENT_OPTION('reports_channel', 'TextChannel'));
+		}
 	}
 }
 
@@ -236,6 +235,8 @@ export interface ClientConfig {
 			role: Snowflake;
 		}[];
 	}[];
+	reports_channel: Snowflake;
+	report_regex: string[];
 	rules_channel: Snowflake;
 	staff_commands_channel: Snowflake;
 	token: string;

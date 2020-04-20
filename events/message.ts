@@ -9,7 +9,7 @@ import Message from '../structures/discord.js/Message';
 import TextChannel from '../structures/discord.js/TextChannel';
 import { Events } from '../util/Client';
 import CommandError from '../util/CommandError';
-import { CommandErrors } from '../util/Constants';
+import { CommandErrors, Responses } from '../util/Constants';
 import Util from '../util/Util';
 
 export default (async message => {
@@ -36,7 +36,15 @@ export default (async message => {
 					await fs.writeFile(name, buffer);
 				}
 			}
+
+			if (client.config.reportsRegex.length && client.config.reportsChannel) {
+				const content = message.content.replace(/( |\n)*/g, '');
+				if (client.config.reportsRegex.some(regex => regex.test(content))) {
+					client.config.reportsChannel.send(Responses.AUTO_REPORT_EMBED(message));
+				}
+			}
 		}
+
 		if (!message.content.startsWith(client.config.prefix)) return;
 		const [plainCommand] = message.content.slice(1).split(' ');
 		const args = new CommandArguments(message);
