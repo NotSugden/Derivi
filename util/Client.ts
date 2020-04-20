@@ -120,7 +120,7 @@ export default class Client extends DJSClient {
 				return commandManager.client.channels.resolve(this.reportsChannelID);
 			},
 			reportsChannelID: config.reports_channel,
-			reportsRegex: config.report_regex.map(str => new RegExp(str, 'gi')),
+			reportsRegex: config.report_regex.map(str => new RegExp(str, 'i')),
 			get rulesChannel() {
 				return commandManager.client.channels.resolve(this.rulesChannelID);
 			},
