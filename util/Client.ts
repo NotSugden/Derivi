@@ -153,17 +153,19 @@ export default class Client extends DJSClient {
 		try {
 			await this.database.open();
 			await this.commands.loadAll();
-			const mutes = await this.database.mute(true);
-			for (const mute of mutes) {
-				this.mutes.set(mute.userID, mute);
-			}
 		} catch (error) {
+			console.error(error);
 			await this.database.close().catch(console.error);
+			throw error;
 		}
 		return new Promise<this>((resolve, reject) => {
 			const handler = async () => {
 				try {
 					await this._validateConfig();
+					const mutes = await this.database.mute(true);
+					for (const mute of mutes) {
+						this.mutes.set(mute.userID, mute);
+					}
 					resolve(this);
 				} catch (error) {
 					this.disconnect()

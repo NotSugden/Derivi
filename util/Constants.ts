@@ -3,6 +3,7 @@ import { Constants, EmbedFieldData, RoleData, MessageEmbed, Snowflake } from 'di
 import * as moment from 'moment';
 import Client from './Client';
 import { Invite, PartialMessage } from './Types';
+import Case from '../structures/Case';
 import Warn from '../structures/Warn';
 import GuildMember from '../structures/discord.js/GuildMember';
 import Message from '../structures/discord.js/Message';
@@ -84,10 +85,18 @@ export const CommandErrors = {
 };
 
 export const Responses = {
+	HISTORY: (cases: Case[]) => {
+		return cases.flatMap(caseData => [
+			`${caseData.id}: ${caseData.action.charAt(0) + caseData.action.slice(1).toLowerCase()} ${
+				caseData.moderator ? caseData.moderator.tag : caseData.moderatorID
+			} (${moment.utc(caseData.timestamp).format('DD/MM/YYYY HH:mm A')}): ${caseData.reason}`,
+			...Object.entries(caseData.extras).map(([name, value]) => `${name}: ${value}`)
+		]);
+	},
 	WARNINGS: (warns: Warn[]) => {
 		return warns.map(warn => `(${warn.caseID}) ${
 			warn.moderator ? warn.moderator.tag : warn.moderatorID
-		} (${moment(warn.timestamp).format('DD/MM/YYYY HH:MM A')}): ${warn.reason}`);
+		} (${moment.utc(warn.timestamp).format('DD/MM/YYYY HH:mm A')}): ${warn.reason}`);
 	},
 	MODERATION_LOG_FIELDS: (moderator: User, users: User[]): EmbedFieldData[] => [{
 		name: 'Moderator',
@@ -168,7 +177,7 @@ export const EventResponses = {
 			.setDescription([
 				`Invite Code: ${hyperlink(invite.code, invite.url)}`,
 				`Expires at: ${invite.expiresTimestamp ? moment.utc(invite.expiresAt!).format(
-					'DD/MM/YYYY HH:MM A'
+					'DD/MM/YYYY HH:mm A'
 				) : 'Never'}`,
 				`Inviter: ${invite.inviter ? `${invite.inviter} (${invite.inviter.id})` : 'Unknown User#0000'}`,
 				`Max Uses: ${invite.maxUses || 'Infinite'}`,

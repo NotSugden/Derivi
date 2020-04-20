@@ -4,13 +4,14 @@ import { ModerationActionTypes } from '../util/Constants';
 
 export default class Case {
 	public client!: Client;
-	public action: string;
-	public extras: string[];
+	public action: keyof typeof ModerationActionTypes;
+	public extras: { [key: string]: string };
 	public id: number;
 	public logMessageID: Snowflake;
 	public moderatorID: Snowflake;
 	public reason: string;
 	public screenshots: string[];
+	public timestamp: Date;
 	public userIDs: Snowflake[];
 	
 
@@ -24,6 +25,7 @@ export default class Case {
 		this.moderatorID = data.moderator_id;
 		this.reason = data.reason;
 		this.screenshots = JSON.parse(data.screenshots);
+		this.timestamp = new Date(data.timestamp);
 		this.userIDs = JSON.parse(data.user_ids);
 	}
 
@@ -77,5 +79,6 @@ export interface RawCase {
 	moderator_id: Snowflake;
 	reason: string;
 	screenshots: string;
+	timestamp: number;
 	user_ids: string;
 }

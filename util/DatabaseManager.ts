@@ -26,8 +26,8 @@ export default class DatabaseManager {
 		Object.defineProperty(this, 'client', { value: client });
 	}
 
-	public async rawQuery(sql: string, ...params: unknown[]) {
-		return this.rawDatabase.all(sql, ...params);
+	public async rawQuery<T = { [key: string]: string | number }>(sql: string, ...params: unknown[]) {
+		return this.rawDatabase.all<T>(sql, ...params);
 	}
 
 	public close() {
@@ -242,8 +242,8 @@ export default class DatabaseManager {
 
 		await this.rawDatabase.run(
 			// cases table should have an auto-incrementing unique key, id
-			`INSERT INTO cases (action, extras, message_id, moderator_id, reason, screenshots, user_ids)
-			VALUES (?, ?, ?, ?, ?, ?, ?)`,
+			`INSERT INTO cases (action, extras, message_id, moderator_id, reason, screenshots, user_ids, timestamp)
+			VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
 			data.action = action,
 			data.extras = extras ? stringify(extras) : '{}',
 			data.message_id = message.id,
@@ -251,7 +251,9 @@ export default class DatabaseManager {
 			data.moderator_id,
 			data.reason,
 			data.screenshots = JSON.stringify(screenshots),
-			data.user_ids = JSON.stringify(_users)
+			data.user_ids = JSON.stringify(_users),
+			// a number is used here and not an ISO string so that i can filter it easier in the `history` command
+			Date.now() 
 		);
 
 		const { seq: caseID } = await this.rawDatabase.get<{ name: 'cases'; seq: number }>(
@@ -339,7 +341,11 @@ export default class DatabaseManager {
 	public async mute(user: true | UserResolvable | UserResolvable[]) {
 		if (typeof user === 'boolean'){
 			const rawData = await this.rawDatabase.all<RawMute>('SELECT * FROM mutes');
-			return rawData.map(data => new Mute(this.client, data));
+			return rawData.reduce((acc, data) => {
+				const mute = new Mute(this.client, data);
+				if (mute.endTimestamp < Date.now()) return acc;
+				else return [...acc, mute];
+			}, [] as Mute[]) as Mute[];
 		}
 		if (Array.isArray(user)) return Promise.all(user.map(u => this.mute(u)));
 		const id = this.client.users.resolveID(user);
@@ -349,7 +355,9 @@ export default class DatabaseManager {
 
 		const data = await this.rawDatabase.get<RawMute>('SELECT * FROM mutes WHERE user_id = ?', id);
 		if (!data) return null;
-		return new Mute(this.client, data);
+		const mute = new Mute(this.client, data);
+		if (mute.endTimestamp < Date.now()) return null;
+		else return mute;
 	}
 
 	public async newMute(user: UserResolvable, start: Date, end: Date) {
