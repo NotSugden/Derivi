@@ -29,3 +29,13 @@
 | Auto Increment? | :white_check_mark: | :white_check_mark: | :white_check_mark: |
 | Unique?         | :heavy_check_mark: | :white_check_mark: | :white_check_mark: |
 | Default Value   |                    |                    |                    |
+
+### Table: `partnerships`
+| Column          | user_id            | timestamp          | guild_invite       | guild_id           |
+|-----------------|--------------------|--------------------|--------------------|--------------------|
+| Type            | TEXT               | INTEGER            | TEXT               | TEXT               |
+| Not Null?       | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: |
+| Primary Key?    | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: |
+| Auto Increment? | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: |
+| Unique?         | :white_check_mark: | :heavy_check_mark: | :white_check_mark: | :white_check_mark: |
+| Default Value   |                    |                    |                    |                    |
