@@ -1,14 +1,18 @@
 /* eslint-disable consistent-return */
 import { promises as fs } from 'fs';
-import { join } from 'path';
-import { MessageOptions, MessageEditOptions } from 'discord.js';
+import { join, extname } from 'path';
+import { MessageOptions, MessageEditOptions, StringResolvable, MessageAdditions } from 'discord.js';
 import fetch from 'node-fetch';
 import { CommandData } from '../structures/Command';
 import CommandArguments from '../structures/CommandArguments';
 import Message from '../structures/discord.js/Message';
-import { Responses } from '../util/Constants';
+import TextChannel from '../structures/discord.js/TextChannel';
+import { Events } from '../util/Client';
+import CommandError from '../util/CommandError';
+import { CommandErrors, Responses } from '../util/Constants';
 import Util from '../util/Util';
-export default async (message: Message) => {
+
+export default (async message => {
 	try {
 		const { client } = message;
 		const edited = Boolean(message.editedTimestamp);
@@ -18,30 +22,40 @@ export default async (message: Message) => {
 		) return;
 		if (message.guild!.id === client.config.defaultGuildID) {
 			if (client.config.attachmentLogging && !edited && message.attachments.size) {
-				const urls = message.attachments.map(({ url }) => url);
-				/* eslint-disable no-await-in-loop */
+				const urls = message.attachments.map(({ proxyURL }) => proxyURL);
 				for (let i = 0; i < urls.length; i++) {
 					const url = urls[i];
-					const extension = url.split('.').pop();
+					const extension = extname(url);
 					const name = join(
 						client.config.filesDir,
-						`${message.id}-${i}${extension ? `.${extension}` : ''}`,
+						`${message.id}-${i}${extension}`
 					);
 					const buffer = await fetch(url)
 						.then(response => response.buffer())
 						.then(data => Util.encrypt(data, client.config.encryptionPassword));
 					await fs.writeFile(name, buffer);
 				}
-				/* eslint-enable no-await-in-loop */
+			}
+
+			if (client.config.reportsRegex.length && client.config.reportsChannel) {
+				const content = message.content.replace(/( |\n)*/g, '');
+				if (client.config.reportsRegex.some(regex => regex.test(content))) {
+					client.config.reportsChannel.send(Responses.AUTO_REPORT_EMBED(message));
+				}
 			}
 		}
+
 		if (!message.content.startsWith(client.config.prefix)) return;
 		const [plainCommand] = message.content.slice(1).split(' ');
 		const args = new CommandArguments(message);
 		const command = client.commands.resolve(plainCommand);
 		if (!command) return;
 		const { permissions } = command;
-		const send: CommandData['send'] = async (content, options) => {
+
+		const send = (async (
+			content: StringResolvable,
+			options?: MessageOptions | MessageEditOptions | MessageAdditions
+		) => {
 			if (typeof message.commandID === 'string') {
 				const msg = message.channel.messages.cache.get(message.commandID);
 				// Lazy fix here casting it to MessageEditOptions, TS complains otherwise.
@@ -49,31 +63,36 @@ export default async (message: Message) => {
 			}
 
 			// Lazy fix here casting it to MessageOptions, TS complains otherwise.
-			const msg = await message.channel.send(content, (options as MessageOptions)) as Message;
+			const msg = await message.channel.send(content, options as MessageOptions | MessageAdditions) as Message;
 			message.commandID = msg.id;
 			return msg;
-		};
-		let hasPermissions: boolean;
+		}) as CommandData['send'];
+
+
+		let hasPermissions: boolean | string;
 		if (typeof permissions === 'function') {
-			hasPermissions = await permissions(message.member!, message.channel);
+			hasPermissions = await permissions(message.member!, message.channel as TextChannel);
 		} else {
 			hasPermissions = message.member!.hasPermission(permissions);
 		}
-		if (!hasPermissions) return send(Responses.INSUFFICIENT_PERMISSIONS);
+		if (!hasPermissions || typeof hasPermissions === 'string') {
+			return send(typeof hasPermissions === 'string' ?
+				hasPermissions : CommandErrors.INSUFFICIENT_PERMISSIONS
+			);
+		}
 
 		await command.run(message, args, {
 			edited,
-			send,
+			send
 		});
 	} catch (error) {
+		if (error instanceof CommandError) {
+			return message.channel.send(error.message);
+		}
 		await message.channel.send([
 			`An unexpected error has occoured: \`${error.name}\``,
-			`\`\`\`js\n${error.message}\`\`\``,
-		], {
-			files: [
-				'https://cdn.discordapp.com/attachments/594924795632549908/687837066058399780/Icons8_flat_delete_generic.png',
-			],
-		}).catch(console.error);
+			`\`\`\`js\n${error.message}\`\`\``
+		]).catch(console.error);
 		console.error(error);
 	}
-};
+}) as (...args: Events['message']) => void;

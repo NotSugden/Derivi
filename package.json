@@ -17,9 +17,10 @@
 	},
 	"homepage": "https://github.com/NotSugden/ASC-rewrite#readme",
 	"dependencies": {
+		"@naval-base/ms": "^3.1.0",
+		"@types/node": "^13.7.7",
 		"@types/node-fetch": "^2.5.5",
 		"@types/ws": "^7.2.2",
-		"@types/node": "^13.7.7",
 		"discord.js": "github:discordjs/discord.js",
 		"eslint-plugin-import": "^2.20.1",
 		"moment": "^2.24.0",
