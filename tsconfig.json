@@ -8,7 +8,7 @@
 		"removeComments": false,
 		"alwaysStrict": true,
 		"pretty": true,
-		"outDir": "compiled"
+		"outDir": "../compiled"
 	},
 	"exclude": ["node_modules"]
 }
