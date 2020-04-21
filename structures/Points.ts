@@ -11,14 +11,14 @@ export default class Points {
 	constructor(client: Client, data: RawPoints) {
 		Object.defineProperty(this, 'client', { value: client });
 
-		this.amount = data.points;
-		this.lastDailyTimestamp = data.last_daily;
-		this.userID = data.id;
+		this.amount = data.amount;
+		this.lastDailyTimestamp = new Date(data.last_daily).getTime();
+		this.userID = data.user_id;
 		this.vault = data.vault;
 	}
 
 	get lastDaily() {
-		return this.lastDailyTimestamp ? new Date(this.lastDailyTimestamp) : null;
+		return new Date(this.lastDailyTimestamp);
 	}
 
 	get user() {
@@ -35,8 +35,8 @@ export default class Points {
 }
 
 export interface RawPoints {
-	id: Snowflake;
-	points: number;
-	last_daily: number;
+	user_id: Snowflake;
+	amount: number;
+	last_daily: string;
 	vault: number;
 }
