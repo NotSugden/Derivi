@@ -28,7 +28,9 @@ export default class CommandManager extends Collection<string, Command> {
 
 	public resolve(command: CommandResolvable) {
 		if (typeof command === 'string') {
-			const existing = this.get(command) || this.find(cmd => cmd.path === command);
+			const existing = this.get(command) || this.find(
+				cmd => (cmd.path === command) || (cmd.aliases.includes(command))
+			);
 			return existing;
 		}
 		if (command instanceof Command) {

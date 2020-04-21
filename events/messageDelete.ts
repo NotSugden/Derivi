@@ -23,7 +23,7 @@ export default (async message => {
 	const previous = (await message.channel.messages.fetch({
 		around: message.id,
 		limit: 1
-	})).first() as Message;
+	})).first() as Message | undefined;
 
 	const embed = EventResponses.MESSAGE_DELETE(message, {
 		files,

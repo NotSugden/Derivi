@@ -57,6 +57,7 @@ export default class Client extends DJSClient {
 	 * The configured channels here could be null, however they aren't supposed to be
 	 */
 	public readonly config!: {
+		allowedLevelingChannels: Snowflake[];
 		attachmentLogging: boolean;
 		attachmentsURL?: string;
 		readonly encryptionPassword: string;
@@ -103,6 +104,7 @@ export default class Client extends DJSClient {
 		}
 
 		Object.defineProperty(this, 'config', { value: {
+			allowedLevelingChannels: config.allowed_level_channels,
 			attachmentLogging: config.attachment_logging as boolean,
 			attachmentsURL: config.attachment_files_url,
 			database: config.database as string,
@@ -214,6 +216,15 @@ export default class Client extends DJSClient {
 			return;
 		}
 		const { config } = this;
+		for (const channelID of config.allowedLevelingChannels) {
+			const ch = this.channels.resolve(channelID);
+			if (!ch || ch.type !== 'text') {
+				throw new TypeError(Errors.INVALID_CLIENT_OPTION(
+					`allowed_level_channels[${channelID}]`,
+					'TextChannel'
+				));
+			}
+		}
 		if (config.attachmentLogging) {
 			const exists = await promisify(fs.exists)(this.config.filesDir);
 			if (!exists) throw new Error(Errors.INVALID_CLIENT_OPTION('files_dir', 'directory'));
@@ -247,6 +258,7 @@ export default class Client extends DJSClient {
 }
 
 export interface ClientConfig {
+	allowed_level_channels: Snowflake[];
 	attachment_files_url?: string;
 	attachment_logging: boolean;
 	commands_dir?: string;
