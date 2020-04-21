@@ -49,3 +49,13 @@
 | Auto Increment? | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark:       |
 | Unique?         | :heavy_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark:       |
 | Default Value   |                    | 1000               | 0                  | 1970-01-01T00:00:00.000Z |
+
+### Table: `levels`
+| Column          | user_id            | level              | xp                 |
+|-----------------|--------------------|--------------------|--------------------|
+| Type            | TEXT               | INTEGER            | INTEGER            |
+| Not Null?       | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: |
+| Primary Key?    | :heavy_check_mark: | :white_check_mark: | :white_check_mark: |
+| Auto Increment? | :white_check_mark: | :white_check_mark: | :white_check_mark: |
+| Unique?         | :heavy_check_mark: | :white_check_mark: | :white_check_mark: |
+| Default Value   |                    | 0                  | 0                  |
