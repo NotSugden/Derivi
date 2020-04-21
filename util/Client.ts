@@ -188,7 +188,6 @@ export default class Client extends DJSClient {
 			};
 			this.once(Constants.Events.CLIENT_READY, handler);
 			this.login(token)
-				.then(() => resolve(this))
 				.catch(error => {
 					this.off(Constants.Events.CLIENT_READY, handler);
 					this.disconnect()
