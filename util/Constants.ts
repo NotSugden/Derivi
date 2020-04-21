@@ -3,6 +3,7 @@ import { Constants, EmbedFieldData, RoleData, MessageEmbed, Snowflake } from 'di
 import * as moment from 'moment';
 import Client from './Client';
 import { Invite, PartialMessage } from './Types';
+import Util from './Util';
 import Case from '../structures/Case';
 import Warn from '../structures/Warn';
 import GuildMember from '../structures/discord.js/GuildMember';
@@ -99,6 +100,27 @@ export const CommandErrors = {
 };
 
 export const Responses = {
+	LEVEL: (user: User, level: number, xp: number) => {
+		const LEFT_BORDER = '<:Lines2:597212619299880962>';
+		const RIGHT_BORDER = '<:Lines3:594509306364297228>';
+		const RIGHT_ARROW = '<:ASC_RightArrow:608077963635851296>';
+		const MIDDLE_BORDER = '<:Lines:597212592167059456>';
+
+		return [
+			`**${user.username}**#${user.discriminator}`,
+			`${LEFT_BORDER}${MIDDLE_BORDER.repeat(6)}${RIGHT_BORDER}`,
+			//`${RIGHT_ARROW} Rank **${rank}**`,
+			`${RIGHT_ARROW} Level **${level}**`,
+			`${LEFT_BORDER}${MIDDLE_BORDER.repeat(6)}${RIGHT_BORDER}`,
+			`XP: **${xp}**/**${Util.levelCalc(level).toFixed(0)}**`
+		];
+	},
+	LEVEL_UP: (user: User, newLevel: number) => ({
+		content: `Congrats ${user}, you're now level ${newLevel}.`,
+		allowedMentions: {
+			users: [user.id]
+		}
+	}),
 	PARTNER_REWARD: (user: User, channel: TextChannel, points: number) => ({
 		content: `${user} Was rewarded **${points}** points for a ${channel}.`,
 		allowedMentions: {
@@ -233,7 +255,9 @@ export const EventResponses = {
 	},
 
 	GUILD_MEMBER_ADD: (member: GuildMember & { client: Client }, webhook = true) => ({
-		content: `<@&539532117781118987> to **${member.guild.name}** ${member.user}, you can click ${
+		content: `<:ASC_RightArrow:608077963635851296> <@&539532117781118987> to **${
+			member.guild.name
+		}** ${member.user}, you can click ${
 			webhook ? `[here](<${
 				messageURL('539355100397699092', '635215364950851659', '635228291556704320')
 			}>)` : `<#${member.client.config.rulesChannelID}>`
@@ -291,13 +315,13 @@ export const EventResponses = {
 			.setThumbnail(user.displayAvatarURL({ dynamic: true }));
 	},
 
-	MESSAGE_DELETE: (message: Message | PartialMessage, options: { files: string[]; previous: Message }) => {
+	MESSAGE_DELETE: (message: Message | PartialMessage, options: { files: string[]; previous?: Message }) => {
 		const embed = new MessageEmbed()
 			.setAuthor(`Message Deleted in #${
 				(message.channel as TextChannel).name
 			} by ${message.author ? message.author.tag : 'Unkown User#0000'}`)
 			.setDescription([
-				hyperlink('Previous Message', options.previous.url),
+				options.previous ? hyperlink('Previous Message', options.previous.url) : 'No previous message',
 				`Author ID: ${message.author ? message.author.id : '00000000000000000'}`
 			])
 			.setColor(Constants.Colors.RED)

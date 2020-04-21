@@ -151,14 +151,10 @@ export default class DatabaseManager {
 		const userID = this.client.users.resolveID(user);
 		if (!userID || !/^\d{17,19}$/.test(userID)) throw new Error(Errors.LEVELS_RESOLVE_ID());
 
-		let data = await this.rawDatabase.get<RawLevels>('SELECT * FROM levels WHERE user_id = ?', userID);
+		const data = await this.rawDatabase.get<RawLevels>('SELECT * FROM levels WHERE user_id = ?', userID);
 		if (!data) {
-			await this.rawDatabase.run('INSERT INTO levels (user_id, level, xp) VALUES (?, ?, ?)', userID, 0, 0);
-			data = {
-				level: 0,
-				user_id: userID,
-				xp: 0
-			};
+			await this.rawDatabase.run('INSERT INTO levels (user_id) VALUES (?)', userID);
+			return this.levels(user);
 		}
 		return new Levels(this.client, data);
 	}

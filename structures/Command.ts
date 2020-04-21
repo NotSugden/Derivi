@@ -10,6 +10,7 @@ import Client from '../util/Client';
 import CommandManager from '../util/CommandManager';
 
 export default class Command {
+	public aliases: string[];
 	public category: string;
 	public client!: Client;
 	public cooldown: Exclude<CommandOptions['cooldown'], undefined>;
@@ -26,6 +27,8 @@ export default class Command {
 			client: { value: manager.client },
 			manager: { value: manager }
 		});
+
+		this.aliases = options.aliases;
 		this.category = options.category;
 		this.cooldown = options.cooldown || 3;
 		this.name = options.name;
