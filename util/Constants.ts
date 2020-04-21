@@ -85,10 +85,26 @@ export const CommandErrors = {
 			valid.map(ext => `\`${ext}\``).join(', ')
 		}.`,
 	RESOLVE_ID: (id: string) =>
-		`An ID or user mention was provided, but the user couldn't be resolved, are you sure its valid? (${id})`
+		`An ID or user mention was provided, but the user couldn't be resolved, are you sure its valid? (${id})`,
+	TOO_MANY_INVITES: (max = 1) => `A maximum of ${max} invites is permitted here.`,
+	NO_INVITE: 'You must provide an invite link.',
+	CLIENT_BANNED_INVITE: 'The ASC bot seems to be banned from that guild, ask that server\'s owner why.',
+	UNKNOWN_INVITE: (code: string) => `The invite you provided, \`${code}\`, is invalid.`,
+	GROUP_INVITE: 'The invite you provided is for a group, not a guild.',
+	PARTNER_MEMBER_COUNT: (minimum: boolean) => `The invite you sent ${
+		minimum ?
+			'does not have enough' :
+			'has too many'
+	} members for this channel.`
 };
 
 export const Responses = {
+	PARTNER_REWARD: (user: User, channel: TextChannel, points: number) => ({
+		content: `${user} Was rewarded **${points}** points for a ${channel}.`,
+		allowedMentions: {
+			users: [user.id]
+		}
+	}),
 	AUTO_REPORT_EMBED: (message: Message) => {
 		return new MessageEmbed()
 			.setAuthor('Alert')
@@ -216,12 +232,17 @@ export const EventResponses = {
 			.setTimestamp(invite.createdAt!);
 	},
 
-	GUILD_MEMBER_ADD: (member: GuildMember & { client: Client }, webhook = true) => 
-		`<@&539532117781118987> to ${member.guild.name} ${member.user}, You can click ${
-			webhook ? `[here](${
+	GUILD_MEMBER_ADD: (member: GuildMember & { client: Client }, webhook = true) => ({
+		content: `<@&539532117781118987> to **${member.guild.name}** ${member.user}, you can click ${
+			webhook ? `[here](<${
 				messageURL('539355100397699092', '635215364950851659', '635228291556704320')
-			})` : `<#${member.client.config.rulesChannelID}>`
+			}>)` : `<#${member.client.config.rulesChannelID}>`
 		} to read the rules!`,
+		allowedMentions: {
+			users: [member.id],
+			roles: ['539532117781118987']
+		}
+	}),
 	GUILD_MEMBER_UPDATE: (oldMember: GuildMember, newMember: GuildMember) => {
 		const { user } = newMember;
 		const data = [];

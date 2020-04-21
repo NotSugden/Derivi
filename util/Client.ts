@@ -64,9 +64,16 @@ export default class Client extends DJSClient {
 		readonly defaultGuild: Guild;
 		defaultGuildID: Snowflake;
 		filesDir: string;
+		partnershipChannels: Map<Snowflake, {
+			minimum: number;
+			maximum: number;
+			points: number;
+		}>;
 		prefix: string;
 		reactionRoles: Map<Snowflake, Map<string, Snowflake>>;
 		reportsRegex: RegExp[];
+		readonly partnerRewardsChannel: TextChannel;
+		partnerRewardsChannelID: Snowflake;
 		readonly punishmentChannel: TextChannel;
 		punishmentChannelID: Snowflake;
 		readonly reportsChannel: TextChannel;
@@ -104,6 +111,17 @@ export default class Client extends DJSClient {
 			},
 			defaultGuildID: config.default_guild,
 			filesDir: config.files_dir as string,
+			get partnerRewardsChannel() {
+				return commandManager.client.channels.resolve(this.partnerRewardsChannelID);
+			},
+			partnerRewardsChannelID: config.partner_rewards_channel,
+			partnershipChannels: new Map(config.partnership_channels.map(data => [
+				data.id, {
+					maximum: typeof data.maximum === 'number' ? data.maximum : Infinity,
+					minimum: data.minimum,
+					points: data.points
+				}
+			])),
 			prefix: config.prefix,
 			get punishmentChannel() {
 				return commandManager.client.channels.resolve(this.punishmentChannelID);
@@ -215,6 +233,16 @@ export default class Client extends DJSClient {
 		if (config.reportsChannel && config.reportsChannel.type !== 'text') {
 			throw new TypeError(Errors.INVALID_CLIENT_OPTION('reports_channel', 'TextChannel'));
 		}
+		if (config.partnerRewardsChannel && config.partnerRewardsChannel.type !== 'text') {
+			throw new TypeError(Errors.INVALID_CLIENT_OPTION('partner_rewards_channel', 'TextChannel'));
+		}
+
+		for (const channelID of this.config.partnershipChannels.keys()) {
+			const channel = this.channels.resolve(channelID);
+			if (!channel || channel.type !== 'text') {
+				throw new TypeError(Errors.INVALID_CLIENT_OPTION(`partnership_channels[${channelID}]`, 'TextChannel'));
+			}
+		}
 	}
 }
 
@@ -227,6 +255,13 @@ export interface ClientConfig {
 	default_guild: Snowflake;
 	files_dir?: string;
 	prefix: string;
+	partner_rewards_channel: Snowflake;
+	partnership_channels: {
+		id: Snowflake;
+		minimum: number;
+		maximum: number | null;
+		points: number;
+	}[];
 	punishment_channel: Snowflake;
 	reaction_roles: {
 		message: Snowflake;

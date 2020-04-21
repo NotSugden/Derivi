@@ -11,7 +11,7 @@ export default class Levels {
 		Object.defineProperty(this, 'client', { value: client });
 
 		this.level = data.level;
-		this.userID = data.id;
+		this.userID = data.user_id;
 		this.xp = data.xp;
 	}
 
@@ -33,7 +33,7 @@ export default class Levels {
 }
 
 export interface RawLevels {
-	id: Snowflake;
+	user_id: Snowflake;
 	level: number;
 	xp: number;
 }

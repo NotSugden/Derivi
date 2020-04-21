@@ -45,6 +45,48 @@ export default (async message => {
 			}
 		}
 
+		const partnerChannel = client.config.partnershipChannels.get(message.channel.id);
+		if (partnerChannel && client.config.partnerRewardsChannel) {
+			if (message.invites.length > 1) {
+				await message.delete();
+				throw new CommandError('TOO_MANY_INVITES').dm();
+			} else if (!message.invites.length) {
+				await message.delete();
+				throw new CommandError('NO_INVITE').dm();
+			}
+
+			try {
+				const invite = await client.fetchInvite(message.invites[0]);
+				if (!invite.guild) throw new CommandError('GROUP_INVITE').dm();
+				else if (invite.guild.id === client.config.defaultGuildID) {
+					await message.delete();
+					throw new CommandError('UNKNOWN_INVITE', invite.code).dm();
+				}
+
+				if (invite.memberCount < partnerChannel.minimum || invite.memberCount > partnerChannel.maximum) {
+					await message.delete();
+					throw new CommandError('PARTNER_MEMBER_COUNT', invite.memberCount < partnerChannel.minimum).dm();
+				}
+
+				await client.config.partnerRewardsChannel.send(Responses.PARTNER_REWARD(
+					message.author, message.channel as TextChannel, partnerChannel.points
+				));
+
+				const points = await client.database.points(message.author);
+				await points.set({ points: points.amount + partnerChannel.points });
+
+				return;
+			} catch (error) {
+				if (message.deletable) await message.delete();
+				if (error.message === 'The user is banned from this guild.'){
+					throw new CommandError('CLIENT_BANNED_INVITE').dm();
+				} else if (error.message === 'Unknown Invite') {
+					throw new CommandError('UNKNOWN_INVITE', message.invites[0]).dm();
+				}
+				throw error;
+			}
+		}
+
 		if (!message.content.startsWith(client.config.prefix)) return;
 		const [plainCommand] = message.content.slice(1).split(' ');
 		const args = new CommandArguments(message);
@@ -87,7 +129,9 @@ export default (async message => {
 		});
 	} catch (error) {
 		if (error instanceof CommandError) {
-			return message.channel.send(error.message);
+			return error.dmError ?
+				message.author.send(error.message) :
+				message.channel.send(error.message);
 		}
 		await message.channel.send([
 			`An unexpected error has occoured: \`${error.name}\``,

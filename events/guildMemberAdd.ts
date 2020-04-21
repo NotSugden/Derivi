@@ -1,4 +1,4 @@
-import { WebhookClient, MessageEmbed, Constants } from 'discord.js';
+import { WebhookClient, MessageEmbed, Constants, WebhookMessageOptions, MessageOptions } from 'discord.js';
 import TextChannel from '../structures/discord.js/TextChannel';
 import { Events } from '../util/Client';
 import { EventResponses } from '../util/Constants';
@@ -10,11 +10,11 @@ export default (async member => {
 		(member.guild.channels.cache.find(ch => ch.type === 'text' && ch.name === 'general') as TextChannel);
 	const isWebhook = hookOrChannel instanceof WebhookClient;
 	if (hookOrChannel) {
-		const options = {
-			content: EventResponses.GUILD_MEMBER_ADD(member, isWebhook)
-		} as { [key: string]: string };
+		const options = {} as MessageOptions | WebhookMessageOptions;
+		Object.assign(options, EventResponses.GUILD_MEMBER_ADD(member, isWebhook));
+
 		if (isWebhook) {
-			options.username = 'Welcome';
+			(options as WebhookMessageOptions).username = 'Welcome';
 		}
 		hookOrChannel.send(options)
 			.catch(console.error);
