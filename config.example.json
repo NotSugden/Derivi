@@ -1,4 +1,7 @@
 {
+	"allowed_level_channels": [
+		"123456789012345678"
+	],
 	"attachment_files_url": "https://someurl.com/files",
 	"attachment_logging": false,
 	"default_guild": "123456789012345678",

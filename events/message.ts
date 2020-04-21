@@ -1,7 +1,7 @@
 /* eslint-disable consistent-return */
 import { promises as fs } from 'fs';
 import { join, extname } from 'path';
-import { MessageOptions, MessageEditOptions, StringResolvable, MessageAdditions } from 'discord.js';
+import { MessageOptions, MessageEditOptions, StringResolvable, MessageAdditions, Snowflake } from 'discord.js';
 import fetch from 'node-fetch';
 import { CommandData } from '../structures/Command';
 import CommandArguments from '../structures/CommandArguments';
@@ -11,6 +11,13 @@ import { Events } from '../util/Client';
 import CommandError from '../util/CommandError';
 import { CommandErrors, Responses } from '../util/Constants';
 import Util from '../util/Util';
+
+const XP_COOLDOWN = new Set<Snowflake>();
+const random = (min: number, max: number): number => {
+	const ran = Math.floor(Math.random() * max);
+	if (ran < min) return random(min, max);
+	return ran;
+};
 
 export default (async message => {
 	try {
@@ -84,6 +91,30 @@ export default (async message => {
 					throw new CommandError('UNKNOWN_INVITE', message.invites[0]).dm();
 				}
 				throw error;
+			}
+		}
+
+		const allowedChannels = client.config.allowedLevelingChannels;
+		if (
+			(!allowedChannels.length || allowedChannels.includes(message.channel.id)) &&
+			!XP_COOLDOWN.has(message.author.id) && !edited
+		) {
+			const { level, xp } = await client.database.levels(message.author.id);
+
+			const newData = {
+				xp: xp + random(12, 37)
+			} as { xp: number; level?: number };
+			if (newData.xp > Util.levelCalc(level)) {
+				newData.level = level + 1;
+			}
+
+			await client.database.setLevels(message.author.id, newData);
+
+			XP_COOLDOWN.add(message.author.id);
+			setTimeout(() => XP_COOLDOWN.delete(message.author.id));
+
+			if (typeof newData.level === 'number') {
+				await message.channel.send(Responses.LEVEL_UP(message.author, newData.level)); 
 			}
 		}
 

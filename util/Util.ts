@@ -57,6 +57,30 @@ export default class Util {
 		return Buffer.concat([decipher.update(data), decipher.final()]);
 	}
 
+	static async users(message: Message, limit?: number): Promise<Collection<Snowflake, User>>;
+	static async users(message: Message, limit: 1): Promise<User | null>;
+	static async users(message: Message, limit = 0) {
+		const { client } = message;
+		const users = new Collection<Snowflake, User>();
+		const [, ...content] = message.content.split(' ');
+		for (const word of [...content]) {
+			const [id] = word.match(/\d{17,19}/) || [];
+			if (!id) break;
+			content.shift();
+			let user: User;
+			try {
+				user = await client.users.fetch(id) as User;
+			} catch {
+				throw new CommandError('RESOLVE_ID', id);
+			}
+			users.set(user.id, user);
+			if (limit && users.size === limit) {
+				return limit === 1 ? users.first() : users;
+			}
+		}
+		return limit === 1 ? null : users;
+	}
+
 	static async reason(message: Message, options?: { fetchMembers?: false; withFlags?: false }): Promise<ReasonData>;
 	static async reason(message: Message, options: { fetchMembers?: false; withFlags: Flag[] }): Promise<ReasonData & {
 		flags: FlagData;
@@ -171,6 +195,14 @@ export default class Util {
 		const position = member.roles.highest.comparePositionTo(by.roles.highest);
 		if (position < 0) return true;
 		return false;
+	}
+
+	static levelCalc(level: number) {
+		return (
+			(5 / 6) *
+			(level + 1) *
+			(2 * (level + 1) * (level + 1) + 27 * (level + 1) + 91)
+		);
 	}
 }
 
