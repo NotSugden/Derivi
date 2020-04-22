@@ -163,7 +163,7 @@ export default class DatabaseManager {
 	public async case(ids: number[]): Promise<(Case | null)[]>;
 	public async case(id: number | number[]) {
 		if (Array.isArray(id)) return Promise.all(id.map(i => this.case(i)));
-		const data = await this.rawDatabase.get<RawCase>('SELECT * FROM cases WHERE user_id = ?', id);
+		const data = await this.rawDatabase.get<RawCase>('SELECT * FROM cases WHERE id = ?', id);
 		if (!data) return null;
 		return new Case(this.client, data);
 	}
@@ -173,7 +173,7 @@ export default class DatabaseManager {
 	 */
 	public async updateCase(caseID: number, urls: string[]) {
 		await this.rawDatabase.run(
-			'UPDATE cases SET screenshots = ? WHERE user_id = ?',
+			'UPDATE cases SET screenshots = ? WHERE id = ?',
 			JSON.stringify(urls),
 			caseID
 		);
