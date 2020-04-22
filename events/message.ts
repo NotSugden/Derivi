@@ -118,7 +118,7 @@ export default (async message => {
 			}
 		}
 
-		if (!message.content.startsWith(client.config.prefix)) return;
+		if (!client.config.prefix.some(pfx => message.content.startsWith(pfx))) return;
 		const [plainCommand] = message.content.slice(1).split(' ');
 		const args = new CommandArguments(message);
 		const command = client.commands.resolve(plainCommand);
