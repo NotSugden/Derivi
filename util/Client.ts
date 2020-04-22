@@ -1,5 +1,6 @@
 import * as fs from 'fs';
 import { promisify } from 'util';
+import { deprecate } from 'util';
 import {
 	Client as DJSClient,
 	ClientOptions,
@@ -70,7 +71,7 @@ export default class Client extends DJSClient {
 			maximum: number;
 			points: number;
 		}>;
-		prefix: string;
+		prefix: string[];
 		reactionRoles: Map<Snowflake, Map<string, Snowflake>>;
 		reportsRegex: RegExp[];
 		readonly partnerRewardsChannel: TextChannel;
@@ -103,6 +104,12 @@ export default class Client extends DJSClient {
 			this.webhooks.set(webhook.name, new WebhookClient(webhook.id, webhook.token, this.options));
 		}
 
+		if (!Array.isArray(config.prefix)) {
+			deprecate(() => {
+				config.prefix = [config.prefix as string];
+			}, 'config.prefix as string will be removed in favour of an array of strings.')();
+		}
+
 		Object.defineProperty(this, 'config', { value: {
 			allowedLevelingChannels: config.allowed_level_channels,
 			attachmentLogging: config.attachment_logging as boolean,
@@ -124,7 +131,7 @@ export default class Client extends DJSClient {
 					points: data.points
 				}
 			])),
-			prefix: config.prefix,
+			prefix: config.prefix as string[],
 			get punishmentChannel() {
 				return commandManager.client.channels.resolve(this.punishmentChannelID);
 			},
@@ -265,7 +272,7 @@ export interface ClientConfig {
 	database?: string;
 	default_guild: Snowflake;
 	files_dir?: string;
-	prefix: string;
+	prefix: string | string[];
 	partner_rewards_channel: Snowflake;
 	partnership_channels: {
 		id: Snowflake;
