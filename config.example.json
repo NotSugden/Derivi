@@ -6,7 +6,7 @@
 	"attachment_logging": false,
 	"default_guild": "123456789012345678",
 	"encryption_password": "A secure password",
-	"prefix": "+",
+	"prefix": ["+"],
 	"punishment_channel": "123456789012345678",
 	"rules_channel": "123456789012345678",
 	"staff_commands_channel": "123456789012345678",
