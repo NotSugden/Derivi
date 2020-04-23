@@ -7,7 +7,7 @@ import { EventResponses } from '../util/Constants';
  */
 export default (async invite => {
 	const { client } = invite;
-	if (!invite.guild || invite.guild.id !== client.config.defaultGuildID) return;
+	if (invite.guild?.id !== client.config.defaultGuildID) return;
 	if (!invite.guild.invites.has(invite.code)) {
 		invite.guild.invites.set(invite.code, invite);
 	}

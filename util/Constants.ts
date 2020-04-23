@@ -106,7 +106,7 @@ export const Responses = {
 		return new MessageEmbed()
 			.setAuthor('ASC Leaderboards', guild.iconURL({ dynamic: true })!)
 			.setDescription(levels.map(
-				(data, index) => `**#${index+1}** - ${data.user!.tag} Level ${data.level}`
+				(data, index) => `**#${index+1}** - ${data.user?.tag || 'Unkown User#0000'} Level ${data.level}`
 			))
 			.setColor('WHITE');
 	},
@@ -153,14 +153,14 @@ export const Responses = {
 	HISTORY: (cases: Case[]) => {
 		return cases.flatMap(caseData => [
 			`${caseData.id}: ${caseData.action.charAt(0) + caseData.action.slice(1).toLowerCase()} ${
-				caseData.moderator ? caseData.moderator.tag : caseData.moderatorID
+				caseData.moderator?.tag || caseData.moderatorID
 			} (${moment.utc(caseData.timestamp).format('DD/MM/YYYY HH:mm A')}): ${caseData.reason}`,
 			...Object.entries(caseData.extras).map(([name, value]) => `${name}: ${value}`)
 		]);
 	},
 	WARNINGS: (warns: Warn[]) => {
 		return warns.map(warn => `(${warn.caseID}) ${
-			warn.moderator ? warn.moderator.tag : warn.moderatorID
+			warn.moderator?.tag || warn.moderatorID
 		} (${moment.utc(warn.timestamp).format('DD/MM/YYYY HH:mm A')}): ${warn.reason}`);
 	},
 	MODERATION_LOG_FIELDS: (moderator: User, users: User[]): EmbedFieldData[] => [{
@@ -240,16 +240,16 @@ export const EventResponses = {
 					'DD/MM/YYYY HH:mm A'
 				) : 'Never'}`,
 				`Inviter: ${invite.inviter ? `${invite.inviter} (${invite.inviter.id})` : 'Unknown User#0000'}`,
-				`Max Uses: ${invite.maxUses || 'Infinite'}`,
+				`Max Uses: ${invite.maxUses ?? 'Infinite'}`,
 				`Temporary?: ${invite.temporary ? 'Yes' : 'No'}`
 			])
-			.setFooter(`User ID: ${invite.inviter ? invite.inviter.id : '00000000000000000'}`)
+			.setFooter(`User ID: ${invite.inviter?.id || '00000000000000000'}`)
 			.setTimestamp(invite.createdAt!);
 	},
 	INVITE_DELETE: (invite: Invite) => {
 		return new MessageEmbed()
 			.setAuthor(`Invite deleted in #${(invite.channel as TextChannel).name}, created by ${
-				invite.inviter ? invite.inviter.tag : 'Unknown User#0000'
+				invite.inviter?.tag || 'Unknown User#0000'
 			}`)
 			.setColor(Constants.Colors.RED)
 			.setDescription([
@@ -257,10 +257,10 @@ export const EventResponses = {
 				// Could check for `invite.uses === invite.maxUses` here however it's never updated so there's no point
 				`Expired?: ${invite.expiresTimestamp && invite.expiresTimestamp < Date.now() ? 'Yes' : 'No'}`,
 				`Inviter: ${invite.inviter ? `${invite.inviter} (${invite.inviter.id})` : 'Unknown User#0000'}`,
-				`Max Uses: ${invite.maxUses || 'Infinite'}`,
+				`Max Uses: ${invite.maxUses ?? 'Infinite'}`,
 				`Temporary?: ${invite.temporary ? 'Yes' : 'No'}`
 			])
-			.setFooter(`User ID: ${invite.inviter ? invite.inviter.id : '00000000000000000'}`)
+			.setFooter(`User ID: ${invite.inviter?.id || '00000000000000000'}`)
 			.setTimestamp(invite.createdAt!);
 	},
 
@@ -329,10 +329,10 @@ export const EventResponses = {
 		const embed = new MessageEmbed()
 			.setAuthor(`Message Deleted in #${
 				(message.channel as TextChannel).name
-			} by ${message.author ? message.author.tag : 'Unkown User#0000'}`)
+			} by ${message.author?.tag || 'Unkown User#0000'}`)
 			.setDescription([
 				options.previous ? hyperlink('Previous Message', options.previous.url) : 'No previous message',
-				`Author ID: ${message.author ? message.author.id : '00000000000000000'}`
+				`Author ID: ${message.author?.id || '00000000000000000'}`
 			])
 			.setColor(Constants.Colors.RED)
 			.addField('Content', message.partial ?

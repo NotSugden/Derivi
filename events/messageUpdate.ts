@@ -4,7 +4,7 @@ import { EventResponses } from '../util/Constants';
 export default (async (oldMessage, newMessage) => {
 	const { guild, client } = newMessage;
 	if (
-		!guild || guild.id !== client.config.defaultGuildID ||
+		guild?.id !== client.config.defaultGuildID ||
 		newMessage.partial || oldMessage.content === newMessage.content ||
 		newMessage.author.bot
 	) return;

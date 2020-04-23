@@ -62,7 +62,7 @@ export default class DatabaseManager {
 		try {
 			existing = await this.points(userID);
 		} catch (err) {
-			if (err.name === Errors.POINTS_RESOLVE_ID()) throw error;
+			if (err.name === Errors.POINTS_RESOLVE_ID(false)) throw error;
 			else throw err;
 		}
 

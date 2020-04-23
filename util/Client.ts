@@ -126,7 +126,7 @@ export default class Client extends DJSClient {
 			partnerRewardsChannelID: config.partner_rewards_channel,
 			partnershipChannels: new Map(config.partnership_channels.map(data => [
 				data.id, {
-					maximum: typeof data.maximum === 'number' ? data.maximum : Infinity,
+					maximum: data.maximum ?? Infinity,
 					minimum: data.minimum,
 					points: data.points
 				}
@@ -224,7 +224,7 @@ export default class Client extends DJSClient {
 		const { config } = this;
 		for (const channelID of config.allowedLevelingChannels) {
 			const ch = this.channels.resolve(channelID);
-			if (!ch || ch.type !== 'text') {
+			if (ch?.type !== 'text') {
 				throw new TypeError(Errors.INVALID_CLIENT_OPTION(
 					`allowed_level_channels[${channelID}]`,
 					'TextChannel'
@@ -238,25 +238,25 @@ export default class Client extends DJSClient {
 		if (!(config.defaultGuild instanceof Guild)) {
 			throw new TypeError(Errors.INVALID_CLIENT_OPTION('default_guild', 'Guild'));
 		}
-		if (config.punishmentChannel && config.punishmentChannel.type !== 'text') {
+		if (config.punishmentChannel?.type !== 'text') {
 			throw new TypeError(Errors.INVALID_CLIENT_OPTION('punishment_channel', 'TextChannel'));
 		}
-		if (config.rulesChannel && config.rulesChannel.type !== 'text') {
+		if (config.rulesChannel?.type !== 'text') {
 			throw new TypeError(Errors.INVALID_CLIENT_OPTION('rules_channel', 'TextChannel'));
 		}
-		if (config.staffCommandsChannel && config.staffCommandsChannel.type !== 'text') {
+		if (config.staffCommandsChannel?.type !== 'text') {
 			throw new TypeError(Errors.INVALID_CLIENT_OPTION('staff_commands_channel', 'TextChannel'));
 		}
-		if (config.reportsChannel && config.reportsChannel.type !== 'text') {
+		if (config.reportsChannel?.type !== 'text') {
 			throw new TypeError(Errors.INVALID_CLIENT_OPTION('reports_channel', 'TextChannel'));
 		}
-		if (config.partnerRewardsChannel && config.partnerRewardsChannel.type !== 'text') {
+		if (config.partnerRewardsChannel?.type !== 'text') {
 			throw new TypeError(Errors.INVALID_CLIENT_OPTION('partner_rewards_channel', 'TextChannel'));
 		}
 
 		for (const channelID of this.config.partnershipChannels.keys()) {
 			const channel = this.channels.resolve(channelID);
-			if (!channel || channel.type !== 'text') {
+			if (channel?.type !== 'text') {
 				throw new TypeError(Errors.INVALID_CLIENT_OPTION(`partnership_channels[${channelID}]`, 'TextChannel'));
 			}
 		}
