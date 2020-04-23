@@ -5,7 +5,9 @@ import Client from './Client';
 import { Invite, PartialMessage } from './Types';
 import Util from './Util';
 import Case from '../structures/Case';
+import Levels from '../structures/Levels';
 import Warn from '../structures/Warn';
+import Guild from '../structures/discord.js/Guild';
 import GuildMember from '../structures/discord.js/GuildMember';
 import Message from '../structures/discord.js/Message';
 import TextChannel from '../structures/discord.js/TextChannel';
@@ -100,6 +102,14 @@ export const CommandErrors = {
 };
 
 export const Responses = {
+	TOP: (levels: Levels[], guild: Guild) => {
+		return new MessageEmbed()
+			.setAuthor('ASC Leaderboards', guild.iconURL({ dynamic: true })!)
+			.setDescription(levels.map(
+				(data, index) => `**#${index+1}** - ${data.user!.tag} Level ${data.level}`
+			))
+			.setColor('WHITE');
+	},
 	LEVEL: (user: User, level: number, xp: number) => {
 		const LEFT_BORDER = '<:Lines2:597212619299880962>';
 		const RIGHT_BORDER = '<:Lines3:594509306364297228>';
@@ -155,10 +165,10 @@ export const Responses = {
 	},
 	MODERATION_LOG_FIELDS: (moderator: User, users: User[]): EmbedFieldData[] => [{
 		name: 'Moderator',
-		value: moderator.tag
+		value: `${moderator.tag} (${moderator.id})`
 	}, {
 		name: `User${users.length > 1 ? 's' : ''} punished`,
-		value: users.map(({ tag }) => tag)
+		value: users.map(({ tag, id }) => `${tag} (${id})`)
 	}],
 	MODERATION_LOG_DESCRIPTION: (action: keyof typeof ModerationActionTypes, reason: string, extras: object) => {
 		const description = [

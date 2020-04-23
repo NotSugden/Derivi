@@ -144,14 +144,26 @@ export default class DatabaseManager {
 		return existing;
 	}
 
+	public async levels(top: number): Promise<Levels[]>;
 	public async levels(user: UserResolvable): Promise<Levels>;
 	public async levels(users: UserResolvable[]): Promise<Levels[]>;
-	public async levels(user: UserResolvable | UserResolvable[]) {
+	public async levels(user: UserResolvable | UserResolvable[] | number) {
 		if (Array.isArray(user)) return Promise.all(user.map(u => this.levels(u)));
+		if (typeof user === 'number') {
+			const topLevels = await this.rawDatabase.all<RawLevels>(
+				'SELECT * FROM levels ORDER by xp desc LIMIT ?',
+				user
+			);
+			return topLevels
+				.map(data => new Levels(this.client, data));
+		}
 		const userID = this.client.users.resolveID(user);
 		if (!userID || !/^\d{17,19}$/.test(userID)) throw new Error(Errors.LEVELS_RESOLVE_ID());
 
-		const data = await this.rawDatabase.get<RawLevels>('SELECT * FROM levels WHERE user_id = ?', userID);
+		const data = await this.rawDatabase.get<RawLevels>(
+			'SELECT * FROM levels WHERE user_id = ?',
+			userID
+		);
 		if (!data) {
 			await this.rawDatabase.run('INSERT INTO levels (user_id) VALUES (?)', userID);
 			return this.levels(user);
