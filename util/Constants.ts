@@ -165,10 +165,10 @@ export const Responses = {
 	},
 	MODERATION_LOG_FIELDS: (moderator: User, users: User[]): EmbedFieldData[] => [{
 		name: 'Moderator',
-		value: moderator.tag
+		value: `${moderator.tag} (${moderator.id})`
 	}, {
 		name: `User${users.length > 1 ? 's' : ''} punished`,
-		value: users.map(({ tag }) => tag)
+		value: users.map(({ tag, id }) => `${tag} (${id})`)
 	}],
 	MODERATION_LOG_DESCRIPTION: (action: keyof typeof ModerationActionTypes, reason: string, extras: object) => {
 		const description = [
