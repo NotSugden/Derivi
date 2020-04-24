@@ -84,12 +84,12 @@ export default (async message => {
 
 				return;
 			} catch (error) {
-				if (message.deletable) await message.delete();
 				if (error.message === 'The user is banned from this guild.'){
 					throw new CommandError('CLIENT_BANNED_INVITE').dm();
 				} else if (error.message === 'Unknown Invite') {
 					throw new CommandError('UNKNOWN_INVITE', message.invites[0]).dm();
 				}
+				await message.delete();
 				throw error;
 			}
 		}
