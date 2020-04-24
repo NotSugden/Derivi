@@ -147,7 +147,9 @@ export const Responses = {
 				}__ a ${hyperlink('message', message.url)} with a possible restricted term`
 			).addFields({
 				name: 'Message Content',
-				value: message.content
+				value: message.content.length > 1000 ?
+					`${message.content.slice(0, 1000)}...` :
+					message.content
 			});
 	},
 	HISTORY: (cases: Case[]) => {
@@ -326,6 +328,10 @@ export const EventResponses = {
 	},
 
 	MESSAGE_DELETE: (message: Message | PartialMessage, options: { files: string[]; previous?: Message }) => {
+		let content = message.partial ?
+			'Message content was not cached' :
+			message.content || 'No content';
+		if (content.length > 1000) content = `${content.slice(0, 1000)}...`;
 		const embed = new MessageEmbed()
 			.setAuthor(`Message Deleted in #${
 				(message.channel as TextChannel).name
@@ -335,9 +341,8 @@ export const EventResponses = {
 				`Author ID: ${message.author?.id || '00000000000000000'}`
 			])
 			.setColor(Constants.Colors.RED)
-			.addField('Content', message.partial ?
-				'Message content was not cached' : message.content || 'No content'
-			).setFooter(`${message.id} | Created at`)
+			.addField('Content', content)
+			.setFooter(`${message.id} | Created at`)
 			.setTimestamp(message.createdAt);
 		if (options.files.length) {
 			embed.addField(
@@ -349,6 +354,12 @@ export const EventResponses = {
 	},
 
 	MESSAGE_UPDATE: (oldMessage: Message | PartialMessage, newMessage: Message) => {
+		let oldContent = oldMessage.partial ?
+			'Old content wasn\'t cached' :
+			(oldMessage.content || 'No content');
+		let newContent = newMessage.content || 'No content';
+		if (oldContent.length > 1000) oldContent = `${oldContent.slice(0, 1000)}...`;
+		if (newContent.length > 1000) newContent = `${newContent.slice(0, 1000)}...`;
 		return new MessageEmbed()
 			.setAuthor(`Message Edited in #${(newMessage.channel as TextChannel).name} by ${newMessage.author.tag}`)
 			.setDescription([
@@ -360,10 +371,10 @@ export const EventResponses = {
 			.setTimestamp()
 			.addFields({
 				name: 'Old Content',
-				value: oldMessage.partial ? 'Old content wasn\'t cached' : (oldMessage.content || 'No content')
+				value: oldContent
 			}, {
 				name: 'New Content',
-				value: newMessage.content || 'No content'
+				value: newContent
 			});
 	}
 };
