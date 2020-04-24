@@ -102,6 +102,8 @@ export const CommandErrors = {
 };
 
 export const Responses = {
+	POINTS: (user: User, amount: number, self = true) =>
+		`${self ? 'You' : 'They'} have **${amount}** points in ${self ? 'your' : 'their'} wallet.`,
 	TOP: (levels: Levels[], guild: Guild) => {
 		return new MessageEmbed()
 			.setAuthor('ASC Leaderboards', guild.iconURL({ dynamic: true })!)
