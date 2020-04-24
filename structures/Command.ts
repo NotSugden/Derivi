@@ -30,9 +30,9 @@ export default class Command {
 
 		this.aliases = options.aliases;
 		this.category = options.category;
-		this.cooldown = options.cooldown || 3;
+		this.cooldown = options.cooldown ?? 3;
 		this.name = options.name;
-		this.permissions = options.permissions || 0;
+		this.permissions = options.permissions ?? 0;
 		this.path = path;
 
 		this._usages = options.usages;

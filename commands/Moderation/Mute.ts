@@ -10,7 +10,13 @@ import Util from '../../util/Util';
 
 const parseMS = <T extends { reason: string }>(data: T): T & { time: number } => {
 	const reason = data.reason.split(' ');
-	const time = ms(reason.shift() || '');
+	const time = (() => {
+		try {
+			return ms(reason.shift() || '');
+		} catch {
+			return -1;
+		}
+	})();
 	return Object.assign(data, { reason: reason.join(' '), time });
 };
 

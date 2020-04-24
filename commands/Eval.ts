@@ -68,7 +68,7 @@ export default class Eval extends Command {
 		};
 		try {
 			let result = await eval(args.regular.join(' '));
-			if (Array.isArray(result) && result.every(element => element && typeof element.then === 'function')) {
+			if (Array.isArray(result) && result.every(element => typeof element?.then === 'function')) {
 				result = await Promise.all(result);
 			}
 			return finish(result);

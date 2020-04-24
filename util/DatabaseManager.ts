@@ -20,27 +20,34 @@ const stringify = (json: object) => {
 
 export default class DatabaseManager {
 	private client!: Client;
-	private rawDatabase = (sqlite as unknown) as sqlite.Database;
+	private rawDatabase: sqlite.Database | null;
 
 	constructor(client: Client) {
 		Object.defineProperty(this, 'client', { value: client });
+		this.rawDatabase = null;
 	}
 
 	public async rawQuery<T = { [key: string]: string | number }>(sql: string, ...params: unknown[]) {
-		return this.rawDatabase.all<T>(sql, ...params);
+		return this.rawDatabase!.all<T>(sql, ...params);
 	}
 
 	public close() {
-		return this.rawDatabase.close();
+		return this.rawDatabase!.close()
+			.then(() => this.rawDatabase = null);
 	}
 
 	/**
    * Warning: database file will need to be properly configured.
    */
 	public open() {
-		return sqlite.open(this.client.config.database, {
-			cached: true
-		});
+		return sqlite.open({
+			/*
+			 * CLI is saying that the sqlite3 import shouldn't be at the top
+			 * But VSC says it should, so fuck it ima use require
+			 */
+			driver: require('sqlite3').Database,
+			filename: this.client.config.database
+		}).then(database => this.rawDatabase = database);
 	}
 
 	public async setPoints(
@@ -62,7 +69,7 @@ export default class DatabaseManager {
 		try {
 			existing = await this.points(userID);
 		} catch (err) {
-			if (err.name === Errors.POINTS_RESOLVE_ID()) throw error;
+			if (err.name === Errors.POINTS_RESOLVE_ID(false)) throw error;
 			else throw err;
 		}
 
@@ -81,7 +88,7 @@ export default class DatabaseManager {
 			set.push(['last_daily', existing.lastDailyTimestamp = typeof daily === 'number' ? daily : Date.now()]);
 		}
 
-		await this.rawDatabase.run(
+		await this.rawDatabase!.run(
 			`UPDATE points SET ${set.map(([key]) => `${key} = ?`).join(', ')} WHERE user_id = ?`,
 			...set.map(([, value]) => value),
 			userID
@@ -96,9 +103,9 @@ export default class DatabaseManager {
 		const userID = this.client.users.resolveID(user);
 		if (!userID || !/^\d{17,19}$/.test(userID)) throw new Error(Errors.POINTS_RESOLVE_ID(true));
 		
-		const data = await this.rawDatabase.get<RawPoints>('SELECT * FROM points WHERE user_id = ?', userID);
+		const data = await this.rawDatabase!.get<RawPoints>('SELECT * FROM points WHERE user_id = ?', userID);
 		if (!data) {
-			await this.rawDatabase.run(
+			await this.rawDatabase!.run(
 				'INSERT INTO points (user_id) VALUES (?)',
 				userID
 			);
@@ -136,7 +143,7 @@ export default class DatabaseManager {
 			throw new RangeError(Errors.NEGATIVE_NUMBER(level < 0 ? 'level' : 'xp'));
 		}
 
-		await this.rawDatabase.run('UPDATE levels SET level = ?, xp = ? WHERE user_id = ?',
+		await this.rawDatabase!.run('UPDATE levels SET level = ?, xp = ? WHERE user_id = ?',
 			existing.level = level,
 			existing.xp = xp,
 			userID
@@ -150,7 +157,7 @@ export default class DatabaseManager {
 	public async levels(user: UserResolvable | UserResolvable[] | number) {
 		if (Array.isArray(user)) return Promise.all(user.map(u => this.levels(u)));
 		if (typeof user === 'number') {
-			const topLevels = await this.rawDatabase.all<RawLevels>(
+			const topLevels = await this.rawDatabase!.all<RawLevels[]>(
 				'SELECT * FROM levels ORDER by xp desc LIMIT ?',
 				user
 			);
@@ -160,12 +167,12 @@ export default class DatabaseManager {
 		const userID = this.client.users.resolveID(user);
 		if (!userID || !/^\d{17,19}$/.test(userID)) throw new Error(Errors.LEVELS_RESOLVE_ID());
 
-		const data = await this.rawDatabase.get<RawLevels>(
+		const data = await this.rawDatabase!.get<RawLevels>(
 			'SELECT * FROM levels WHERE user_id = ?',
 			userID
 		);
 		if (!data) {
-			await this.rawDatabase.run('INSERT INTO levels (user_id) VALUES (?)', userID);
+			await this.rawDatabase!.run('INSERT INTO levels (user_id) VALUES (?)', userID);
 			return this.levels(user);
 		}
 		return new Levels(this.client, data);
@@ -175,7 +182,7 @@ export default class DatabaseManager {
 	public async case(ids: number[]): Promise<(Case | null)[]>;
 	public async case(id: number | number[]) {
 		if (Array.isArray(id)) return Promise.all(id.map(i => this.case(i)));
-		const data = await this.rawDatabase.get<RawCase>('SELECT * FROM cases WHERE id = ?', id);
+		const data = await this.rawDatabase!.get<RawCase>('SELECT * FROM cases WHERE id = ?', id);
 		if (!data) return null;
 		return new Case(this.client, data);
 	}
@@ -184,7 +191,7 @@ export default class DatabaseManager {
 	 * TODO: change this to accept an object for multiple misc changes
 	 */
 	public async updateCase(caseID: number, urls: string[]) {
-		await this.rawDatabase.run(
+		await this.rawDatabase!.run(
 			'UPDATE cases SET screenshots = ? WHERE id = ?',
 			JSON.stringify(urls),
 			caseID
@@ -240,7 +247,7 @@ export default class DatabaseManager {
 			}
 		}
 
-		await this.rawDatabase.run(
+		await this.rawDatabase!.run(
 			// cases table should have an auto-incrementing unique key, id
 			`INSERT INTO cases (action, extras, message_id, moderator_id, reason, screenshots, user_ids, timestamp)
 			VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
@@ -256,10 +263,10 @@ export default class DatabaseManager {
 			Date.now() 
 		);
 
-		const { seq: caseID } = await this.rawDatabase.get<{ name: 'cases'; seq: number }>(
+		const { seq: caseID } = (await this.rawDatabase!.get<{ name: 'cases'; seq: number }>(
 			'SELECT seq FROM sqlite_sequence WHERE name = ?',
 			'cases'
-		);
+		))!;
 		data.id = caseID;
 		return new Case(this.client, data);
 	}
@@ -288,7 +295,7 @@ export default class DatabaseManager {
 			return object;
 		}
 		if (typeof caseOrUser === 'number') {
-			const rawWarns = await this.rawDatabase.all<RawWarn>(
+			const rawWarns = await this.rawDatabase!.all<RawWarn[]>(
 				'SELECT * FROM warnings WHERE case_id = ?',
 				caseOrUser
 			);
@@ -298,7 +305,7 @@ export default class DatabaseManager {
 		const userID = this.client.users.resolveID(caseOrUser);
 		if (!userID || !/^\d{17,19}$/.test(userID)) throw new Error(Errors.WARNS_RESOLVE_ID);
 
-		const rawWarns = await this.rawDatabase.all<RawWarn>('SELECT * FROM warnings WHERE user_id = ?', userID);
+		const rawWarns = await this.rawDatabase!.all<RawWarn[]>('SELECT * FROM warnings WHERE user_id = ?', userID);
 		if (!rawWarns.length) return null;
 		return rawWarns.map(data => new Warn(this.client, data));
 	}
@@ -323,7 +330,7 @@ export default class DatabaseManager {
 		data.moderator_id = (await resolve(moderator, new Error(Errors.RESOLVE_PROVIDED('moderator')))).id;
 		data.user_id = (await resolve(user, new Error(Errors.RESOLVE_PROVIDED('user')))).id;
 
-		await this.rawDatabase.run(
+		await this.rawDatabase!.run(
 			'INSERT INTO warnings (case_id, moderator_id, reason, user_id, timestamp) VALUES (?, ?, ?, ?, ?)',
 			caseID,
 			data.moderator_id,
@@ -340,7 +347,7 @@ export default class DatabaseManager {
 	public async mute(users: UserResolvable[]): Promise<(Mute | null)[]>;
 	public async mute(user: true | UserResolvable | UserResolvable[]) {
 		if (typeof user === 'boolean'){
-			const rawData = await this.rawDatabase.all<RawMute>('SELECT * FROM mutes');
+			const rawData = await this.rawDatabase!.all<RawMute[]>('SELECT * FROM mutes');
 			return rawData.reduce((acc, data) => {
 				const mute = new Mute(this.client, data);
 				if (mute.endTimestamp < Date.now()) return acc;
@@ -353,7 +360,7 @@ export default class DatabaseManager {
 
 		if (this.client.mutes.has(userID)) return this.client.mutes.get(userID);
 
-		const data = await this.rawDatabase.get<RawMute>('SELECT * FROM mutes WHERE user_id = ?', userID);
+		const data = await this.rawDatabase!.get<RawMute>('SELECT * FROM mutes WHERE user_id = ?', userID);
 		if (!data) return null;
 		const mute = new Mute(this.client, data);
 		if (mute.endTimestamp < Date.now()) return null;
@@ -366,7 +373,7 @@ export default class DatabaseManager {
 
 		const data = { user_id: userID } as RawMute;
 
-		await this.rawDatabase.run(
+		await this.rawDatabase!.run(
 			'INSERT INTO mutes (user_id, start, end) VALUES (?, ?, ?)',
 			userID,
 			data.start = start.toISOString(),
@@ -380,7 +387,7 @@ export default class DatabaseManager {
 		const userID = this.client.users.resolveID(user);
 		if (!userID || !/^\d{17,19}$/.test(userID)) throw new Error(Errors.MUTE_RESOLVE_ID(false));
 
-		const { changes } = await this.rawDatabase.run('DELETE FROM mutes WHERE user_id = ?', userID);
+		const { changes } = await this.rawDatabase!.run('DELETE FROM mutes WHERE user_id = ?', userID);
 
 		return Boolean(changes);
 	}
@@ -400,7 +407,7 @@ export default class DatabaseManager {
 		if (Array.isArray(guild)) return Promise.all(guild.map(id => this.partnerships(id)));
 		const { client } = this;
 		if (typeof guild === 'string') {
-			const partnerships = await this.rawDatabase.all<RawPartnership>(
+			const partnerships = await this.rawDatabase!.all<RawPartnership[]>(
 				'SELECT * FROM partnerships WHERE guild_id = ? OR guild_invite = ?',
 				guild, guild
 			);
@@ -416,7 +423,7 @@ export default class DatabaseManager {
 		}
 		const before = guild.before ? new Date(guild.before).getTime() : Date.now();
 		const after = guild.after ? new Date(guild.after).getTime() : 0;
-		const partnerships = await this.rawDatabase.all<RawPartnership>(
+		const partnerships = await this.rawDatabase!.all<RawPartnership[]>(
 			'SELECT * FROM partnerships WHERE timestamp < ? AND timestamp > ?',
 			before, after
 		);
@@ -434,7 +441,7 @@ export default class DatabaseManager {
 	public async newPartnership(guild: { invite: string; id: Snowflake }, user: UserResolvable, timestamp: Date) {
 		const userID = this.client.users.resolveID(user);
 		if (!userID || !/^\d{17,19}$/.test(userID)) throw new Error(Errors.RESOLVE_PROVIDED('user'));
-		await this.rawDatabase.run(
+		await this.rawDatabase!.run(
 			'INSERT INTO partnerships (guild_id, guild_invite, user_id, timestamp) VALUES (?, ?, ?, ?)',
 			guild.id, guild.invite, userID, timestamp.getTime()
 		);

@@ -25,9 +25,9 @@ export default (async message => {
 		const edited = Boolean(message.editedTimestamp);
 		if (
 			message.author.bot ||
-			message.channel.type === 'dm'
+			!message.guild
 		) return;
-		if (message.guild!.id === client.config.defaultGuildID) {
+		if (message.guild.id === client.config.defaultGuildID) {
 			if (client.config.attachmentLogging && !edited && message.attachments.size) {
 				const urls = message.attachments.map(({ proxyURL }) => proxyURL);
 				for (let i = 0; i < urls.length; i++) {
@@ -144,9 +144,9 @@ export default (async message => {
 
 		let hasPermissions: boolean | string;
 		if (typeof permissions === 'function') {
-			hasPermissions = await permissions(message.member!, message.channel as TextChannel);
+			hasPermissions = await permissions(message.member, message.channel as TextChannel);
 		} else {
-			hasPermissions = message.member!.hasPermission(permissions);
+			hasPermissions = message.member.hasPermission(permissions);
 		}
 		if (!hasPermissions || typeof hasPermissions === 'string') {
 			return send(typeof hasPermissions === 'string' ?
