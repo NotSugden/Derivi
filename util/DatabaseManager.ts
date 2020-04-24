@@ -1,4 +1,3 @@
-import { Database } from 'sqlite3';
 import { UserResolvable, Snowflake } from 'discord.js';
 import * as sqlite from 'sqlite';
 import Client from './Client';
@@ -42,7 +41,11 @@ export default class DatabaseManager {
    */
 	public open() {
 		return sqlite.open({
-			driver: Database,
+			/*
+			 * CLI is saying that the sqlite3 import shouldn't be at the top
+			 * But VSC says it should, so fuck it ima use require
+			 */
+			driver: require('sqlite3').Database,
 			filename: this.client.config.database
 		}).then(database => this.rawDatabase = database);
 	}
