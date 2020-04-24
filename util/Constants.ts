@@ -222,7 +222,7 @@ export const Responses = {
 };
 
 export const URLs = {
-	HASTEBIN: (endpointOrID?: string) => `https://hasteb.in${endpointOrID ? `/${endpointOrID}` : ''}`
+	HASTEBIN: (endpointOrID?: string) => `https://paste.nomsy.net${endpointOrID ? `/${endpointOrID}` : ''}`
 };
 
 export const FLAGS_REGEX = /--([a-z]+)=("[^"]*"|[0-9a-z]*)/gi;

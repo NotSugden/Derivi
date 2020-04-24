@@ -5,6 +5,7 @@ import CommandArguments from '../structures/CommandArguments';
 import Message from '../structures/discord.js/Message';
 import CommandManager from '../util/CommandManager';
 import { URLs } from '../util/Constants';
+import Util from '../util/Util';
 
 const util: typeof import('util') = require('util');
 const djs: typeof import('discord.js') = require('discord.js');
@@ -27,6 +28,15 @@ export default class Eval extends Command {
 	public async run(message: Message, args: CommandArguments, {
 		send
 	}: CommandData): Promise<Message | void> {
+		const { string: code, flags } = Util.extractFlags(
+			args.regular.join(' '), [{
+				name: 'silent',
+				type: 'boolean'
+			}, {
+				name: 'async',
+				type: 'boolean'
+			}]
+		);
 		const reverse = (string: string) => string.split('').reverse().join('');
 		const finish = async (result: unknown) => {
 			const inspected = (typeof result === 'string' ? result : util.inspect(result))
@@ -47,8 +57,11 @@ export default class Eval extends Command {
 					),
 					'[ENCRYPTION PASSWORD]'
 				);
+			const respond = (content: unknown, options?: import('discord.js').MessageOptions) => flags.silent ?
+				message.author.send(content, options) as Promise<Message> :
+				send(content, options);
 			if (inspected.length > 1250) {
-				const { key } = await fetch(URLs.HASTEBIN('documents'), {
+				const json = await fetch(URLs.HASTEBIN('documents'), {
 					body: inspected,
 					headers: {
 						'Content-Type': 'application/json'
@@ -56,18 +69,18 @@ export default class Eval extends Command {
 					method: 'POST'
 
 				}).then(response => response.json());
-				return send(
-					key ?
-						`Output was too long, posted to ${URLs.HASTEBIN(key)}` :
+				return respond(
+					json.key ?
+						`Output was too long, posted to ${URLs.HASTEBIN(json.key)}` :
 						'Output was too long for hastebin.'
 				);
 			}
-			return send(inspected, {
+			return respond(inspected, {
 				code: 'js'
 			});
 		};
 		try {
-			let result = await eval(args.regular.join(' '));
+			let result = await eval(flags.async ? `(async() => {${code}})()` : code);
 			if (Array.isArray(result) && result.every(element => typeof element?.then === 'function')) {
 				result = await Promise.all(result);
 			}
