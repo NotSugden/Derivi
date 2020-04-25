@@ -78,6 +78,7 @@ export const CommandErrors = {
 	INVALID_TIME: (time = '2 minutes') => `The time you provided is less than ${time}, which is the minimum.`,
 	INSUFFICIENT_PERMISSIONS: 'You have insufficient permissions to perform this action.',
 	MENTION_USERS: (users = true) => `Please mention at least 1 ${users ? 'user' : 'member'}.`,
+	MENTION_USER: (user = true) => `Please mention a ${user ? 'user' : 'member'}.`,
 	PROVIDE_REASON: 'Please supply a reason for this action.',
 	INVALID_FLAG_TYPE: (flag: string, type: string) => `Flag ${flag} must be ${type}`,
 	INVALID_FLAG: (provided: string, valid: string[]) =>
@@ -111,7 +112,8 @@ export const CommandErrors = {
 		}
 		return `${str}.`;
 	},
-	NOT_ENOUGH_POINTS: (required: number) => `You need at least ${required} points in your wallet to do this.`,
+	NOT_ENOUGH_POINTS: (required: number, wallet = true) =>
+		`You need at least ${required} points in your ${wallet ? 'wallet' : 'vault'} to do this.`,
 	NO_POINTS: (vault = false) => `You do not have any points${vault ? ' in the vault' : ''}.`,
 	UNKNOWN_SHOP_ITEM: (item: string) => `${item} isn't listed in the shop.`,
 	ALREADY_PURCHASED: 'You already own this item.',
@@ -119,6 +121,8 @@ export const CommandErrors = {
 };
 
 export const Responses = {
+	TRANSFER_SUCCESS: (user: User, amount: number) =>
+		`Successfully transferred **${amount}** points to **${user.username}**.`,
 	COLLECTED_DAILY: (amount = 250) => `Collected daily **${amount}** points.`,
 	SUCCESSFUL_PURCHASE: (item: string) => `Successfully purchased **${item}**.`,
 	SHOP_LAYOUT: (items: ShopItems, guild: Guild) => {
@@ -134,8 +138,8 @@ export const Responses = {
 			}
 		}), 'Use `.buy [name]` to buy an item.'];
 	},
-	WITHDRAW_SUCCESS: (amount: number) => `Successfully withdrew ${amount} points.`,
-	DEPOSIT_SUCCESS: (amount: number) => `Successfully deposited ${amount} points.`,
+	WITHDRAW_SUCCESS: (amount: number) => `Successfully withdrew **${amount}** points.`,
+	DEPOSIT_SUCCESS: (amount: number) => `Successfully deposited **${amount}** points.`,
 	VAULT_CHECK: (user: User, amount: number) => 
 		`You have **${amount}** points in your vault.`,
 	POINTS: (user: User, amount: number, self = true) =>
