@@ -98,10 +98,28 @@ export const CommandErrors = {
 		minimum ?
 			'does not have enough' :
 			'has too many'
-	} members for this channel.`
+	} members for this channel.`,
+	INVALID_OPTION: (validOptions: string[], index = 1) => 
+		`Argument ${index} is not a valid option, valid options are ${
+			validOptions.map(option => `\`${option}\``).join(', ')
+		}.`,
+	INVALID_NUMBER: ({ min, max }: { min?: number; max?: number} = {}) => {
+		let str = 'The number you provided is invalid';
+		if (typeof min === 'number') str += `, it must be a minimum of ${min}`;
+		if (typeof max === 'number') {
+			str += `${typeof min === 'number' ? ' and a maximum of' : ', it must be no higher than'} ${max}`;
+		}
+		return `${str}.`;
+	},
+	NOT_ENOUGH_POINTS: (required: number) => `You need at least ${required} points to do this.`,
+	NO_POINTS: (vault = false) => `You do not have any points${vault ? ' in the vault' : ''}.`
 };
 
 export const Responses = {
+	WITHDRAW_SUCCESS: (amount: number) => `Successfully withdrew ${amount} points.`,
+	DEPOSIT_SUCCESS: (amount: number) => `Successfully deposited ${amount} points.`,
+	VAULT_CHECK: (user: User, amount: number) => 
+		`You have **${amount}** points in your vault.`,
 	POINTS: (user: User, amount: number, self = true) =>
 		`${self ? 'You' : 'They'} have **${amount}** points in ${self ? 'your' : 'their'} wallet.`,
 	TOP: (levels: Levels[], guild: Guild) => {
