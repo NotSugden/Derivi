@@ -1,7 +1,7 @@
 import { join } from 'path';
 import { Constants, EmbedFieldData, RoleData, MessageEmbed, Snowflake } from 'discord.js';
 import * as moment from 'moment';
-import Client from './Client';
+import Client, { ShopItems } from './Client';
 import { Invite, PartialMessage } from './Types';
 import Util from './Util';
 import Case from '../structures/Case';
@@ -111,11 +111,27 @@ export const CommandErrors = {
 		}
 		return `${str}.`;
 	},
-	NOT_ENOUGH_POINTS: (required: number) => `You need at least ${required} points to do this.`,
-	NO_POINTS: (vault = false) => `You do not have any points${vault ? ' in the vault' : ''}.`
+	NOT_ENOUGH_POINTS: (required: number) => `You need at least ${required} points in your wallet to do this.`,
+	NO_POINTS: (vault = false) => `You do not have any points${vault ? ' in the vault' : ''}.`,
+	UNKNOWN_SHOP_ITEM: (item: string) => `${item} isn't listed in the shop.`,
+	ALREADY_PURCHASED: 'You already own this item.'
 };
 
 export const Responses = {
+	SUCCESSFUL_PURCHASE: (item: string) => `Successfully purchased **${item}**.`,
+	SHOP_LAYOUT: (items: ShopItems, guild: Guild) => {
+		const RIGHT_ARROW = '<:ASC_RightArrow:608077963635851296>';
+		return [...items.map(item => {
+			if (item.action === 'give_role') {
+				const role = guild.roles.cache.get(item.role_id)!;
+				return `${RIGHT_ARROW} **${role.name}** Role for ${
+					item.cost > 0 ?
+						`**${item.cost}** Points` :
+						'**Free**'
+				}.`;
+			}
+		}), 'Use `.buy [name]` to buy an item.'];
+	},
 	WITHDRAW_SUCCESS: (amount: number) => `Successfully withdrew ${amount} points.`,
 	DEPOSIT_SUCCESS: (amount: number) => `Successfully deposited ${amount} points.`,
 	VAULT_CHECK: (user: User, amount: number) => 
