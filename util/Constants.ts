@@ -114,10 +114,12 @@ export const CommandErrors = {
 	NOT_ENOUGH_POINTS: (required: number) => `You need at least ${required} points in your wallet to do this.`,
 	NO_POINTS: (vault = false) => `You do not have any points${vault ? ' in the vault' : ''}.`,
 	UNKNOWN_SHOP_ITEM: (item: string) => `${item} isn't listed in the shop.`,
-	ALREADY_PURCHASED: 'You already own this item.'
+	ALREADY_PURCHASED: 'You already own this item.',
+	DAILY_WAIT: (time: string) => `You need to wait ${time} to collect your next daily points.`
 };
 
 export const Responses = {
+	COLLECTED_DAILY: (amount = 250) => `Collected daily **${amount}** points.`,
 	SUCCESSFUL_PURCHASE: (item: string) => `Successfully purchased **${item}**.`,
 	SHOP_LAYOUT: (items: ShopItems, guild: Guild) => {
 		const RIGHT_ARROW = '<:ASC_RightArrow:608077963635851296>';

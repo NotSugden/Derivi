@@ -85,9 +85,9 @@ export default class DatabaseManager {
 		}
 		if (typeof daily === 'number' || typeof daily === 'boolean' || daily instanceof Date) {
 			if (daily < 0) throw new RangeError(Errors.NEGATIVE_NUMBER('daily'));
-			const date = new Date(typeof daily === 'number' ?
-				daily :
-				Date.now()
+			const date = new Date(typeof daily === 'boolean' ?
+				Date.now() :
+				daily
 			);
 			set.push(['last_daily', date.toISOString()]);
 			existing.lastDailyTimestamp = date.getTime();
