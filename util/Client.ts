@@ -87,6 +87,7 @@ export default class Client extends DJSClient {
 		staffCommandsChannelID: Snowflake;
 	};
 	public database: DatabaseManager;
+	public lockedPoints = new Set<Snowflake>();
 	public mutes = new Collection<Snowflake, Mute>();
 	public token: string;
 	public webhooks = new Map<string, WebhookClient>();

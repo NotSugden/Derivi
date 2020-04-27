@@ -4,6 +4,7 @@ import * as moment from 'moment';
 import Client, { ShopItems } from './Client';
 import { Invite, PartialMessage } from './Types';
 import Util from './Util';
+import { Card } from '../commands/Points/Blackjack';
 import Case from '../structures/Case';
 import Levels from '../structures/Levels';
 import Warn from '../structures/Warn';
@@ -13,6 +14,61 @@ import Message from '../structures/discord.js/Message';
 import TextChannel from '../structures/discord.js/TextChannel';
 import User from '../structures/discord.js/User';
 /* eslint-disable sort-keys */
+
+const EMOJI_CARDS = [
+	{ suit: 'Diamonds', value: '2', emoji: '<:2D:625291323540504616>' },
+	{ suit: 'Clubs', value: '2', emoji: '<:2C:625291323557150750>' },
+	{ suit: 'Hearts', value: '2', emoji: '<:2H:625291324224045056>' },
+	{ suit: 'Clubs', value: '4', emoji: '<:4C:625291324324839435>' },
+	{ suit: 'Diamonds', value: '3', emoji: '<:3D:625291324333096985>' },
+	{ suit: 'Hearts', value: '3', emoji: '<:3H:625291324337160213>' },
+	{ suit: 'Clubs', value: '3', emoji: '<:3C:625291324341616661>' },
+	{ suit: 'Spades', value: '3', emoji: '<:3S:625291324358262794>' },
+	{ suit: 'Spades', value: '2', emoji: '<:2S:625291324396011520>' },
+	{ suit: 'Diamonds', value: '4', emoji: '<:4D:625291324442148864>' },
+	{ suit: 'Hearts', value: '4', emoji: '<:4H:625291326795284480>' },
+	{ suit: 'Diamonds', value: 'A', emoji: '<:AD:625291327147606017>' },
+	{ suit: 'Hearts', value: 'A', emoji: '<:AH:625291327185223700>' },
+	{ suit: 'Clubs', value: 'A', emoji: '<:AC:625291327252463616>' },
+	{ suit: 'Spades', value: '4', emoji: '<:4S:625291327797461002>' },
+	{ suit: 'Diamonds', value: '5', emoji: '<:5D:625291327927484427>' },
+	{ suit: 'Spades', value: '5', emoji: '<:5S:625291327994593291>' },
+	{ suit: 'Spades', value: '6', emoji: '<:6S:625291328452034580>' },
+	{ suit: 'Diamonds', value: '7', emoji: '<:7D:625291328456228885>' },
+	{ suit: 'Spades', value: '7', emoji: '<:7S:625291328560824331>' },
+	{ suit: 'Hearts', value: '7', emoji: '<:7H:625291328560824333>' },
+	{ suit: 'Hearts', value: '5', emoji: '<:5H:625291328581926922>' },
+	{ suit: 'Diamonds', value: '6', emoji: '<:6D:625291328762413056>' },
+	{ suit: 'Hearts', value: '6', emoji: '<:6H:625291328800161792>' },
+	{ suit: 'Clubs', value: '5', emoji: '<:5C:625291329055752198>' },
+	{ suit: 'Diamonds', value: '8', emoji: '<:8D:625291329257340929>' },
+	{ suit: 'Spades', value: '9', emoji: '<:9S:625291329366130709>' },
+	{ suit: 'Clubs', value: '6', emoji: '<:6C:625291329383170068>' },
+	{ suit: 'Spades', value: '8', emoji: '<:8S:625291329450147860>' },
+	{ suit: 'Diamonds', value: '9', emoji: '<:9D:625291329504673802>' },
+	{ suit: 'Spades', value: '10', emoji: '<:10S:625291329508868096>' },
+	{ suit: 'Hearts', value: '8', emoji: '<:8H:625291329550680074>' },
+	{ suit: 'Hearts', value: '9', emoji: '<:9H:625291329592754187>' },
+	{ suit: 'Spades', value: 'A', emoji: '<:AS:625291329764589579>' },
+	{ suit: 'Hearts', value: '10', emoji: '<:10H:625291329844281345>' },
+	{ suit: 'Clubs', value: '10', emoji: '<:10C:625291330431614977>' },
+	{ suit: 'Clubs', value: '8', emoji: '<:8C:625291330465169408>' },
+	{ suit: 'Clubs', value: '9', emoji: '<:9C:625291330532147240>' },
+	{ suit: 'Clubs', value: '7', emoji: '<:7C:625291331501162506>' },
+	{ suit: 'Diamonds', value: '10', emoji: '<:10D:625291331819798549>' },
+	{ suit: 'Clubs', value: 'J', emoji: '<:JC:625294117039243264>' },
+	{ suit: 'Diamonds', value: 'J', emoji: '<:JD:625294117483839528>' },
+	{ suit: 'Hearts', value: 'J', emoji: '<:JH:625294118138150932>' },
+	{ suit: 'Spades', value: 'K', emoji: '<:KS:625294118171705344>' },
+	{ suit: 'Clubs', value: 'K', emoji: '<:KC:625294118293078027>' },
+	{ suit: 'Diamonds', value: 'K', emoji: '<:KD:625294118599262228>' },
+	{ suit: 'Spades', value: 'J', emoji: '<:JS:625294118683279360>' },
+	{ suit: 'Hearts', value: 'K', emoji: '<:KH:625294119236796416>' },
+	{ suit: 'Clubs', value: 'Q', emoji: '<:QC:625294143131877397>' },
+	{ suit: 'Spades', value: 'Q', emoji: '<:QS:625294144700547072>' },
+	{ suit: 'Hearts', value: 'Q', emoji: '<:QH:625294145451196446>' },
+	{ suit: 'Diamonds', value: 'Q', emoji: '<:QD:625294145702985740>' }
+];
 
 export enum ModerationActionTypes {
 	BAN = Constants.Colors.RED,
@@ -117,10 +173,63 @@ export const CommandErrors = {
 	NO_POINTS: (vault = false) => `You do not have any points${vault ? ' in the vault' : ''}.`,
 	UNKNOWN_SHOP_ITEM: (item: string) => `${item} isn't listed in the shop.`,
 	ALREADY_PURCHASED: 'You already own this item.',
-	DAILY_WAIT: (time: string) => `You need to wait ${time} to collect your next daily points.`
+	DAILY_WAIT: (time: string) => `You need to wait ${time} to collect your next daily points.`,
+	LOCKED_POINTS: (yours = true) =>
+		`${yours ? 'Your' : 'Their'} points are currently locked, this is likely due to ${
+			yours ? 'you' : 'them'
+		} playing a game.`
 };
 
+export type MatchState = 'won' | 'lost' | 'draw' | 'idle'
+
 export const Responses = {
+	GAME_END_STATE: (state: MatchState, bet: number) => `You ${state === 'won' ? 'won' : 'lost'} **${bet}** points.`,
+	BLACKJACK_MESSAGE: (userHand: Card[], dealerHand: Card[], bet: number) => {
+		const mapHand = (hand: Card[]) => hand.map(
+			card => EMOJI_CARDS.find(({ value, suit }) => value === card.value && suit === card.suit)?.emoji
+		).join(' ');
+		const getWeight = (deck: Card[]) => deck.reduce((acc, card) => acc + card.weight, 0);
+		return new MessageEmbed()
+			.setTitle('Blackjack')
+			.setDescription([
+				'Type `hit` for another card, `double` to double bet and draw card or `stand` to end your turn.',
+				'Type `rules` for rules.'
+			])
+			.addFields({
+				name: 'Your hand',
+				value: [
+					mapHand(userHand),
+					`Total: ${getWeight(userHand)}`
+				]
+			}, {
+				name: 'Dealers hand',
+				value: [
+					mapHand(dealerHand),
+					`Total: ${getWeight(dealerHand)}`
+				]
+			})
+			.setFooter(`Your bet: ${bet}`);
+	},
+	BLACKJACK_RULES: () => {
+		const RIGHT_ARROW = '<:ASC_RightArrow:608077963635851296>';
+		return new MessageEmbed()
+			.setTitle('How to play')
+			.addFields({
+				name: 'Goal',
+				value: `${RIGHT_ARROW} beat the dealer's hand without going over 21.`
+			}, {
+				name: 'Moves',
+				value: [
+					`${RIGHT_ARROW} \`Hit\` is to ask for another card.`,
+					`${RIGHT_ARROW} \`Stand\` is to hold your total and end your turn.`,
+					`${RIGHT_ARROW} \`Double\` is to double your bet and add another card to your hand.`,
+					`${RIGHT_ARROW} \`Split\` is to divide hand into two. Can only be done with two of the same card.`
+				]
+			}, {
+				name: 'Outcome',
+				value: `${RIGHT_ARROW} If you go over 21 you bust, and the dealer wins regardless of the dealer's hand.`
+			});
+	},
 	TRANSFER_SUCCESS: (user: User, amount: number) =>
 		`Successfully transferred **${amount}** points to **${user.username}**.`,
 	COLLECTED_DAILY: (amount = 250) => `Collected daily **${amount}** points.`,

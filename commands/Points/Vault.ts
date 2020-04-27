@@ -37,6 +37,10 @@ export default class Vault extends Command {
 			throw new CommandError('INVALID_OPTION', OPTIONS);
 		}
 
+		if (this.client.lockedPoints.has(message.author.id)) {
+			throw new CommandError('LOCKED_POINTS');
+		}
+
 		if (option === 'deposit') {
 			const amount = args[1] === 'all' ? points.amount : parseInt(args[1]);
 			if (points.amount === 0) {

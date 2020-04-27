@@ -18,9 +18,15 @@ export default class Transfer extends Command {
 	}
 
 	public async run(message: Message, args: CommandArguments, { send }: CommandData) {
+		if (this.client.lockedPoints.has(message.author.id)) {
+			throw new CommandError('LOCKED_POINTS');
+		}
 		const user = await Util.users(message, 1);
 		if (!user) {
 			throw new CommandError('MENTION_USER');
+		}
+		if (this.client.lockedPoints.has(user.id)) {
+			throw new CommandError('LOCKED_POINTS', false);
 		}
 
 		const transferAmount = parseInt(args[1]);

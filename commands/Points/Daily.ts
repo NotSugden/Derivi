@@ -18,6 +18,9 @@ export default class Daily extends Command {
 	}
 
 	public async run(message: Message, args: CommandArguments, { send }: CommandData) {
+		if (this.client.lockedPoints.has(message.author.id)) {
+			throw new CommandError('LOCKED_POINTS');
+		}
 		const points = await this.client.database.points(message.author);
 		if (points.lastDailyTimestamp > (Date.now() - 864e+5)) {
 			throw new CommandError('DAILY_WAIT', moment(Date.now()).to(points.lastDailyTimestamp + 864e+5, true));

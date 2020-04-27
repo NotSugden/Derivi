@@ -19,6 +19,9 @@ export default class Shop extends Command {
 	}
 
 	public async run(message: Message, args: CommandArguments, { send }: CommandData) {
+		if (this.client.lockedPoints.has(message.author.id)) {
+			throw new CommandError('LOCKED_POINTS');
+		}
 		if (!args[0]) {
 			return send(Responses.SHOP_LAYOUT(this.client.config.shopItems, message.guild!));
 		}
