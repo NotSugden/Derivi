@@ -74,7 +74,8 @@ export enum ModerationActionTypes {
 	BAN = Constants.Colors.RED,
 	KICK = Constants.Colors.ORANGE,
 	MUTE = Constants.Colors.GREY,
-	WARN = Constants.Colors.YELLOW
+	WARN = Constants.Colors.YELLOW,
+	SOFT_BAN = Constants.Colors.PURPLE
 }
 
 const hyperlink = (name: string, url: string) => `[${name}](${url})`;
@@ -338,8 +339,11 @@ export const Responses = {
 		return [...description, `Reason: ${reason}`];
 	},
 
-	AUDIT_LOG_MEMBER_REMOVE: (moderator: User, caseID: number, kick = true) =>
-		`${kick ? 'Kicked' : 'Banned'} by ${moderator.tag}: Case ${caseID}`,
+	AUDIT_LOG_MEMBER_REMOVE: (moderator: User, caseID: number, kick: boolean | null = true) =>
+		`${kick ?
+			'Kicked' :
+			kick === null ? 'Softbanned' : 'Banned'
+		} by ${moderator.tag}: Case ${caseID}`,
 
 	/**
    * Big spaghetti code ;(
@@ -349,10 +353,10 @@ export const Responses = {
 		filteredUsers?: User[];
 		members?: GuildMember[];
 		users: User[];
-	}, kick = true) => {
+	}, kick: boolean | null = true) => {
 
 		const content = [
-			`${kick ? 'Kicked' : 'Banned'} ${
+			`${kick ? 'Kicked' : kick === null ? 'Softbanned' : 'Banned'} ${
 				(members || users).length === 1 ?
 					(members ? members[0].user : users[0]).tag :
 					`${(members || users).length} members`
@@ -364,7 +368,7 @@ export const Responses = {
 		if (array.length !== users.length) {
 			const amount = users.length - array.length;
 			content.push(`Couldn't ${
-				kick ? 'kick' : 'ban'
+				kick ? 'kick' : kick === null ? 'softban' : 'ban'
 			} ${amount} other user${amount > 1 ? 's' : ''}, as they had already ${
 				kick ? 'left/been kicked' : 'been banned'
 			}.`);

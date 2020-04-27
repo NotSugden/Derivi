@@ -27,10 +27,6 @@ export default class Ban extends Command {
 				required: true,
 				type: 'user'
 			}, {
-				type: '--days=7'
-			}, {
-				type: '--silent=true'
-			}, {
 				required: true,
 				type: 'reason'
 			}]
@@ -45,6 +41,9 @@ export default class Ban extends Command {
 				type: 'number'
 			}, {
 				name: 'silent',
+				type: 'boolean'
+			}, {
+				name: 'soft',
 				type: 'boolean'
 			}]
 		});
@@ -67,9 +66,13 @@ export default class Ban extends Command {
 
 		const banOptions = {} as BanOptions;
 
+		if (flags.soft) {
+			banOptions.days = 7;
+		}
+
 		if (typeof flags.days === 'number') {
 			const { days } = flags;
-			if (days < 1 || days > 7 ) {
+			if (days < 1 || days > 7) {
 				throw new CommandError(
 					'INVALID_FLAG_TYPE',
 					'days', 'an integer bigger than 0 and lower than 8'
@@ -97,7 +100,7 @@ export default class Ban extends Command {
 		const { id: caseID } = await Util.sendLog(
 			message.author,
 			filteredUsers,
-			'BAN',
+			flags.soft ? 'SOFT_BAN' : 'BAN',
 			extras
 		);
 
@@ -109,6 +112,9 @@ export default class Ban extends Command {
 				user
 			});
 			await guild.members.ban(user, banOptions);
+			if (flags.soft) {
+				await guild.members.unban(user.id);
+			}
 		}
 
 		if (!flags.silent) {
