@@ -66,12 +66,10 @@ export default (async message => {
 				const invite = await client.fetchInvite(message.invites[0]);
 				if (!invite.guild) throw new CommandError('GROUP_INVITE').dm();
 				else if (invite.guild.id === client.config.defaultGuildID) {
-					await message.delete();
 					throw new CommandError('UNKNOWN_INVITE', invite.code).dm();
 				}
 
 				if (invite.memberCount < partnerChannel.minimum || invite.memberCount > partnerChannel.maximum) {
-					await message.delete();
 					throw new CommandError('PARTNER_MEMBER_COUNT', invite.memberCount < partnerChannel.minimum).dm();
 				}
 
@@ -84,7 +82,7 @@ export default (async message => {
 
 				return;
 			} catch (error) {
-				if (message.deletable) await message.delete();
+				await message.delete();
 				if (error.message === 'The user is banned from this guild.'){
 					throw new CommandError('CLIENT_BANNED_INVITE').dm();
 				} else if (error.message === 'Unknown Invite') {
