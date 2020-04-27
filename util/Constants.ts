@@ -183,6 +183,10 @@ export const CommandErrors = {
 export type MatchState = 'won' | 'lost' | 'draw' | 'idle'
 
 export const Responses = {
+	POINTS_MODIFY: (user: User, amount: number, mode: 'add' | 'set' | 'remove') => {
+		if (mode === 'set') return `Successfully set ${user.username}'s points to ${amount}.`;
+		return `Successfully ${mode === 'add' ? 'added' : 'removed'} ${amount} points from ${user.username}.`;
+	},
 	GAME_END_STATE: (state: MatchState, bet: number) => `You ${state === 'won' ? 'won' : 'lost'} **${bet}** points.`,
 	BLACKJACK_MESSAGE: (userHand: Card[], dealerHand: Card[], bet: number) => {
 		const mapHand = (hand: Card[]) => hand.map(
