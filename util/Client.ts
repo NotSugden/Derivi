@@ -74,6 +74,7 @@ export default class Client extends DJSClient {
 		prefix: string[];
 		reactionRoles: Map<Snowflake, Map<string, Snowflake>>;
 		reportsRegex: RegExp[];
+		shopItems: ShopItems;
 		readonly partnerRewardsChannel: TextChannel;
 		partnerRewardsChannelID: Snowflake;
 		readonly punishmentChannel: TextChannel;
@@ -86,6 +87,7 @@ export default class Client extends DJSClient {
 		staffCommandsChannelID: Snowflake;
 	};
 	public database: DatabaseManager;
+	public lockedPoints = new Set<Snowflake>();
 	public mutes = new Collection<Snowflake, Mute>();
 	public token: string;
 	public webhooks = new Map<string, WebhookClient>();
@@ -152,6 +154,7 @@ export default class Client extends DJSClient {
 				return commandManager.client.channels.resolve(this.rulesChannelID);
 			},
 			rulesChannelID: config.rules_channel,
+			shopItems: config.shop_items,
 			get staffCommandsChannel() {
 				return commandManager.client.channels.resolve(this.staffCommandsChannelID);
 			},
@@ -292,6 +295,7 @@ export interface ClientConfig {
 	report_regex: string[];
 	rules_channel: Snowflake;
 	staff_commands_channel: Snowflake;
+	shop_items: ShopItems;
 	token: string;
 	webhooks: {
 		name: string;
@@ -299,3 +303,10 @@ export interface ClientConfig {
 		token: string;
 	}[];
 }
+
+export type ShopItems = {
+	action: 'give_role';
+	cost: number;
+	role_id: Snowflake;
+}[]
+// at some point later on more actions would be added to this

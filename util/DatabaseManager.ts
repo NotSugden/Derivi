@@ -60,7 +60,7 @@ export default class DatabaseManager {
 	): Promise<Points>;
 	public async setPoints(
 		user: UserResolvable,
-		{ points, vault, daily }: { points?: number; vault?: number; daily?: boolean | number }
+		{ points, vault, daily }: { points?: number; vault?: number; daily?: boolean | number | Date }
 	) {
 		const userID = this.client.users.resolveID(user);
 		const error = new Error(Errors.POINTS_RESOLVE_ID(false));
@@ -73,7 +73,7 @@ export default class DatabaseManager {
 			else throw err;
 		}
 
-		const set: [Exclude<keyof RawPoints, 'id'>, number][] = [];
+		const set: [Exclude<keyof RawPoints, 'id'>, number | string][] = [];
 
 		if (typeof points === 'number') {
 			if (points < 0) throw new RangeError(Errors.NEGATIVE_NUMBER('points'));
@@ -83,9 +83,14 @@ export default class DatabaseManager {
 			if (vault < 0) throw new RangeError(Errors.NEGATIVE_NUMBER('vault'));
 			set.push(['vault', existing.vault = vault]);
 		}
-		if (typeof daily === 'number' || daily) {
+		if (typeof daily === 'number' || typeof daily === 'boolean' || daily instanceof Date) {
 			if (daily < 0) throw new RangeError(Errors.NEGATIVE_NUMBER('daily'));
-			set.push(['last_daily', existing.lastDailyTimestamp = typeof daily === 'number' ? daily : Date.now()]);
+			const date = new Date(typeof daily === 'boolean' ?
+				Date.now() :
+				daily
+			);
+			set.push(['last_daily', date.toISOString()]);
+			existing.lastDailyTimestamp = date.getTime();
 		}
 
 		await this.rawDatabase!.run(
