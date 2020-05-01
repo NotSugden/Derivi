@@ -1,6 +1,6 @@
 {
 	"name": "asc-rewrite",
-	"version": "1.4.0-dev",
+	"version": "2.0.0-dev",
 	"description": "The ASC bot",
 	"main": "index.js",
 	"scripts": {
@@ -18,12 +18,14 @@
 	"homepage": "https://github.com/NotSugden/ASC-rewrite#readme",
 	"dependencies": {
 		"@naval-base/ms": "^3.1.0",
+		"@types/mysql": "^2.15.10",
 		"@types/node": "^13.7.7",
 		"@types/node-fetch": "^2.5.5",
 		"@types/ws": "^7.2.2",
 		"discord.js": "github:discordjs/discord.js",
 		"eslint-plugin-import": "^2.20.1",
 		"moment": "^2.24.0",
+		"mysql": "git+https://github.com/nwoltman/node-mysql.git#caching-sha2-password",
 		"sqlite": "^4.0.7"
 	},
 	"devDependencies": {

@@ -47,6 +47,6 @@ export default class Points {
 export interface RawPoints {
 	user_id: Snowflake;
 	amount: number;
-	last_daily: string;
+	last_daily: Date;
 	vault: number;
 }

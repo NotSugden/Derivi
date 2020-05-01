@@ -5,6 +5,12 @@
 	"attachment_files_url": "https://someurl.com/files",
 	"attachment_logging": false,
 	"default_guild": "123456789012345678",
+	"database": {
+		"host": "localhost",
+		"user": "root",
+		"password": "A secure password",
+		"database": "main"
+	},
 	"encryption_password": "A secure password",
 	"prefix": ["+"],
 	"punishment_channel": "123456789012345678",

@@ -1,6 +1,5 @@
 import * as fs from 'fs';
 import { promisify } from 'util';
-import { deprecate } from 'util';
 import {
 	Client as DJSClient,
 	ClientOptions,
@@ -12,6 +11,7 @@ import {
 	ClientEvents,
 	MessageReaction
 } from 'discord.js';
+import * as mysql from 'mysql';
 import CommandManager from './CommandManager';
 import { Defaults, Errors } from './Constants';
 import DatabaseManager from './DatabaseManager';
@@ -98,18 +98,12 @@ export default class Client extends DJSClient {
 
 		const commandManager = new CommandManager(this, config.commands_dir as string);
 		this.commands = commandManager;
-		this.database = new DatabaseManager(this);
+		this.database = new DatabaseManager(this, config.database);
 
 		this.token = config.token;
 
 		for (const webhook of config.webhooks) {
 			this.webhooks.set(webhook.name, new WebhookClient(webhook.id, webhook.token, this.options));
-		}
-
-		if (!Array.isArray(config.prefix)) {
-			deprecate(() => {
-				config.prefix = [config.prefix as string];
-			}, 'config.prefix as string will be removed in favour of an array of strings.')();
 		}
 
 		Object.defineProperty(this, 'config', { value: {
@@ -272,10 +266,10 @@ export interface ClientConfig {
 	attachment_logging: boolean;
 	commands_dir?: string;
 	encryption_password: string;
-	database?: string;
+	database: mysql.ConnectionConfig;
 	default_guild: Snowflake;
 	files_dir?: string;
-	prefix: string | string[];
+	prefix: string[];
 	partner_rewards_channel: Snowflake;
 	partnership_channels: {
 		id: Snowflake;

@@ -79,6 +79,6 @@ export interface RawCase {
 	moderator_id: Snowflake;
 	reason: string;
 	screenshots: string;
-	timestamp: number;
+	timestamp: Date;
 	user_ids: string;
 }

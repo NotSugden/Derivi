@@ -68,13 +68,12 @@ export default class Case extends Command {
 				await msg.edit(`Case ${data.id - 1}`, new MessageEmbed(msg.embeds[0]));
 				await DJSUtil.delayFor(2500);
 			}
-			await this.client.database.rawQuery(
-				'UPDATE sqlite_sequence SET seq = seq - 1 WHERE name = ?',
-				'cases'
-			);
-			await this.client.database.rawQuery(
+			await this.client.database.query(
 				'UPDATE cases SET id = id - 1 WHERE id > ?',
 				caseID
+			);
+			await this.client.database.query(
+				'ALTER TABLE cases AUTO_INCREMENT = 1'
 			);
 
 			return response.edit(Responses.DELETE_CASE(caseID, true)) as Promise<Message>; 

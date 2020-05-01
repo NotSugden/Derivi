@@ -51,7 +51,7 @@ export default class Mute {
 
 	public delete() {
 		this.client.mutes.delete(this.userID);
-		return this.client.database.deleteMute(this.userID) as Promise<true>;
+		return this.client.database.deleteMute(this.userID);
 	}
 
 	get endAt() {
@@ -68,7 +68,7 @@ export default class Mute {
 }
 
 export interface RawMute {
-	end: string;
-	start: string;
+	end: Date;
+	start: Date;
 	user_id: Snowflake;
 }
