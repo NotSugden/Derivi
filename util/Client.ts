@@ -1,6 +1,5 @@
 import * as fs from 'fs';
 import { promisify } from 'util';
-import { deprecate } from 'util';
 import {
 	Client as DJSClient,
 	ClientOptions,
@@ -12,6 +11,7 @@ import {
 	ClientEvents,
 	MessageReaction
 } from 'discord.js';
+import * as mysql from 'mysql';
 import CommandManager from './CommandManager';
 import { Defaults, Errors } from './Constants';
 import DatabaseManager from './DatabaseManager';
@@ -74,6 +74,7 @@ export default class Client extends DJSClient {
 		prefix: string[];
 		reactionRoles: Map<Snowflake, Map<string, Snowflake>>;
 		reportsRegex: RegExp[];
+		shopItems: ShopItems;
 		readonly partnerRewardsChannel: TextChannel;
 		partnerRewardsChannelID: Snowflake;
 		readonly punishmentChannel: TextChannel;
@@ -86,6 +87,7 @@ export default class Client extends DJSClient {
 		staffCommandsChannelID: Snowflake;
 	};
 	public database: DatabaseManager;
+	public lockedPoints = new Set<Snowflake>();
 	public mutes = new Collection<Snowflake, Mute>();
 	public token: string;
 	public webhooks = new Map<string, WebhookClient>();
@@ -96,18 +98,12 @@ export default class Client extends DJSClient {
 
 		const commandManager = new CommandManager(this, config.commands_dir as string);
 		this.commands = commandManager;
-		this.database = new DatabaseManager(this);
+		this.database = new DatabaseManager(this, config.database);
 
 		this.token = config.token;
 
 		for (const webhook of config.webhooks) {
 			this.webhooks.set(webhook.name, new WebhookClient(webhook.id, webhook.token, this.options));
-		}
-
-		if (!Array.isArray(config.prefix)) {
-			deprecate(() => {
-				config.prefix = [config.prefix as string];
-			}, 'config.prefix as string will be removed in favour of an array of strings.')();
 		}
 
 		Object.defineProperty(this, 'config', { value: {
@@ -152,6 +148,7 @@ export default class Client extends DJSClient {
 				return commandManager.client.channels.resolve(this.rulesChannelID);
 			},
 			rulesChannelID: config.rules_channel,
+			shopItems: config.shop_items,
 			get staffCommandsChannel() {
 				return commandManager.client.channels.resolve(this.staffCommandsChannelID);
 			},
@@ -269,10 +266,10 @@ export interface ClientConfig {
 	attachment_logging: boolean;
 	commands_dir?: string;
 	encryption_password: string;
-	database?: string;
+	database: mysql.ConnectionConfig;
 	default_guild: Snowflake;
 	files_dir?: string;
-	prefix: string | string[];
+	prefix: string[];
 	partner_rewards_channel: Snowflake;
 	partnership_channels: {
 		id: Snowflake;
@@ -292,6 +289,7 @@ export interface ClientConfig {
 	report_regex: string[];
 	rules_channel: Snowflake;
 	staff_commands_channel: Snowflake;
+	shop_items: ShopItems;
 	token: string;
 	webhooks: {
 		name: string;
@@ -299,3 +297,10 @@ export interface ClientConfig {
 		token: string;
 	}[];
 }
+
+export type ShopItems = {
+	action: 'give_role';
+	cost: number;
+	role_id: Snowflake;
+}[]
+// at some point later on more actions would be added to this

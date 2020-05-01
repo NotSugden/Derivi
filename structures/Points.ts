@@ -25,10 +25,20 @@ export default class Points {
 		return this.client.users.resolve(this.userID);
 	}
 
-	public set({ points, vault, daily }: { points?: number; vault: number; daily?: boolean | number }): Promise<Points>;
-	public set({ points, vault, daily }: { points: number; vault?: number; daily?: boolean | number }): Promise<Points>;
-	public set({ points, vault, daily }: { points?: number; vault?: number; daily?: boolean | number }) {
-		return this.client.database.setPoints(this.userID, { daily, points, vault } as {
+	public set({ points, vault, daily }: {
+		points?: number; vault: number;
+		daily?: boolean | number | string | Date;
+	}): Promise<Points>;
+	public set({ points, vault, daily }: {
+		points: number; vault?: number;
+		daily?: boolean | number | string | Date;
+	}): Promise<Points>;
+	public set({ points, vault, daily }: {
+		points?: number; vault?: number;
+		daily?: boolean | number | string | Date;
+	}) {
+		return this.client.database.setPoints(this.userID, {
+			daily: typeof daily === 'string' ? new Date(daily) : daily, points, vault } as {
       points: number; vault?: number; daily?: boolean | number;
     });
 	}
@@ -37,6 +47,6 @@ export default class Points {
 export interface RawPoints {
 	user_id: Snowflake;
 	amount: number;
-	last_daily: string;
+	last_daily: Date;
 	vault: number;
 }

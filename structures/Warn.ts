@@ -38,6 +38,6 @@ export interface RawWarn {
 	case_id: number;
 	moderator_id: Snowflake;
 	reason: string;
-	timestamp: string;
+	timestamp: Date;
 	user_id: Snowflake;
 }

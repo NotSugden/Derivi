@@ -5,6 +5,12 @@
 	"attachment_files_url": "https://someurl.com/files",
 	"attachment_logging": false,
 	"default_guild": "123456789012345678",
+	"database": {
+		"host": "localhost",
+		"user": "root",
+		"password": "A secure password",
+		"database": "main"
+	},
 	"encryption_password": "A secure password",
 	"prefix": ["+"],
 	"punishment_channel": "123456789012345678",
@@ -34,5 +40,10 @@
 		"minimum": 1000,
 		"maximum": null,
 		"points": 2500
+	}],
+	"shop_items": [{
+		"action": "give_role",
+		"cost": 1000,
+		"role_id": "123456789012345678"
 	}]
 }

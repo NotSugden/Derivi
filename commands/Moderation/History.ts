@@ -1,5 +1,4 @@
 import ms from '@naval-base/ms';
-import Case, { RawCase } from '../../structures/Case';
 import Command, { CommandData } from '../../structures/Command';
 import CommandArguments from '../../structures/CommandArguments';
 import Message from '../../structures/discord.js/Message';
@@ -44,11 +43,9 @@ export default class History extends Command {
 		if (time < 432e5 && time !== -1) throw new CommandError('INVALID_TIME', '12 hours');
 
 		// until i think of a better way
-		const data = await this.client.database.rawQuery<RawCase[]>(
-			'SELECT * FROM cases WHERE timestamp > ?',
-			time === -1 ? 0 : (Date.now() - time)
-		).then(cases => Responses.HISTORY(cases
-			.map(caseData => new Case(this.client, caseData))
+		const data = await this.client.database.case({
+			after: time === -1 ? new Date(0) : new Date(Date.now() - time)
+		}).then(cases => Responses.HISTORY(cases
 			.filter(caseData => caseData.userIDs.some(userID => users.has(userID))))
 		);
 		

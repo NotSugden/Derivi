@@ -62,9 +62,9 @@ export default class Case {
 		const embed = new MessageEmbed(message.embeds[0]);
 		const field = embed.fields.find(field => field.name === 'Screenshots');
 		if (field) {
-			field.value = urls.join('\n');
+			field.value = this.screenshots.join('\n');
 		} else {
-			embed.addField('Screenshots', urls.join('\n'));
+			embed.addField('Screenshots', this.screenshots.join('\n'));
 		}
 		await message.edit(`Case ${this.id}`, embed);
 		return this;
@@ -79,6 +79,6 @@ export interface RawCase {
 	moderator_id: Snowflake;
 	reason: string;
 	screenshots: string;
-	timestamp: number;
+	timestamp: Date;
 	user_ids: string;
 }
