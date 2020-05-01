@@ -48,16 +48,22 @@ export default class Attach extends Command {
 			return send('Attachment Logging needs to be enabled to use this command');
 		}
 		const caseID = parseInt(args[0]);
-		if (isNaN(caseID)) throw new CommandError('INVALID_CASE_ID', args[0] || '');
+		if (isNaN(caseID)) {
+			throw new CommandError('INVALID_CASE_ID', args[0] || '');
+		}
 
 		const caseData = await message.client.database.case(caseID);
 
-		if (!caseData) throw new CommandError('INVALID_CASE_ID', args[0]);
+		if (!caseData) {
+			throw new CommandError('INVALID_CASE_ID', args[0]);
+		}
 
 		if (
 			!message.attachments.size ||
 			message.attachments.some(({ proxyURL }) => !VALID_EXTENSIONS.includes(extname(proxyURL).slice(1)))
-		) throw new CommandError('PROVIDE_ATTACHMENT', VALID_EXTENSIONS);
+		) {
+			throw new CommandError('PROVIDE_ATTACHMENT', VALID_EXTENSIONS);
+		}
 
 		const urls = [];
 		for (const attachment of message.attachments.values()) {

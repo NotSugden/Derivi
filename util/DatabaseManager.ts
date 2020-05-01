@@ -183,10 +183,34 @@ export default class DatabaseManager {
 		return new Levels(this.client, data);
 	}
 
+	public async deleteCase(id: number) {
+		const { changes } = await this.rawDatabase!.run('DELETE FROM cases WHERE id = ?', id);
+		return Boolean(changes);
+	}
+
+	public async case(options: { after?: number; before?: number }): Promise<Case[]>;
 	public async case(id: number): Promise<Case | null>;
 	public async case(ids: number[]): Promise<(Case | null)[]>;
-	public async case(id: number | number[]) {
+	public async case(id: number | number[] | { after?: number; before?: number }) {
 		if (Array.isArray(id)) return Promise.all(id.map(i => this.case(i)));
+		if (typeof id === 'object') {
+
+			const values: [string[], number[]] = [[], []];
+			if (typeof id.after === 'number') {
+				values[0].push('id > ?');
+				values[1].push(id.after);
+			}
+			if (typeof id.before === 'number') {
+				values[0].push('id < ?');
+				values[1].push(id.before);
+			}
+
+			const cases = await this.rawDatabase!.all<RawCase[]>(
+				`SELECT * FROM cases WHERE ${values[0].join(' AND ')}`,
+				...values[1]
+			);
+			return cases.map(data => new Case(this.client, data));
+		}
 		const data = await this.rawDatabase!.get<RawCase>('SELECT * FROM cases WHERE id = ?', id);
 		if (!data) return null;
 		return new Case(this.client, data);

@@ -1,16 +1,35 @@
 import * as crypto from 'crypto';
 import { Collection, Snowflake, MessageEmbed } from 'discord.js';
 import CommandError from './CommandError';
-import { ModerationActionTypes, Responses, FLAGS_REGEX } from './Constants';
+import { ModerationActionTypes, Responses, FLAGS_REGEX, OPTIONS_REGEX } from './Constants';
 import GuildMember from '../structures/discord.js/GuildMember';
 import Message from '../structures/discord.js/Message';
 import User from '../structures/discord.js/User';
+
+const arrToObject = <T extends string>(array: T[], fn: (key: string, index: number) => unknown) => {
+	const obj: { [key: string]: unknown } = {};
+	for (let i = 0;i < array.length;i++) {
+		const key = array[i];
+		obj[key] = fn(key, i);
+	}
+	return obj as { [K in T]: null };
+};
 
 const getCipherKey = (password: string) => crypto.createHash('sha256')
 	.update(password)
 	.digest();
 
 export default class Util {
+
+	static getOptions<T extends string>(string: string, options: T[]) {
+		const given = [...string.matchAll(OPTIONS_REGEX)]
+			.map(arr => arr.slice(1)) as [T, string][];
+		const obj: { [K in T]: string | null } = arrToObject(options, () => null);
+		for (const [name, value] of given) {
+			obj[name] = value.startsWith('"') ? value.slice(1, value.length - 1) : value;
+		}
+		return obj;
+	}
 
 	static extractFlags(string: string, flagTypes?: Flag[]): {
 		flags: FlagData;

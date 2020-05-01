@@ -70,13 +70,13 @@ const EMOJI_CARDS = [
 	{ suit: 'Diamonds', value: 'Q', emoji: '<:QD:625294145702985740>' }
 ];
 
-export enum ModerationActionTypes {
-	BAN = Constants.Colors.RED,
-	KICK = Constants.Colors.ORANGE,
-	MUTE = Constants.Colors.GREY,
-	WARN = Constants.Colors.YELLOW,
-	SOFT_BAN = Constants.Colors.PURPLE
-}
+export const ModerationActionTypes = {
+	BAN: Constants.Colors.RED,
+	KICK: Constants.Colors.ORANGE,
+	MUTE: Constants.Colors.GREY,
+	WARN: Constants.Colors.YELLOW,
+	SOFT_BAN: Constants.Colors.PURPLE
+};
 
 const hyperlink = (name: string, url: string) => `[${name}](${url})`;
 
@@ -178,12 +178,27 @@ export const CommandErrors = {
 	LOCKED_POINTS: (yours = true) =>
 		`${yours ? 'Your' : 'Their'} points are currently locked, this is likely due to ${
 			yours ? 'you' : 'them'
-		} playing a game.`
+		} playing a game.`,
+	NOT_PERMITTED_CASE_DELETE:
+		'You\'re not permitted to delete this case, ' +
+		'you must either be the person who issued it or have the `Administrator` permission.',
+	NO_OPTIONS: (valid: string[]) =>
+		`You have not provided any options, use the format \`optionName="value"\`, valid options are ${
+			valid.map(opt => `\`${opt}\``).join(', ')
+		}.`,
+	INVALID_OPTION_TYPE: (option: string, validTypes: string[]) =>
+		`Option ${option} is not valid, it should be one of ${
+			validTypes.map(type => `\`${type}\``).join(', ')
+		}.`
 };
 
 export type MatchState = 'won' | 'lost' | 'draw' | 'idle'
 
 export const Responses = {
+	DELETE_CASE: (caseID: number, deleted = false) => {
+		if (!deleted) return `Deleting case ${caseID}, this may take a while to complete.`;
+		return `Deleted case ${caseID}.`;
+	},
 	POINTS_MODIFY: (user: User, amount: number, mode: 'add' | 'set' | 'remove') => {
 		if (mode === 'set') return `Successfully set ${user.username}'s points to ${amount}.`;
 		return `Successfully ${mode === 'add' ? 'added' : 'removed'} ${amount} points from ${user.username}.`;
@@ -387,6 +402,7 @@ export const URLs = {
 };
 
 export const FLAGS_REGEX = /--([a-z]+)=("[^"]*"|[0-9a-z]*)/gi;
+export const OPTIONS_REGEX = /([a-z]*)=("[^"]*"|[0-9a-z]*)/gi;
 
 export const EventResponses = {
 	INVITE_CREATE: (invite: Invite) => {
