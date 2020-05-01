@@ -60,7 +60,9 @@ export default class Attach extends Command {
 
 		if (
 			!message.attachments.size ||
-			message.attachments.some(({ proxyURL }) => !VALID_EXTENSIONS.includes(extname(proxyURL).slice(1)))
+			message.attachments.some(({ proxyURL }) => !VALID_EXTENSIONS.includes(
+				extname(proxyURL).slice(1).toLowerCase()
+			))
 		) {
 			throw new CommandError('PROVIDE_ATTACHMENT', VALID_EXTENSIONS);
 		}
