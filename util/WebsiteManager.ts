@@ -40,11 +40,15 @@ export default class WebsiteManager extends EventEmitter {
 				}
 			});
 		return new Promise<this>((resolve, reject) => {
+			// using clearTimeout just brings up issues with eslints
+			let resolved = false;
 			const onReady = () => {
+				resolved = true;
 				resolve(this);
 			};
 			this.once('ready', onReady);
 			setTimeout(() => {
+				if (resolved) return;
 				try {
 					childProcess.kill();
 				} catch { } // eslint-disable-line no-empty
