@@ -128,7 +128,7 @@ export default class Client extends DJSClient {
 					points: data.points
 				}
 			])),
-			prefix: config.prefix as string[],
+			prefix: config.prefix,
 			get punishmentChannel() {
 				return commandManager.client.channels.resolve(this.punishmentChannelID);
 			},
