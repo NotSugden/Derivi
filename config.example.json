@@ -45,5 +45,10 @@
 		"action": "give_role",
 		"cost": 1000,
 		"role_id": "123456789012345678"
-	}]
+	}],
+	"website": {
+		"enabled": true,
+		"filename": "index.js",
+		"directory": "/path/to/directory"
+	}
 }

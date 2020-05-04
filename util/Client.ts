@@ -16,6 +16,7 @@ import CommandManager from './CommandManager';
 import { Defaults, Errors } from './Constants';
 import DatabaseManager from './DatabaseManager';
 import { Invite, PartialMessage } from './Types';
+import WebsiteManager from './WebsiteManager';
 import Mute from '../structures/Mute';
 import DMChannel from '../structures/discord.js/DMChannel';
 import Guild from '../structures/discord.js/Guild';
@@ -91,13 +92,13 @@ export default class Client extends DJSClient {
 	public mutes = new Collection<Snowflake, Mute>();
 	public token: string;
 	public webhooks = new Map<string, WebhookClient>();
+	public website?: WebsiteManager;
 
 	constructor(config: ClientConfig, options: ClientOptions) {
 		super(options);
 		DJSUtil.mergeDefault(Defaults.CLIENT_CONFIG, config);
 
-		const commandManager = new CommandManager(this, config.commands_dir as string);
-		this.commands = commandManager;
+		const commandManager = this.commands = new CommandManager(this, config.commands_dir as string);
 		this.database = new DatabaseManager(this, config.database);
 
 		this.token = config.token;
@@ -157,6 +158,10 @@ export default class Client extends DJSClient {
 		Object.defineProperty(this.config, 'encryptionPassword', {
 			value: config.encryption_password
 		});
+
+		if (config.website?.enabled) {
+			this.website = new WebsiteManager(this, config.website);
+		}
 	}
 
 	public on<K extends keyof Events>(event: K, listener: (...args: Events[K]) => void): this {
@@ -175,6 +180,7 @@ export default class Client extends DJSClient {
 		return new Promise<this>((resolve, reject) => {
 			const handler = async () => {
 				try {
+					await DJSUtil.delayFor(2500);
 					await this._validateConfig();
 					const mutes = await this.database.mute(true);
 					for (const mute of mutes) {
@@ -192,7 +198,10 @@ export default class Client extends DJSClient {
 			};
 			this.once(Constants.Events.CLIENT_READY, handler);
 			this.login(token)
-				.catch(error => {
+				.then(() => {
+					if (!this.website) return;
+					return this.website.spawn();
+				}).catch(error => {
 					this.off(Constants.Events.CLIENT_READY, handler);
 					this.disconnect()
 						.then(() => reject(error))
@@ -296,6 +305,11 @@ export interface ClientConfig {
 		id: Snowflake;
 		token: string;
 	}[];
+	website?: {
+		enabled: boolean;
+		filename: string;
+		directory: string;
+	};
 }
 
 export type ShopItems = {
