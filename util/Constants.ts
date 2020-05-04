@@ -81,7 +81,7 @@ export const ModerationActionTypes = {
 const hyperlink = (name: string, url: string) => `[${name}](${url})`;
 
 const messageURL = (guildID: Snowflake, channelID: Snowflake, messageID: Snowflake) =>
-	`https://discordapp.com/channels/${guildID}/${channelID}/${messageID}`;
+	`https://discord.com/channels/${guildID}/${channelID}/${messageID}`;
 
 export const Defaults = {
 	CLIENT_CONFIG: {
@@ -484,7 +484,7 @@ export const EventResponses = {
 			}
 			/** 
 		 	 * Not using an else if as roles can be both removed and added
-		 	 * see https://discordapp.com/developers/docs/resources/guild#modify-guild-member
+		 	 * see https://discord.com/developers/docs/resources/guild#modify-guild-member
 		 	 */
 			if (removedRoles.size) {
 			// I'm not using role mentions here as the log channel is in a different guild
