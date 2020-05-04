@@ -91,8 +91,8 @@ export default class WebsiteManager extends EventEmitter {
 					result = error;
 				}
 				this.process!.send({
-					_responseID: message._responseID,
-					_result: result
+					_data: { result },
+					_responseID: message._responseID
 				}, errorCB);
 			} else if (action.type === 'GET_GUILD_MEMBERS') {
 				const membersMap = (member: GuildMember | null) => {
@@ -127,14 +127,21 @@ export default class WebsiteManager extends EventEmitter {
 						}
 					}
 					return this.process!.send({
-						_members: members.map(membersMap),
+						_data: {
+							members: members.map(membersMap)
+						},
 						_responseID: message._responseID
 					});
 				} else if (action.query) {
 					const members = await this.client.config.defaultGuild.members.fetch({
 						query: action.query
 					});
-					return members.array().map(membersMap);
+					return this.process!.send({
+						_data: {
+							members: members.array().map(membersMap)
+						},
+						_responseID: message._responseID
+					});
 				}
 			}
 		}
