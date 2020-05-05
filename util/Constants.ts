@@ -195,6 +195,34 @@ export const CommandErrors = {
 export type MatchState = 'won' | 'lost' | 'draw' | 'idle'
 
 export const Responses = {
+	STARBOARD_EMBED: (stars: number, message: Message) => {
+		const embed = new MessageEmbed()
+			.addFields({
+				inline: true,
+				name: 'Author',
+				value: message.author.toString()
+			}, {
+				inline: true,
+				name: 'Channel',
+				value: message.channel.toString()
+			})
+			.setThumbnail(message.author.displayAvatarURL({ dynamic: true }))
+			.setFooter(`${stars} Stars`).setTimestamp(message.createdAt);
+		embed.setDescription([
+			hyperlink('Jump', messageURL(message.guild!.id, message.channel.id, message.id)),
+			message.content
+		]);
+		if (['png', 'jpg', 'jpeg', 'gif'].some(ext => message.attachments.first()?.name?.endsWith(ext))) {
+			embed.setImage(message.attachments.first()!.url);
+		}
+		return embed;
+	},
+	STAR_OWN_MESSAGE: (user: User) => ({
+		content: `${user}, You cannot star your own messages.`,
+		allowedMentions: {
+			users: [user.id]
+		}
+	}),
 	DELETE_CASE: (caseID: number, deleted = false) => {
 		if (!deleted) return `Deleting case ${caseID}, this may take a while to complete.`;
 		return `Deleted case ${caseID}.`;

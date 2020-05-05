@@ -90,6 +90,12 @@ export default class Client extends DJSClient {
 		rulesChannelID: Snowflake;
 		readonly staffCommandsChannel: TextChannel;
 		staffCommandsChannelID: Snowflake;
+		starboard: {
+			readonly channel: TextChannel;
+			channelID: Snowflake;
+			minimum: number;
+			reacionOnly: boolean;
+		} | null;
 	};
 	public database: DatabaseManager;
 	public lockedPoints = new Set<Snowflake>();
@@ -158,7 +164,15 @@ export default class Client extends DJSClient {
 			get staffCommandsChannel() {
 				return commandManager.client.channels.resolve(this.staffCommandsChannelID);
 			},
-			staffCommandsChannelID: config.staff_commands_channel
+			staffCommandsChannelID: config.staff_commands_channel,
+			starboard: config.starboard?.enabled ? {
+				get channel() {
+					return commandManager.client.channels.resolve(this.channelID);
+				},
+				channelID: config.starboard.channel_id,
+				minimum: config.starboard.minimum,
+				reactionOnly: config.starboard.reaction_only
+			} : null
 		} as Client['config'] });
 		Object.defineProperty(this.config, 'encryptionPassword', {
 			value: config.encryption_password
@@ -261,6 +275,11 @@ export default class Client extends DJSClient {
 		if (config.partnerRewardsChannel?.type !== 'text') {
 			throw new TypeError(Errors.INVALID_CLIENT_OPTION('partner_rewards_channel', 'TextChannel'));
 		}
+		if (config.starboard) {
+			if (config.starboard.channel?.type !== 'text') {
+				throw new TypeError(Errors.INVALID_CLIENT_OPTION('starboard.channel_id', 'TextChannel'));
+			}
+		}
 		if (config.levelRoles) {
 			for (const { id } of config.levelRoles) {
 				if (!config.defaultGuild.roles.cache.has(id)) {
@@ -323,6 +342,12 @@ export interface ClientConfig {
 		level: number;
 		id: Snowflake;
 	}[];
+	starboard?: {
+		enabled: boolean;
+		channel_id: Snowflake;
+		minimum: number;
+		reaction_only: boolean;
+	};
 }
 
 export type ShopItems = {

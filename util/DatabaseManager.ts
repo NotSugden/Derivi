@@ -6,6 +6,7 @@ import Case, { RawCase } from '../structures/Case';
 import Levels, { RawLevels } from '../structures/Levels';
 import Mute, { RawMute } from '../structures/Mute';
 import Points, { RawPoints } from '../structures/Points';
+import Star, { RawStar } from '../structures/Star';
 import Warn, { RawWarn } from '../structures/Warn';
 import Message from '../structures/discord.js/Message';
 import User from '../structures/discord.js/User';
@@ -201,7 +202,6 @@ export default class DatabaseManager {
 	public async case(id: number | number[] | { after?: number | Date; before?: number | Date }) {
 		if (Array.isArray(id)) return Promise.all(id.map(i => this.case(i)));
 		if (typeof id === 'object') {
-
 			const values: [string[], string[]] = [[], []];
 			if (typeof id.after !== 'undefined') {
 				values[0].push('timestamp > ?');
@@ -487,6 +487,81 @@ export default class DatabaseManager {
 			},
 			userID
 		};
+	}
+
+	public async addRemoveStar(messageID: Snowflake, userID: Snowflake | Snowflake[], add = true) {
+		if (!/^\d{17,19}$/.test(messageID)) throw new Error(Errors.RESOLVE_PROVIDED('messageID'));
+		let newUsers: Snowflake[] = [];
+		if (Array.isArray(userID)) {
+			for (const id of userID) {
+				if (!/^\d{17,19}$/.test(id)) throw new Error(Errors.RESOLVE_PROVIDED(`userIDs[${id}]`));
+			}
+		} else if (!/^\d{17,19}$/.test(userID)) throw new Error(Errors.RESOLVE_PROVIDED('userID'));
+
+		newUsers.push(...(Array.isArray(userID) ? userID : [userID]));
+
+		const [{ users }] = await this.query(
+			'SELECT users FROM starboard WHERE message_id = ? LIMIT 1',
+			messageID
+		);
+		if (add) newUsers.push(...JSON.parse(users));
+		else newUsers = JSON.parse(users).filter((id: Snowflake) => !newUsers.includes(id));
+		await this.query(
+			'UPDATE starboard SET users = ?, stars = ? WHERE message_id = ?',
+			JSON.stringify(newUsers),
+			newUsers.length,
+			messageID
+		);
+		return newUsers;
+	}
+
+	public async newStar(data: {
+		messageID: Snowflake;
+		starboardID: Snowflake;
+		channelID: Snowflake;
+		users: Snowflake[];
+	}) {
+		const rawData = {} as RawStar;
+		await this.query(
+			'INSERT INTO starboard (message_id, starboard_id, channel_id, users, stars) VALUES (?, ?, ?, ?, ?)',
+			rawData.message_id = data.messageID,
+			rawData.starboard_id = data.starboardID,
+			rawData.channel_id = data.channelID,
+			rawData.users = JSON.stringify(data.users),
+			rawData.stars = data.users.length
+		);
+		return new Star(this.client, rawData);
+	}
+
+	public async stars(options: { above?: number; below?: number }): Promise<Star[]>;
+	public async stars(messageIDs: Snowflake[]): Promise<(Star | null)>;
+	public async stars(messageID: Snowflake): Promise<Star | null>;
+	public async stars(messageID: Snowflake | { above?: number; below?: number } | Snowflake[]) {
+		if (Array.isArray(messageID)) return Promise.all(messageID.map(id => this.stars(id)));
+		if (typeof messageID === 'object') {
+			const values: [string[], string[]] = [[], []];
+			if (typeof messageID.above !== 'undefined') {
+				values[0].push('stars > ?');
+				values[1].push(new Date(messageID.above).toISOString());
+			}
+			if (typeof messageID.below !== 'undefined') {
+				values[0].push('stars < ?');
+				values[1].push(new Date(messageID.below).toISOString());
+			}
+
+			const stars = await this.query<RawStar>(
+				`SELECT * FROM starboard WHERE ${values[0].join(' AND ')}`,
+				...values[1]
+			);
+			return stars.map(data => new Star(this.client, data));
+		}
+		if (!/^\d{17,19}$/.test(messageID)) throw new Error(Errors.RESOLVE_PROVIDED('messageID'));
+		const [data] = await this.query<RawStar>(
+			'SELECT * FROM starboard WHERE message_id = ?',
+			messageID
+		);
+		if (!data) return null;
+		return new Star(this.client, data);
 	}
 }
 
