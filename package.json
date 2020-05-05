@@ -1,6 +1,6 @@
 {
 	"name": "asc-rewrite",
-	"version": "2.1.1-dev",
+	"version": "2.2.0-dev",
 	"description": "The ASC bot",
 	"main": "index.js",
 	"scripts": {

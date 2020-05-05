@@ -103,7 +103,18 @@ export default (async message => {
 				xp: xp + random(12, 37)
 			} as { xp: number; level?: number };
 			if (newData.xp > Util.levelCalc(level)) {
+				const { levelRoles } = client.config;
 				newData.level = level + 1;
+				const index = levelRoles?.findIndex(data => data.level === newData.level);
+				if (typeof index === 'number' && index !== -1) {
+					if (index > 0 && message.member.roles.cache.has(levelRoles![index - 1].id)) {
+						const roles = message.member.roles.cache.keyArray();
+						roles.splice(roles.indexOf(levelRoles![index - 1].id), 1, levelRoles![index].id);
+						await message.member.roles.set(roles);
+					} else {
+						await message.member.roles.add(levelRoles![index].id);
+					}
+				}
 			}
 
 			await client.database.setLevels(message.author.id, newData);

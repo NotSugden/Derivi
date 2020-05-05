@@ -67,6 +67,10 @@ export default class Client extends DJSClient {
 		readonly defaultGuild: Guild;
 		defaultGuildID: Snowflake;
 		filesDir: string;
+		levelRoles?: {
+			level: number;
+			id: Snowflake;
+		}[];
 		partnershipChannels: Map<Snowflake, {
 			minimum: number;
 			maximum: number;
@@ -117,6 +121,7 @@ export default class Client extends DJSClient {
 			},
 			defaultGuildID: config.default_guild,
 			filesDir: config.files_dir as string,
+			levelRoles: config.level_roles,
 			get partnerRewardsChannel() {
 				return commandManager.client.channels.resolve(this.partnerRewardsChannelID);
 			},
@@ -182,6 +187,7 @@ export default class Client extends DJSClient {
 				try {
 					await DJSUtil.delayFor(2500);
 					await this._validateConfig();
+					if (this.website) await this.website.spawn();
 					const mutes = await this.database.mute(true);
 					for (const mute of mutes) {
 						this.mutes.set(mute.userID, mute);
@@ -197,19 +203,15 @@ export default class Client extends DJSClient {
 				}
 			};
 			this.once(Constants.Events.CLIENT_READY, handler);
-			this.login(token)
-				.then(() => {
-					if (!this.website) return;
-					return this.website.spawn();
-				}).catch(error => {
-					this.off(Constants.Events.CLIENT_READY, handler);
-					this.disconnect()
-						.then(() => reject(error))
-						.catch(err => {
-							console.error(err);
-							reject(error);
-						});
-				});
+			this.login(token).catch(error => {
+				this.off(Constants.Events.CLIENT_READY, handler);
+				this.disconnect()
+					.then(() => reject(error))
+					.catch(err => {
+						console.error(err);
+						reject(error);
+					});
+			});
 		});
 	}
 
@@ -258,6 +260,13 @@ export default class Client extends DJSClient {
 		}
 		if (config.partnerRewardsChannel?.type !== 'text') {
 			throw new TypeError(Errors.INVALID_CLIENT_OPTION('partner_rewards_channel', 'TextChannel'));
+		}
+		if (config.levelRoles) {
+			for (const { id } of config.levelRoles) {
+				if (!config.defaultGuild.roles.cache.has(id)) {
+					throw new TypeError(Errors.INVALID_CLIENT_OPTION(`level_roles[${id}]`, 'Role'));
+				}
+			}
 		}
 
 		for (const channelID of this.config.partnershipChannels.keys()) {
@@ -310,6 +319,10 @@ export interface ClientConfig {
 		filename: string;
 		directory: string;
 	};
+	level_roles?: {
+		level: number;
+		id: Snowflake;
+	}[];
 }
 
 export type ShopItems = {
