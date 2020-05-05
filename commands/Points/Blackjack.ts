@@ -125,7 +125,7 @@ const play = async (message: Message, points: Points, bet: { bet: number }): Pro
 					}
 					return collector.stop(userWeight === 21 ? 'won' : 'lost');
 				}
-				if (content === 'double') await updateMessage();
+				await updateMessage();
 			} else if (content === 'stand') {
 				while(getWeight(dealerCards) < 17) {
 					giveCard(dealerCards);
