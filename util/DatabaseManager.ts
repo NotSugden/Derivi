@@ -203,12 +203,12 @@ export default class DatabaseManager {
 		if (typeof id === 'object') {
 
 			const values: [string[], string[]] = [[], []];
-			if (typeof id.after === 'number') {
-				values[0].push('id > ?');
+			if (typeof id.after !== 'undefined') {
+				values[0].push('timestamp > ?');
 				values[1].push(new Date(id.after).toISOString());
 			}
-			if (typeof id.before === 'number') {
-				values[0].push('id < ?');
+			if (typeof id.before !== 'undefined') {
+				values[0].push('timestamp < ?');
 				values[1].push(new Date(id.before).toISOString());
 			}
 
@@ -285,8 +285,8 @@ export default class DatabaseManager {
 
 		await this.query(
 			// cases table should have an auto-incrementing unique key, id
-			`INSERT INTO cases (action, extras, message_id, moderator_id, reason, screenshots, user_ids, timestamp)
-			VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+			`INSERT INTO cases (action, extras, message_id, moderator_id, reason, screenshots, user_ids)
+			VALUES (?, ?, ?, ?, ?, ?, ?)`,
 			data.action = action,
 			data.extras = extras ? stringify(extras) : '{}',
 			data.message_id = message.id,
@@ -294,9 +294,7 @@ export default class DatabaseManager {
 			data.moderator_id,
 			data.reason,
 			data.screenshots = JSON.stringify(screenshots),
-			data.user_ids = JSON.stringify(_users),
-			// a number is used here and not an ISO string so that i can filter it easier in the `history` command
-			Date.now() 
+			data.user_ids = JSON.stringify(_users)
 		);
 
 		const [{ id }] = (await this.query<{ id: number }>(
