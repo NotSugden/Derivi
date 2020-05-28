@@ -1,5 +1,9 @@
 import * as crypto from 'crypto';
+import { promises as fs } from 'fs';
+import * as path from 'path';
 import { Collection, Snowflake, MessageEmbed } from 'discord.js';
+import fetch from 'node-fetch';
+import Client from './Client';
 import CommandError from './CommandError';
 import { ModerationActionTypes, Responses, FLAGS_REGEX, OPTIONS_REGEX } from './Constants';
 import GuildMember from '../structures/discord.js/GuildMember';
@@ -20,6 +24,13 @@ const getCipherKey = (password: string) => crypto.createHash('sha256')
 	.digest();
 
 export default class Util {
+	static async downloadImage(url: string, name: string, config: Client['config']) {
+		const buffer = await fetch(url)
+			.then(resp => resp.buffer())
+			.then(data => this.encrypt(data, config.encryptionPassword));
+		await fs.writeFile(path.join(config.filesDir, name), buffer);
+		return `${config.attachmentsURL!}/${name}`;
+	}
 
 	static getOptions<T extends string>(string: string, options: T[]) {
 		const given = [...string.matchAll(OPTIONS_REGEX)]
@@ -194,6 +205,42 @@ export default class Util {
 			users
 		});
 		await message.edit(`Case ${caseData.id}`, embed);
+		if (client.config.attachmentLogging) {
+			const VALID_EXTENSIONS = ['png', 'jpg', 'jpeg', 'gif'];
+			moderator.send(`Please reply to this message with a screenshot to attach to case ${caseData.id}!`)
+				.then(async ({ channel }) => {
+					try {
+						const response = (await channel.awaitMessages((msg: Message) => {
+							if (msg.author.bot || !msg.attachments.size) return false;
+							if (msg.attachments.some(({ proxyURL }) => !VALID_EXTENSIONS.includes(
+								path.extname(proxyURL).slice(1).toLowerCase()
+							))) return false;
+							return true;
+						}, {
+							errors: ['time'],
+							max: 1,
+							time: 6e4
+						})).first()!;
+            
+						const urls = [];
+						for (const attachment of response.attachments.values()) {
+							const url = await Util.downloadImage(
+								attachment.proxyURL,
+								`case-reference-${caseData.id}-${attachment.id + path.extname(attachment.proxyURL)}`,
+								client.config
+							);
+							urls.push(url);
+						}
+						await caseData.update(urls);
+					} catch (error) {
+						if (error instanceof Map) return;
+						throw error;
+					}
+				}).catch(error => {
+					if (error.message === 'Cannot send messages to this user') return;
+					console.error(error);
+				});
+		}
 		return caseData; 
 	}
 

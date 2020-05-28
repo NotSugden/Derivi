@@ -1,23 +1,13 @@
-import { promises as fs } from 'fs';
-import { extname, join } from 'path';
-import fetch from 'node-fetch';
+
+import { extname } from 'path';
 import Command, { CommandData } from '../../structures/Command';
 import CommandArguments from '../../structures/CommandArguments';
 import Message from '../../structures/discord.js/Message';
-import Client from '../../util/Client';
 import CommandError from '../../util/CommandError';
 import CommandManager from '../../util/CommandManager';
 import Util from '../../util/Util';
 
 const VALID_EXTENSIONS = ['png', 'jpg', 'jpeg', 'gif'];
-
-const download = async (url: string, name: string, config: Client['config']) => {
-	const buffer = await fetch(url)
-		.then(resp => resp.buffer())
-		.then(data => Util.encrypt(data, config.encryptionPassword));
-	await fs.writeFile(join(config.filesDir, name), buffer);
-	return `${config.attachmentsURL!}/${name}`;
-};
 
 export default class Attach extends Command {
 	constructor(manager: CommandManager) {
@@ -69,7 +59,7 @@ export default class Attach extends Command {
 
 		const urls = [];
 		for (const attachment of message.attachments.values()) {
-			const url = await download(
+			const url = await Util.downloadImage(
 				attachment.proxyURL,
 				`case-reference-${caseData.id}-${attachment.id + extname(attachment.proxyURL)}`,
 				this.client.config
