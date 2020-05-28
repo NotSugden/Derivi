@@ -1,4 +1,4 @@
-import { Permissions, MessageEmbed, Util as DJSUtil } from 'discord.js';
+import { Permissions, MessageEmbed, Util as DJSUtil, Snowflake } from 'discord.js';
 import Command, { CommandData } from '../../structures/Command';
 import CommandArguments from '../../structures/CommandArguments';
 import Message from '../../structures/discord.js/Message';
@@ -25,7 +25,7 @@ export default class Case extends Command {
 				required: true,
 				type: 'case number'
 			}, {
-				// extras: ['"delete"'],
+				extras: ['"delete"'],
 				type: '"edit"'
 			}]
 		}, __filename);
@@ -59,12 +59,13 @@ export default class Case extends Command {
 			await caseMessage.delete();
 			const response = await send(Responses.DELETE_CASE(caseID));
 			await this.client.database.deleteCase(caseID);
-			const cases = (await this.client.database.case({
-				after: caseID
-			}));
+			const cases = await this.client.database.query(
+				'SELECT message_id, id FROM cases WHERE id > ?',
+				caseID
+			) as { message_id: Snowflake; id: number }[];
 			if (!cases.length) return response.edit(Responses.DELETE_CASE(caseID, true)) as Promise<Message>;
 			for (const data of cases) {
-				const msg = await channel.messages.fetch(data.logMessageID);
+				const msg = await channel.messages.fetch(data.message_id);
 				await msg.edit(`Case ${data.id - 1}`, new MessageEmbed(msg.embeds[0]));
 				await DJSUtil.delayFor(2500);
 			}
