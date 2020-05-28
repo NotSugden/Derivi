@@ -119,7 +119,7 @@ const serializeChannel = (channel:
 			...baseObj,
 			recipientID: channel.recipient.id
 		};
-	}
+	} else baseObj.name = channel.name;
 	baseObj.parentID = channel.parentID;
 	baseObj.position = channel.calculatedPosition;
 	if (channel.type === 'category') {
