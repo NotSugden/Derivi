@@ -201,7 +201,7 @@ export default class Client extends DJSClient {
 				try {
 					await DJSUtil.delayFor(2500);
 					await this._validateConfig();
-					if (this.website) await this.website.spawn();
+					if (this.website && !this.website.process) await this.website.spawn();
 					const mutes = await this.database.mute(true);
 					for (const mute of mutes) {
 						this.mutes.set(mute.userID, mute);
