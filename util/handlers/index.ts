@@ -110,6 +110,7 @@ const serializeChannel = (channel:
 	if (['text', 'news', 'store'].includes(channel.type)) {
 		if (channel.type !== 'store') {
 			baseObj.messages = (channel as TextChannel).messages.cache.map(serializeMessage);
+			baseObj.topic = (channel as NewsChannel).topic;
 		}
 		baseObj.nsfw = (channel as TextChannel).nsfw;
 	}
@@ -132,8 +133,13 @@ const serializeChannel = (channel:
 			bitrate: (channel as VoiceChannel).bitrate,
 			userLimit: (channel as VoiceChannel).userLimit
 		};
+	} else if (channel.type === 'text') {
+		return {
+			...baseObj,
+			slowmode: (channel as TextChannel).rateLimitPerUser
+		};
 	}
-	return null;
+	return baseObj;
 };
 
 handlers.set('EVAL', async (client, data) => {
