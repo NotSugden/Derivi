@@ -4,12 +4,16 @@ import { Events } from '../util/Client';
 import { EventResponses } from '../util/Constants';
 
 export default (async member => {
-	const { client, user } = member;
-	if (member.guild.id !== client.config.defaultGuildID || user.bot) return;
+	const { client, user, guild } = member;
+	if (guild.id !== client.config.defaultGuildID || user.bot) return;
+	const isMuted = client.mutes.has(user.id);
+	if (isMuted) {
+		await member.roles.add(guild.roles.cache.find(role => role.name === 'Muted')!);
+	}
 	const hookOrChannel = client.webhooks.get('welcome-messages') ||
-		(member.guild.channels.cache.find(ch => ch.type === 'text' && ch.name === 'general') as TextChannel);
+		(guild.channels.cache.find(ch => ch.type === 'text' && ch.name === 'general') as TextChannel);
 	const isWebhook = hookOrChannel instanceof WebhookClient;
-	if (hookOrChannel) {
+	if (hookOrChannel && !isMuted) {
 		const options = {} as MessageOptions | WebhookMessageOptions;
 		Object.assign(options, EventResponses.GUILD_MEMBER_ADD(member, isWebhook));
 
