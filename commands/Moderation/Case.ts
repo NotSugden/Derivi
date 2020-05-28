@@ -63,12 +63,6 @@ export default class Case extends Command {
 				'SELECT message_id, id FROM cases WHERE id > ?',
 				caseID
 			) as { message_id: Snowflake; id: number }[];
-			if (!cases.length) return response.edit(Responses.DELETE_CASE(caseID, true)) as Promise<Message>;
-			for (const data of cases) {
-				const msg = await channel.messages.fetch(data.message_id);
-				await msg.edit(`Case ${data.id - 1}`, new MessageEmbed(msg.embeds[0]));
-				await DJSUtil.delayFor(2500);
-			}
 			await this.client.database.query(
 				'UPDATE cases SET id = id - 1 WHERE id > ?',
 				caseID
@@ -76,6 +70,12 @@ export default class Case extends Command {
 			await this.client.database.query(
 				'ALTER TABLE cases AUTO_INCREMENT = 1'
 			);
+			if (!cases.length) return response.edit(Responses.DELETE_CASE(caseID, true)) as Promise<Message>;
+			for (const data of cases) {
+				const msg = await channel.messages.fetch(data.message_id);
+				await msg.edit(`Case ${data.id - 1}`, new MessageEmbed(msg.embeds[0]));
+				await DJSUtil.delayFor(2500);
+			}
 
 			return response.edit(Responses.DELETE_CASE(caseID, true)) as Promise<Message>; 
 		} /*else if (mode === 'edit') { this will be implemented at a later date
