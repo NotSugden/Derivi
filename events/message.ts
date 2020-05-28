@@ -120,7 +120,7 @@ export default (async message => {
 			await client.database.setLevels(message.author.id, newData);
 
 			XP_COOLDOWN.add(message.author.id);
-			setTimeout(() => XP_COOLDOWN.delete(message.author.id));
+			setTimeout(() => XP_COOLDOWN.delete(message.author.id), 6e4);
 
 			if (typeof newData.level === 'number') {
 				await message.channel.send(Responses.LEVEL_UP(message.author, newData.level)); 
