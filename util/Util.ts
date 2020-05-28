@@ -232,6 +232,7 @@ export default class Util {
 							urls.push(url);
 						}
 						await caseData.update(urls);
+						await moderator.send(`Updated case ${caseData.id}`);
 					} catch (error) {
 						if (error instanceof Map) return;
 						throw error;
