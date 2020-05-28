@@ -1,9 +1,9 @@
 import { fork, ChildProcess } from 'child_process';
 import { EventEmitter } from 'events';
 import * as path from 'path';
-import { Snowflake, MessageEmbedOptions, GuildMember, Util as DJSUtil } from 'discord.js';
+import { Snowflake, MessageEmbedOptions, Util as DJSUtil } from 'discord.js';
 import Client from './Client';
-import TextChannel from '../structures/discord.js/TextChannel';
+import handlers from './handlers';
 
 export default class WebsiteManager extends EventEmitter {
 	public client!: Client;
@@ -28,19 +28,18 @@ export default class WebsiteManager extends EventEmitter {
 					}
 				)
 			}
-		)
-			.on('message', async message => {
-				try {
-					await this._handleMessage(message as ProcessMessage);
-				} catch (error) {
-					childProcess.send({
-						_error: DJSUtil.makePlainError(error),
-						_responseID: (message as ProcessMessage)._responseID
-					});
-				}
-			});
+		).on('message', async message => {
+			try {
+				await this._handleMessage(message as ProcessMessage);
+			} catch (error) {
+				childProcess.send({
+					_error: typeof error === 'string' ? error : DJSUtil.makePlainError(error),
+					_responseID: (message as ProcessMessage)._responseID
+				});
+			}
+		});
 		return new Promise<this>((resolve, reject) => {
-			// using clearTimeout just brings up issues with eslints
+			// using clearTimeout just brings up issues with eslint
 			let resolved = false;
 			const onReady = () => {
 				resolved = true;
@@ -59,111 +58,59 @@ export default class WebsiteManager extends EventEmitter {
 	}
 
 	private async _handleMessage(message?: ProcessMessage) {
-		if (!message) return;
-		const errorCB = (error: Error | null) => {
-			if (!error) return;
-			this.process!.send({
-				_error: DJSUtil.makePlainError(error),
-				_responseID: message._responseID
-			});
-		};
-		if (message._ready) {
-			this.emit('ready');
-		} else if (message._action) {
-			const action = message._action;
-			if (action.type === 'SEND_MESSAGE') {
-				const channel = this.client.channels.resolve(action.channelID) as TextChannel | null;
-				if (channel?.type !== 'text') {
-					throw channel ? 'INVALID_CHANNEL_TYPE' : 'INVALID_CHANNEL';
-				}
-				await channel.send(action.options)
-					.then(msg => this.process!.send({
-						_data: {
-							messageID: msg.id
-						},
-						_responseID: message._responseID
-					}, errorCB));
-			} else if (action.type === 'EVAL') {
-				let result;
-				try {
-					result = await eval(action.script);
-				} catch (error) {
-					result = error;
-				}
-				this.process!.send({
-					_data: { result },
-					_responseID: message._responseID
-				}, errorCB);
-			} else if (action.type === 'GET_GUILD_MEMBERS') {
-				const membersMap = (member: GuildMember | null) => {
-					if (!member) return null;
-					return {
-						displayColor: member.displayHexColor,
-						joinedAt: member.joinedAt?.toISOString(),
-						nickname: member.nickname,
-						permissions: member.permissions.toArray(),
-						roles: member.roles.cache.map(role => ({
-							color: role.hexColor,
-							id: role.id,
-							name: role.name,
-							permissions: role.permissions.toArray(),
-							position: role.rawPosition
-						})),
-						user: {
-							avatarURL: member.user.displayAvatarURL({ dynamic: true }),
-							bot: member.user.bot,
-							flags: member.user.flags.toArray(),
-							tag: member.user.tag
-						}
-					};
-				};
-				if (action.ids) {
-					const members = [];
-					for (const id of action.ids) {
-						try {
-							members.push(await this.client.config.defaultGuild.members.fetch(id));
-						} catch {
-							members.push(null);
-						}
-					}
-					return this.process!.send({
-						_data: {
-							members: members.map(membersMap)
-						},
-						_responseID: message._responseID
-					});
-				} else if (action.query) {
-					const members = await this.client.config.defaultGuild.members.fetch({
-						query: action.query
-					});
-					return this.process!.send({
-						_data: {
-							members: members.array().map(membersMap)
-						},
-						_responseID: message._responseID
-					});
-				}
-			}
-		}
+		if (message?._ready) return this.emit('ready');
+		if (!message?._action?.type) return;
+		const handler = handlers.get(message._action.type);
+		if (!handler) return;
+		const _data = await handler(this.client, message._action);
+		return new Promise((resolve, reject) => this.process!.send({
+			_data,
+			_responseID: message._responseID
+		}, error => {
+			if (error) reject(error);
+			else resolve();
+		}));
 	}
 }
 
-type ProcessMessage = {
+export type ProcessActionObject = {
+	type: 'SEND_MESSAGE';
+	channelID: Snowflake;
+	options: {
+		content?: string;
+		embed: MessageEmbedOptions;
+	};
+} | {
+	type: 'EVAL';
+	script: string;
+} | {
+	type: 'GET_GUILD_MEMBERS';
+	ids?: Snowflake[];
+	query?: string;
+	guildID?: Snowflake;
+} | {
+	type: 'GET_GUILD_CHANNELS';
+	withMessages?: boolean;
+	guildID?: Snowflake;
+} | {
+  type: 'DATABASE_QUERY';
+  sql: string;
+  args: {
+    type?: 'string' | 'date';
+    value: string;
+  }[];
+} | {
+  type: 'GET_CHANNEL_MESSAGES';
+  id?: Snowflake;
+  before?: Snowflake;
+  after?: Snowflake;
+  around?: Snowflake;
+  limit?: number;
+  channelID: Snowflake;
+};
+
+export type ProcessMessage = {
 	_responseID: string;
 	_ready?: true;
-	_action?: {
-		type: 'SEND_MESSAGE';
-		channelID: Snowflake;
-		options: {
-			content?: string;
-			embed: MessageEmbedOptions;
-		};
-	} | {
-		type: 'EVAL';
-		script: string;
-	} | {
-		type: 'GET_GUILD_MEMBERS';
-		ids?: string[];
-		query?: string;
-	};
+	_action?: ProcessActionObject;
 };
