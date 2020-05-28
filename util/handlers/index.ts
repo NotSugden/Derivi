@@ -77,7 +77,7 @@ const serializeMessage = (message: Message | null) => {
 			proxyURL: attachment.proxyURL,
 			url: attachment.url
 		})),
-		authorID: message.author.id,
+		authorID: message.author?.id,
 		channelID: message.channel.id,
 		cleanContent: message.cleanContent,
 		content: message.content,
