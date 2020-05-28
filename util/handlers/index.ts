@@ -40,6 +40,7 @@ const serializeUser = (user: User | null) => {
 		avatarURL: user.displayAvatarURL({ dynamic: true }),
 		bot: user.bot,
 		flags: user.flags ? user.flags.toArray() : [],
+		id: user.id,
 		tag: user.tag
 	};
 };
