@@ -11,7 +11,7 @@ export default (async member => {
 	// This will be added to constants at a later date
 	const embed = new MessageEmbed()
 		.setAuthor(user.tag)
-		.setColor(Constants.Colors.NOT_QUITE_BLACK)
+		.setColor(Constants.Colors.RED)
 		.setDescription([
 			`${user} (${user.id}) Left`,
 			`Roles: ${roles.size > 1 ? roles.map(role => role.name) : 'No roles'}`

@@ -28,7 +28,7 @@ export default (async member => {
 	// This will be added to constants at a later date
 	const embed = new MessageEmbed()
 		.setAuthor(user.tag)
-		.setColor(Constants.Colors.NOT_QUITE_BLACK)
+		.setColor(Constants.Colors.GREEN)
 		.setDescription(`${user} (${user.id}) Joined`)
 		.setFooter(user.id)
 		.setTimestamp(member.joinedAt!);
