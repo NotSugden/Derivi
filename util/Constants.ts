@@ -179,9 +179,9 @@ export const CommandErrors = {
 		`${yours ? 'Your' : 'Their'} points are currently locked, this is likely due to ${
 			yours ? 'you' : 'them'
 		} playing a game.`,
-	NOT_PERMITTED_CASE_DELETE:
-		'You\'re not permitted to delete this case, ' +
-		'you must either be the person who issued it or have the `Administrator` permission.',
+	NOT_PERMITTED_CASE_MODIFY: (action: string) => 
+	// eslint-disable-next-line max-len
+		`You're not permitted to ${action} this case, you must either be the person who issued it or have the \`Administrator\` permission.`,
 	NO_OPTIONS: (valid: string[]) =>
 		`You have not provided any options, use the format \`optionName="value"\`, valid options are ${
 			valid.map(opt => `\`${opt}\``).join(', ')
@@ -195,6 +195,7 @@ export const CommandErrors = {
 export type MatchState = 'won' | 'lost' | 'draw' | 'idle'
 
 export const Responses = {
+	SUCCESSFULLY_EDITED_CASE: (id: number) => `Successfully edited case ${id}.`,
 	STARBOARD_EMBED: (stars: number, message: Message) => {
 		const embed = new MessageEmbed()
 			.addFields({
@@ -303,7 +304,7 @@ export const Responses = {
 		`${self ? 'You' : 'They'} have **${amount}** points in ${self ? 'your' : 'their'} wallet.`,
 	TOP: (levels: Levels[], guild: Guild) => {
 		return new MessageEmbed()
-			.setAuthor('ASC Leaderboards', guild.iconURL({ dynamic: true })!)
+			.setAuthor(`${guild.name} Leaderboards`, guild.iconURL({ dynamic: true })!)
 			.setDescription(levels.map(
 				(data, index) => `**#${index+1}** - ${data.user?.tag || 'Unkown User#0000'} Level ${data.level}`
 			))

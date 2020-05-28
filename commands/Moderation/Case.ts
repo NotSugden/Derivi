@@ -5,8 +5,10 @@ import Message from '../../structures/discord.js/Message';
 import CommandError from '../../util/CommandError';
 import CommandManager from '../../util/CommandManager';
 import { Responses } from '../../util/Constants';
+import Util from '../../util/Util';
 
-const OPTIONS = [/*'edit', */'delete'];
+const OPTIONS = ['edit', 'delete'];
+const EDIT_OPTIONS = ['reason'];
 
 export default class Case extends Command {
 	constructor(manager: CommandManager) {
@@ -47,13 +49,14 @@ export default class Case extends Command {
 			throw new CommandError('INVALID_CASE_ID', args[1]);
 		}
 
+		if (
+			!message.member!.hasPermission(Permissions.FLAGS.ADMINISTRATOR) && 
+      caseData.moderatorID !== message.author.id
+		) {
+			throw new CommandError('NOT_PERMITTED_CASE_MODIFY', mode);
+		}
+    
 		if (mode === 'delete') {
-			if (
-				!message.member!.hasPermission(Permissions.FLAGS.ADMINISTRATOR) && 
-				caseData.moderatorID !== message.author.id
-			) {
-				throw new CommandError('NOT_PERMITTED_CASE_DELETE');
-			}
 			const channel = this.client.config.punishmentChannel;
 			const caseMessage = await channel.messages.fetch(caseData.logMessageID);
 			await caseMessage.delete();
@@ -78,12 +81,35 @@ export default class Case extends Command {
 			}
 
 			return response.edit(Responses.DELETE_CASE(caseID, true)) as Promise<Message>; 
-		} /*else if (mode === 'edit') { this will be implemented at a later date
+		} else if (mode === 'edit') {
 			const newData = Util.getOptions(args.regular.slice(1).join(' '), EDIT_OPTIONS);
 			if (!Object.keys(newData).length) {
 				throw new CommandError('NO_OPTIONS', EDIT_OPTIONS);
 			}
-			
-		}*/
+      
+			const caseMessage = await caseData.logMessage();
+      
+			const newEmbed = new MessageEmbed(caseMessage.embeds[0]);
+      
+			if (typeof newData.reason === 'string') {
+				if (!newData.reason.length) throw new CommandError('PROVIDE_REASON');
+				const description = newEmbed.description!.split('\n');
+				for (let i = 0;i < description.length;i++) {
+					if (!description[i].startsWith('Reason:')) continue;
+					description[i] = `Reason: ${caseData.reason = newData.reason}`;
+				}
+			}
+      
+			await caseMessage.edit(newEmbed);
+      
+			await this.client.database.query(
+				'UPDATE cases SET reason = ?', // well at the moment only the reason can be edited so...
+				newData.reason
+			);
+      
+      
+      
+			return send(Responses.SUCCESSFULLY_EDITED_CASE(caseID));
+		}
 	}
 }
