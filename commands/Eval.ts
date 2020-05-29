@@ -39,7 +39,7 @@ export default class Eval extends Command {
 		);
 		const reverse = (string: string) => string.split('').reverse().join('');
 		const finish = async (result: unknown) => {
-			const inspected = (typeof result === 'string' ? result : util.inspect(result))
+			let inspected = (typeof result === 'string' ? result : util.inspect(result))
 				.replace(
 					new RegExp(`${this.client.token}|${reverse(this.client.token)}`, 'gi'),
 					'[TOKEN]'
@@ -50,13 +50,16 @@ export default class Eval extends Command {
 						'gi'
 					),
 					'[WEBHOOK TOKEN]'
-				).replace(
+				);
+			if (this.client.config.encryptionPassword) {
+				inspected = inspected.replace(
 					new RegExp(
 						`${this.client.config.encryptionPassword}|${reverse(this.client.config.encryptionPassword)}`,
 						'gi'
 					),
 					'[ENCRYPTION PASSWORD]'
 				);
+			}
 			const respond = (content: unknown, options?: import('discord.js').MessageOptions) => flags.silent ?
 				message.author.send(content, options) as Promise<Message> :
 				send(content, options);
