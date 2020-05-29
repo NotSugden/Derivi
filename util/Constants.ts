@@ -260,7 +260,7 @@ export const Responses = {
 			.setFooter(`Your bet: ${bet}`);
 	},
 	BLACKJACK_RULES: () => {
-		const RIGHT_ARROW = '<:ASC_RightArrow:608077963635851296>';
+		const RIGHT_ARROW = '<:RightArrow:597212645812207633>';
 		return new MessageEmbed()
 			.setTitle('How to play')
 			.addFields({
@@ -284,7 +284,7 @@ export const Responses = {
 	COLLECTED_DAILY: (amount = 250) => `Collected daily **${amount}** points.`,
 	SUCCESSFUL_PURCHASE: (item: string) => `Successfully purchased **${item}**.`,
 	SHOP_LAYOUT: (items: ShopItems, guild: Guild) => {
-		const RIGHT_ARROW = '<:ASC_RightArrow:608077963635851296>';
+		const RIGHT_ARROW = '<:RightArrow:597212645812207633>';
 		return [...items.map(item => {
 			if (item.action === 'give_role') {
 				const role = guild.roles.cache.get(item.role_id)!;
@@ -313,7 +313,7 @@ export const Responses = {
 	LEVEL: (user: User, level: number, xp: number) => {
 		const LEFT_BORDER = '<:Lines2:597212619299880962>';
 		const RIGHT_BORDER = '<:Lines3:594509306364297228>';
-		const RIGHT_ARROW = '<:ASC_RightArrow:608077963635851296>';
+		const RIGHT_ARROW = '<:RightArrow:597212645812207633>';
 		const MIDDLE_BORDER = '<:Lines:597212592167059456>';
 
 		return [
@@ -471,7 +471,9 @@ export const EventResponses = {
 	},
 
 	GUILD_MEMBER_ADD: (member: GuildMember & { client: Client }, webhook = true) => ({
-		content: `<:ASC_RightArrow:608077963635851296> <@&539532117781118987> to **${
+		content: `<:RightArrow:597212645812207633> ${
+			member.guild.roles.cache.has('539532117781118987') ? '<@&539532117781118987>' : 'Welcome'
+		} to **${
 			member.guild.name
 		}** ${member.user}, you can click ${
 			webhook ? `[here](<${
