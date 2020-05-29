@@ -533,7 +533,7 @@ export const EventResponses = {
 			.setThumbnail(user.displayAvatarURL({ dynamic: true }));
 	},
 
-	MESSAGE_DELETE: (message: Message | PartialMessage, options: { files: string[]; previous?: Message }) => {
+	MESSAGE_DELETE: (message: Message | PartialMessage, options: { files?: string[]; previous?: Message }) => {
 		let content = message.partial ?
 			'Message content was not cached' :
 			message.content || 'No content';
@@ -550,7 +550,7 @@ export const EventResponses = {
 			.addField('Content', content)
 			.setFooter(`${message.id} | Created at`)
 			.setTimestamp(message.createdAt);
-		if (options.files.length) {
+		if (options.files?.length) {
 			embed.addField(
 				`File${options.files.length > 1 ? 's' : ''}`,
 				options.files.map(file => `${message.client.config.attachmentsURL}/${file}`)
