@@ -2,9 +2,10 @@ import {
 	User, GuildMember, VoiceChannel,
 	CategoryChannel, GuildChannel,
 	NewsChannel, StoreChannel,
-	Message, Role
+	Message, Role, Snowflake, Collection
 } from 'discord.js';
 import DMChannel from '../../structures/discord.js/DMChannel';
+import Guild from '../../structures/discord.js/Guild';
 import TextChannel from '../../structures/discord.js/TextChannel';
 import Client from '../Client';
 import { ProcessActionObject } from '../WebsiteManager';
@@ -50,6 +51,7 @@ const serializeRole = (role: Role | null) => {
 	return {
 		color: role.hexColor,
 		hoist: role.hoist,
+		id: role.id,
 		managed: role.managed,
 		mentionable: role.mentionable,
 		name: role.name,
@@ -142,6 +144,22 @@ const serializeChannel = (channel:
 	return baseObj;
 };
 
+const serializeGuild = (guild: Guild | null) => {
+	if (!guild) return null;
+	return {
+		afkChannelID: guild.afkChannelID,
+		afkTimeout: guild.afkTimeout,
+		bannerURL: guild.bannerURL({ format: 'png' }),
+		channels: guild.channels.cache.keyArray(),
+		iconURL: guild.iconURL({ dynamic: true }),
+		id: guild.id,
+		memberCount: guild.memberCount,
+		name: guild.name,
+		splashURL: guild.splashURL({ format: 'png' }),
+		vanityCode: guild.vanityURLCode
+	};
+};
+
 handlers.set('EVAL', async (client, data) => {
 	let result;
 	try {
@@ -219,4 +237,30 @@ handlers.set('GET_CHANNEL_MESSAGES', async (client, data) => {
 	});
   
 	return { messages: messages.map(serializeMessage) };
+});
+
+handlers.set('GET_GUILD', async (client, data) => {
+	if (!data.id) {
+		const guilds = (client.guilds.cache as Collection<Snowflake, Guild>).map(serializeGuild);
+		if (data.withChannels) {
+			for (const guild of guilds) {
+				// this is dumb but whatever
+				(guild as unknown as { channels: { [key: string]: unknown }[]})
+					.channels = guild!.channels
+						.map(id => serializeChannel(client.channels.resolve(id) as TextChannel)!);
+			}
+		}
+		return { guilds };
+	}
+	const guild = serializeGuild(client.guilds.resolve(data.id) as Guild | null);
+	if (!guild) {
+		throw 'UNKNOWN_GUILD_ID';
+	}
+  
+	if (data.withChannels) {
+		(guild as unknown as { channels: { [key: string]: unknown }[]})
+			.channels = guild!.channels.map(id => serializeChannel(client.channels.resolve(id) as TextChannel)!);
+	}
+  
+	return { guild };
 });

@@ -107,6 +107,10 @@ export type ProcessActionObject = {
   around?: Snowflake;
   limit?: number;
   channelID: Snowflake;
+} | {
+  type: 'GET_GUILD';
+  id?: Snowflake;
+  withChannels?: boolean;
 };
 
 export type ProcessMessage = {
