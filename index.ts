@@ -6,10 +6,10 @@ import {
 	Extendable,
 	Structures,
 	User as DJSUser,
-	// Intents,
 	Guild as DJSGuild,
 	PartialUser,
-	ClientEvents
+	ClientEvents,
+	Intents
 } from 'discord.js';
 import Guild from './structures/discord.js/Guild';
 import User from './structures/discord.js/User';
@@ -33,16 +33,7 @@ const client = new Client(config, {
 		}
 	},
 	ws: {
-		// Intents are borked? idk not recieving GUILD_MEMBER_UPDATE events
-		/*intents: [
-			Intents.FLAGS.DIRECT_MESSAGES,
-			Intents.FLAGS.GUILDS,
-			Intents.FLAGS.GUILD_INVITES,
-			// The below intent must be enabled in your application settings
-			Intents.FLAGS.GUILD_MEMBERS,
-			Intents.FLAGS.GUILD_MESSAGES,
-			Intents.FLAGS.GUILD_MESSAGE_REACTIONS
-		]*/
+		intents: Intents.ALL
 	}
 });
 client.on('error', console.error);
@@ -56,9 +47,9 @@ client.on(Constants.Events.GUILD_BAN_ADD, (async (guild: Guild, user: User) => {
 	if (guild.bans.has(user.id)) return;
 	try {
 		const ban = await guild.fetchBan(user) as {
-			user: User;
-			reason: string | null;
-		};
+      user: User;
+      reason: string | null;
+    };
 		guild.bans.set(user.id, ban);
 	} catch {
 		client.emit('warn', 'Recieved an error fetching a ban in the \'guildBanAdd\' event, this should not happen');

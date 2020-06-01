@@ -21,14 +21,15 @@ const random = (min: number, max: number): number => {
 
 export default (async message => {
 	try {
-		const { client } = message;
+		const { client, guild } = message;
+		const config = guild && client.config.guilds.get(guild.id);
 		const edited = Boolean(message.editedTimestamp);
 		if (
 			message.author.bot ||
 			!message.guild
 		) return;
-		if (message.guild.id === client.config.defaultGuildID) {
-			if (client.config.attachmentLogging && !edited && message.attachments.size) {
+		if (config) {
+			if (message.attachments.size && config.filePermissionsRole && client.config.attachmentLogging && !edited) {
 				const urls = message.attachments.map(({ proxyURL }) => proxyURL);
 				for (let i = 0; i < urls.length; i++) {
 					const url = urls[i];
@@ -44,57 +45,63 @@ export default (async message => {
 				}
 			}
 
-			if (client.config.reportsRegex.length && client.config.reportsChannel) {
+			if (config.reportsRegex.length && config.reportsChannelID) {
 				const content = message.content.replace(/( |\n)*/g, '');
-				if (client.config.reportsRegex.some(regex => regex.test(content))) {
-					client.config.reportsChannel.send(Responses.AUTO_REPORT_EMBED(message));
+				if (config.reportsRegex.some(regex => regex.test(content))) {
+					(client.channels.resolve(config.reportsChannelID) as TextChannel)
+						.send(Responses.AUTO_REPORT_EMBED(message));
 				}
 			}
 		}
 
-		const partnerChannel = client.config.partnershipChannels.get(message.channel.id);
-		if (partnerChannel && client.config.partnerRewardsChannel) {
-			if (message.invites.length > 1) {
-				await message.delete();
-				throw new CommandError('TOO_MANY_INVITES').dm();
-			} else if (!message.invites.length) {
-				await message.delete();
-				throw new CommandError('NO_INVITE').dm();
-			}
-
-			try {
-				const invite = await client.fetchInvite(message.invites[0]);
-				if (!invite.guild) throw new CommandError('GROUP_INVITE').dm();
-				else if (invite.guild.id === client.config.defaultGuildID) {
-					throw new CommandError('UNKNOWN_INVITE', invite.code).dm();
+		if (config) {
+			const partnerChannel = config!.partnerships.channels.get(message.channel.id);
+			if (partnerChannel) {
+				if (message.invites.length > 1) {
+					await message.delete();
+					throw new CommandError('TOO_MANY_INVITES').dm();
+				} else if (!message.invites.length) {
+					await message.delete();
+					throw new CommandError('NO_INVITE').dm();
 				}
 
-				if (invite.memberCount < partnerChannel.minimum || invite.memberCount > partnerChannel.maximum) {
-					throw new CommandError('PARTNER_MEMBER_COUNT', invite.memberCount < partnerChannel.minimum).dm();
+				try {
+					const invite = await client.fetchInvite(message.invites[0]);
+					if (!invite.guild) throw new CommandError('GROUP_INVITE').dm();
+					else if (invite.guild.id === message.guild.id) {
+						throw new CommandError('UNKNOWN_INVITE', invite.code).dm();
+					}
+
+					if (invite.memberCount < partnerChannel.minimum || invite.memberCount > partnerChannel.maximum) {
+						throw new CommandError(
+							'PARTNER_MEMBER_COUNT', invite.memberCount < partnerChannel.minimum
+						).dm();
+					}
+
+					await (client.channels.resolve(config.partnerships.rewardsChannelID) as TextChannel)
+						.send(Responses.PARTNER_REWARD(
+							message.author, message.channel as TextChannel, partnerChannel.points
+						));
+
+					const points = await client.database.points(message.author);
+					await points.set({ points: points.amount + partnerChannel.points });
+
+					return;
+				} catch (error) {
+					await message.delete();
+					if (error.message === 'The user is banned from this guild.'){
+						throw new CommandError('CLIENT_BANNED_INVITE').dm();
+					} else if (error.message === 'Unknown Invite') {
+						throw new CommandError('UNKNOWN_INVITE', message.invites[0]).dm();
+					}
+					throw error;
 				}
-
-				await client.config.partnerRewardsChannel.send(Responses.PARTNER_REWARD(
-					message.author, message.channel as TextChannel, partnerChannel.points
-				));
-
-				const points = await client.database.points(message.author);
-				await points.set({ points: points.amount + partnerChannel.points });
-
-				return;
-			} catch (error) {
-				await message.delete();
-				if (error.message === 'The user is banned from this guild.'){
-					throw new CommandError('CLIENT_BANNED_INVITE').dm();
-				} else if (error.message === 'Unknown Invite') {
-					throw new CommandError('UNKNOWN_INVITE', message.invites[0]).dm();
-				}
-				throw error;
 			}
 		}
 
 		const allowedChannels = client.config.allowedLevelingChannels;
 		if (
-			(!allowedChannels.length || allowedChannels.includes(message.channel.id)) &&
+			config && (!allowedChannels.length || allowedChannels.includes(message.channel.id)) &&
 			!XP_COOLDOWN.has(message.author.id) && !edited
 		) {
 			const { level, xp } = await client.database.levels(message.author.id);
@@ -103,7 +110,7 @@ export default (async message => {
 				xp: xp + random(12, 37)
 			} as { xp: number; level?: number };
 			if (newData.xp > Util.levelCalc(level)) {
-				const { levelRoles } = client.config;
+				const { levelRoles } = config;
 				newData.level = level + 1;
 				const index = levelRoles?.findIndex(data => data.level === newData.level);
 				if (typeof index === 'number' && index !== -1) {

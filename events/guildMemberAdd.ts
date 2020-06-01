@@ -5,12 +5,15 @@ import { EventResponses } from '../util/Constants';
 
 export default (async member => {
 	const { client, user, guild } = member;
-	if (guild.id !== client.config.defaultGuildID || user.bot) return;
-	const isMuted = client.mutes.has(user.id);
+	const config = guild && client.config.guilds.get(guild.id);
+  
+	if (!config || !guild || user.bot) return;
+  
+	const isMuted = client.mutes.has(`${guild.id}:${user.id}`);
 	if (isMuted) {
 		await member.roles.add(guild.roles.cache.find(role => role.name === 'Muted')!);
 	}
-	const hookOrChannel = client.webhooks.get('welcome-messages') ||
+	const hookOrChannel = config.webhooks.get('welcome-messages') ||
 		(guild.channels.cache.find(ch => ch.type === 'text' && ch.name === 'general') as TextChannel);
 	const isWebhook = hookOrChannel instanceof WebhookClient;
 	if (hookOrChannel && !isMuted) {
@@ -23,7 +26,7 @@ export default (async member => {
 		hookOrChannel.send(options)
 			.catch(console.error);
 	}
-	const hook = client.webhooks.get('member-logs');
+	const hook = config.webhooks.get('member-logs');
 	if (!hook) return;
 	// This will be added to constants at a later date
 	const embed = new MessageEmbed()

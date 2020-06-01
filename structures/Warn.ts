@@ -1,5 +1,6 @@
 import { Snowflake } from 'discord.js';
 import Case from './Case';
+import Guild from './discord.js/Guild';
 import Client from '../util/Client';
 
 export default class Warn {
@@ -9,6 +10,7 @@ export default class Warn {
 	public reason: string;
 	public timestamp: Date;
 	public userID: Snowflake;
+	public guildID: Snowflake;
 
 	constructor(client: Client, data: RawWarn) {
 		Object.defineProperty(this, 'client', { value: client });
@@ -18,11 +20,16 @@ export default class Warn {
 		this.reason = data.reason;
 		this.timestamp = new Date(data.timestamp);
 		this.userID = data.user_id;
+		this.guildID = data.guild_id;
 	}
 
 	public case() {
 		// The case shouldn't be null here as it should be linked to a valid case
-		return this.client.database.case(this.caseID) as Promise<Case>;
+		return this.client.database.case(this.guild, this.caseID) as Promise<Case>;
+	}
+	
+	get guild() {
+		return this.client.guilds.resolve(this.guildID) as Guild;
 	}
 
 	get moderator() {
@@ -35,6 +42,7 @@ export default class Warn {
 }
 
 export interface RawWarn {
+	guild_id: Snowflake;
 	case_id: number;
 	moderator_id: Snowflake;
 	reason: string;

@@ -1,5 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-var-requires */
+import { WebhookClient } from 'discord.js';
+const djs: typeof import('discord.js') = require('discord.js');
 import Command, { CommandData } from '../structures/Command';
 import CommandArguments from '../structures/CommandArguments';
 import Message from '../structures/discord.js/Message';
@@ -8,7 +10,6 @@ import { URLs } from '../util/Constants';
 import Util from '../util/Util';
 
 const util: typeof import('util') = require('util');
-const djs: typeof import('discord.js') = require('discord.js');
 const fetch: typeof import('node-fetch').default = require('node-fetch');
 
 export default class Eval extends Command {
@@ -45,7 +46,11 @@ export default class Eval extends Command {
 					'[TOKEN]'
 				).replace(
 					new RegExp(
-						[...this.client.webhooks.values()]
+						[...this.client.config.guilds.values()]
+							.reduce((acc, next) => {
+								acc.push(...next.webhooks.values());
+								return acc;
+							}, [] as WebhookClient[])
 							.map(hook => `${hook.token}|${reverse(hook.token)}`).join('|'),
 						'gi'
 					),

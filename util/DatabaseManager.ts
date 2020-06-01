@@ -8,6 +8,7 @@ import Mute, { RawMute } from '../structures/Mute';
 import Points, { RawPoints } from '../structures/Points';
 import Star, { RawStar } from '../structures/Star';
 import Warn, { RawWarn } from '../structures/Warn';
+import Guild from '../structures/discord.js/Guild';
 import Message from '../structures/discord.js/Message';
 import User from '../structures/discord.js/User';
 
@@ -191,16 +192,16 @@ export default class DatabaseManager {
 		return new Levels(this.client, data);
 	}
 
-	public async deleteCase(id: number) {
-		await this.query('DELETE FROM cases WHERE id = ?', id);
+	public async deleteCase(guild: Guild, id: number) {
+		await this.query('DELETE FROM cases WHERE id = ? AND guild_id = ?', id, guild.id);
 		return;
 	}
 
-	public async case(options: { after?: number | Date; before?: number | Date }): Promise<Case[]>;
-	public async case(id: number): Promise<Case | null>;
-	public async case(ids: number[]): Promise<(Case | null)[]>;
-	public async case(id: number | number[] | { after?: number | Date; before?: number | Date }) {
-		if (Array.isArray(id)) return Promise.all(id.map(i => this.case(i)));
+	public async case(guild: Guild, options: { after?: number | Date; before?: number | Date }): Promise<Case[]>;
+	public async case(guild: Guild, id: number): Promise<Case | null>;
+	public async case(guild: Guild, ids: number[]): Promise<(Case | null)[]>;
+	public async case(guild: Guild, id: number | number[] | { after?: number | Date; before?: number | Date }) {
+		if (Array.isArray(id)) return Promise.all(id.map(i => this.case(guild, i)));
 		if (typeof id === 'object') {
 			const values: [string[], string[]] = [[], []];
 			if (typeof id.after !== 'undefined') {
@@ -211,6 +212,9 @@ export default class DatabaseManager {
 				values[0].push('timestamp < ?');
 				values[1].push(new Date(id.before).toISOString());
 			}
+      
+			values[0].push('guild_id = ?');
+			values[1].push(guild.id);
 
 			const cases = await this.query<RawCase>(
 				`SELECT * FROM cases WHERE ${values[0].join(' AND ')}`,
@@ -226,11 +230,12 @@ export default class DatabaseManager {
 	/**
 	 * TODO: change this to accept an object for multiple misc changes
 	 */
-	public async updateCase(caseID: number, urls: string[]) {
+	public async updateCase(guild: Guild, caseID: number, urls: string[]) {
 		await this.query(
-			'UPDATE cases SET screenshots = ? WHERE id = ?',
+			'UPDATE cases SET screenshots = ? WHERE id = ? AND guild_id = ?',
 			JSON.stringify(urls),
-			caseID
+			caseID,
+			guild.id
 		);
 		return;
 	}
@@ -238,6 +243,7 @@ export default class DatabaseManager {
 	public async newCase({
 		action,
 		extras,
+		guild,
 		message,
 		moderator,
 		reason,
@@ -245,7 +251,8 @@ export default class DatabaseManager {
 		users
 	}: {
 		action: keyof typeof ModerationActionTypes;
-		extras?: object;
+    extras?: object;
+    guild: Guild;
 		message: Message;
 		moderator: UserResolvable;
 		reason: string;
@@ -282,13 +289,17 @@ export default class DatabaseManager {
 				throw new Error(Errors.CASE_RESOLVE_USER(users.indexOf(idOrUser)));
 			}
 		}
+    
+		const id = (await this.query('SELECT * FROM cases WHERE guild_id = ?', guild.id)).length + 1;
 
 		await this.query(
 			// cases table should have an auto-incrementing unique key, id
-			`INSERT INTO cases (action, extras, message_id, moderator_id, reason, screenshots, user_ids)
-			VALUES (?, ?, ?, ?, ?, ?, ?)`,
+			`INSERT INTO cases (id, action, extras, guild_id, message_id, moderator_id, reason, screenshots, user_ids)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+			data.id = id,
 			data.action = action,
 			data.extras = extras ? stringify(extras) : '{}',
+			data.guild_id = guild.id,
 			data.message_id = message.id,
 			// this was converted into a `string`
 			data.moderator_id,
@@ -296,19 +307,15 @@ export default class DatabaseManager {
 			data.screenshots = JSON.stringify(screenshots),
 			data.user_ids = JSON.stringify(_users)
 		);
-
-		const [{ id }] = (await this.query<{ id: number }>(
-			'SELECT LAST_INSERT_ID() as id FROM cases'
-		));
-		data.id = id;
+    
 		return new Case(this.client, data);
 	}
 
-	public async warns(caseID: number): Promise<Warn[] | null>;
-	public async warns(caseIDs: number[]): Promise<{ [key: number]: Warn[] | null }>;
-	public async warns(users: UserResolvable[]): Promise<{ [key: string]: Warn[] | null }>;
-	public async warns(user: UserResolvable): Promise<Warn[]>;
-	public async warns(caseOrUser: UserResolvable | number | UserResolvable[] | number[]): Promise<
+	public async warns(guild: Guild, caseID: number): Promise<Warn[] | null>;
+	public async warns(guild: Guild, caseIDs: number[]): Promise<{ [key: number]: Warn[] | null }>;
+	public async warns(guild: Guild, users: UserResolvable[]): Promise<{ [key: string]: Warn[] | null }>;
+	public async warns(guild: Guild, user: UserResolvable): Promise<Warn[]>;
+	public async warns(guild: Guild, caseOrUser: UserResolvable | number | UserResolvable[] | number[]): Promise<
 		Warn[] |
 		{ [key: number]: Warn[] | null } |
 		{ [key: string]: Warn[] | null } | null
@@ -320,7 +327,7 @@ export default class DatabaseManager {
 			 * but it should return them properly which is what matters
 			 */
 			const objects = await Promise.all((caseOrUser as (number | UserResolvable)[])
-				.map((id: number | UserResolvable) => this.warns(id as number)
+				.map((id: number | UserResolvable) => this.warns(guild, id as number)
 					.then(data => ({
 						[id as string | number]: data
 					}))));
@@ -329,7 +336,8 @@ export default class DatabaseManager {
 		}
 		if (typeof caseOrUser === 'number') {
 			const rawWarns = await this.query<RawWarn>(
-				'SELECT * FROM warnings WHERE case_id = ?',
+				'SELECT * FROM warnings WHERE case_id = ? AND guild_id = ?',
+				guild.id,
 				caseOrUser
 			);
 			if (!rawWarns.length) return null;
@@ -338,15 +346,18 @@ export default class DatabaseManager {
 		const userID = this.client.users.resolveID(caseOrUser);
 		if (!userID || !/^\d{17,19}$/.test(userID)) throw new Error(Errors.WARNS_RESOLVE_ID);
 
-		const rawWarns = await this.query<RawWarn>('SELECT * FROM warnings WHERE user_id = ?', userID);
+		const rawWarns = await this.query<RawWarn>(
+			'SELECT * FROM warnings WHERE user_id = ? AND guild_id = ?',
+			guild.id, userID
+		);
 		if (!rawWarns.length) return null;
 		return rawWarns.map(data => new Warn(this.client, data));
 	}
 
-	public async newWarn(user: UserResolvable, moderator: UserResolvable, { caseID, reason, timestamp = new Date() }: {
-		caseID: number;
-		reason: string;
-		timestamp?: Date;
+	public async newWarn(guild: Guild, user: UserResolvable, moderator: UserResolvable, {
+		caseID, reason, timestamp = new Date()
+	}: {
+		caseID: number; reason: string; timestamp?: Date;
 	}) {
 		const data = { case_id: caseID, reason } as RawWarn;
 		const resolve = (resolvable: UserResolvable, error: Error) => {
@@ -364,7 +375,9 @@ export default class DatabaseManager {
 		data.user_id = (await resolve(user, new Error(Errors.RESOLVE_PROVIDED('user')))).id;
 
 		await this.query(
-			'INSERT INTO warnings (case_id, moderator_id, reason, user_id, timestamp) VALUES (?, ?, ?, ?, ?)',
+			// eslint-disable-next-line max-len
+			'INSERT INTO warnings (guild_id, case_id, moderator_id, reason, user_id, timestamp) VALUES (?, ?, ?, ?, ?, ?)',
+			data.guild_id = guild.id,
 			caseID,
 			data.moderator_id,
 			reason,
@@ -376,10 +389,10 @@ export default class DatabaseManager {
 	}
 
 	public async mute(all: true): Promise<Mute[]>;
-	public async mute(user: UserResolvable): Promise<Mute | null>;
-	public async mute(users: UserResolvable[]): Promise<(Mute | null)[]>;
-	public async mute(user: true | UserResolvable | UserResolvable[]) {
-		if (typeof user === 'boolean'){
+	public async mute(guild: Guild, user: UserResolvable): Promise<Mute | null>;
+	public async mute(guild: Guild, users: UserResolvable[]): Promise<(Mute | null)[]>;
+	public async mute(guild: Guild | true, user?: UserResolvable | UserResolvable[]) {
+		if (typeof guild === 'boolean'){
 			const rawData = await this.query<RawMute>('SELECT * FROM mutes');
 			return rawData.reduce((acc, data) => {
 				const mute = new Mute(this.client, data);
@@ -387,27 +400,31 @@ export default class DatabaseManager {
 				else return [...acc, mute];
 			}, [] as Mute[]) as Mute[];
 		}
-		if (Array.isArray(user)) return Promise.all(user.map(u => this.mute(u)));
-		const userID = this.client.users.resolveID(user);
+		if (Array.isArray(user)) return Promise.all(user.map(u => this.mute(guild, u)));
+		const userID = this.client.users.resolveID(user!);
 		if (!userID || !/^\d{17,19}$/.test(userID)) throw new Error(Errors.MUTE_RESOLVE_ID(true));
 
 		if (this.client.mutes.has(userID)) return this.client.mutes.get(userID);
 
-		const [data] = await this.query<RawMute>('SELECT * FROM mutes WHERE user_id = ? LIMIT 1', userID);
+		const [data] = await this.query<RawMute>(
+			'SELECT * FROM mutes WHERE user_id = ? AND guild_id = ? LIMIT 1',
+			guild.id, userID
+		);
 		if (!data) return null;
 		const mute = new Mute(this.client, data);
 		if (mute.endTimestamp < Date.now()) return null;
 		else return mute;
 	}
 
-	public async newMute(user: UserResolvable, start: Date, end: Date) {
+	public async newMute(guild: Guild, user: UserResolvable, start: Date, end: Date) {
 		const userID = this.client.users.resolveID(user);
 		if (!userID || !/^\d{17,19}$/.test(userID)) throw new Error(Errors.RESOLVE_PROVIDED('user'));
 
 		const data = { user_id: userID } as RawMute;
 
 		await this.query(
-			'INSERT INTO mutes (user_id, start, end) VALUES (?, ?, ?)',
+			'INSERT INTO mutes (guild_id, user_id, start, end) VALUES (?, ?, ?, ?)',
+			guild.id,
 			userID,
 			(data.start = start).toISOString(),
 			(data.end = end).toISOString()
@@ -416,11 +433,11 @@ export default class DatabaseManager {
 		return new Mute(this.client, data);
 	}
 
-	public async deleteMute(user: UserResolvable) {
+	public async deleteMute(guild: Guild, user: UserResolvable) {
 		const userID = this.client.users.resolveID(user);
 		if (!userID || !/^\d{17,19}$/.test(userID)) throw new Error(Errors.MUTE_RESOLVE_ID(false));
 
-		await this.query('DELETE FROM mutes WHERE user_id = ?', userID);
+		await this.query('DELETE FROM mutes WHERE user_id = ? AND guild_id = ?', userID, guild.id);
 		return;
 	}
 
@@ -489,7 +506,7 @@ export default class DatabaseManager {
 		};
 	}
 
-	public async addRemoveStar(messageID: Snowflake, userID: Snowflake | Snowflake[], add = true) {
+	public async addRemoveStar(guild: Guild, messageID: Snowflake, userID: Snowflake | Snowflake[], add = true) {
 		if (!/^\d{17,19}$/.test(messageID)) throw new Error(Errors.RESOLVE_PROVIDED('messageID'));
 		let newUsers: Snowflake[] = [];
 		if (Array.isArray(userID)) {
@@ -507,15 +524,16 @@ export default class DatabaseManager {
 		if (add) newUsers.push(...JSON.parse(users));
 		else newUsers = JSON.parse(users).filter((id: Snowflake) => !newUsers.includes(id));
 		await this.query(
-			'UPDATE starboard SET users = ?, stars = ? WHERE message_id = ?',
+			'UPDATE starboard SET users = ?, stars = ? WHERE message_id = ? AND guild_id = ?',
 			JSON.stringify(newUsers),
 			newUsers.length,
-			messageID
+			messageID,
+			guild.id
 		);
 		return newUsers;
 	}
 
-	public async newStar(data: {
+	public async newStar(guild: Guild, data: {
 		messageID: Snowflake;
 		starboardID: Snowflake;
 		channelID: Snowflake;
@@ -523,7 +541,9 @@ export default class DatabaseManager {
 	}) {
 		const rawData = {} as RawStar;
 		await this.query(
-			'INSERT INTO starboard (message_id, starboard_id, channel_id, users, stars) VALUES (?, ?, ?, ?, ?)',
+			// eslint-disable-next-line
+			'INSERT INTO starboard (guild_id, message_id, starboard_id, channel_id, users, stars) VALUES (?, ?, ?, ?, ?, ?)',
+			rawData.guild_id = guild.id,
 			rawData.message_id = data.messageID,
 			rawData.starboard_id = data.starboardID,
 			rawData.channel_id = data.channelID,
@@ -533,11 +553,11 @@ export default class DatabaseManager {
 		return new Star(this.client, rawData);
 	}
 
-	public async stars(options: { above?: number; below?: number }): Promise<Star[]>;
-	public async stars(messageIDs: Snowflake[]): Promise<(Star | null)>;
-	public async stars(messageID: Snowflake): Promise<Star | null>;
-	public async stars(messageID: Snowflake | { above?: number; below?: number } | Snowflake[]) {
-		if (Array.isArray(messageID)) return Promise.all(messageID.map(id => this.stars(id)));
+	public async stars(guild: Guild, options: { above?: number; below?: number }): Promise<Star[]>;
+	public async stars(guild: Guild, messageIDs: Snowflake[]): Promise<(Star | null)>;
+	public async stars(guild: Guild, messageID: Snowflake): Promise<Star | null>;
+	public async stars(guild: Guild, messageID: Snowflake | { above?: number; below?: number } | Snowflake[]) {
+		if (Array.isArray(messageID)) return Promise.all(messageID.map(id => this.stars(guild, id)));
 		if (typeof messageID === 'object') {
 			const values: [string[], string[]] = [[], []];
 			if (typeof messageID.above !== 'undefined') {
@@ -548,6 +568,9 @@ export default class DatabaseManager {
 				values[0].push('stars < ?');
 				values[1].push(new Date(messageID.below).toISOString());
 			}
+      
+			values[0].push('guild_id = ?');
+			values[1].push(guild.id);
 
 			const stars = await this.query<RawStar>(
 				`SELECT * FROM starboard WHERE ${values[0].join(' AND ')}`,
@@ -557,8 +580,8 @@ export default class DatabaseManager {
 		}
 		if (!/^\d{17,19}$/.test(messageID)) throw new Error(Errors.RESOLVE_PROVIDED('messageID'));
 		const [data] = await this.query<RawStar>(
-			'SELECT * FROM starboard WHERE message_id = ?',
-			messageID
+			'SELECT * FROM starboard WHERE message_id = ? AND guild_id = ?',
+			messageID, guild.id
 		);
 		if (!data) return null;
 		return new Star(this.client, data);

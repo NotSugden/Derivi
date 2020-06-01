@@ -15,12 +15,15 @@ export default class Warn extends Command {
 			cooldown: 5,
 			name: 'warn',
 			permissions: member => {
-				if (member.guild.id !== member.client.config.defaultGuildID) return false;
+				const config = member.client.config.guilds.get(member.guild.id);
+				if (!config) return false;
+				const hasAccess = config.accessLevelRoles.some(
+					roleID => member.roles.cache.has(roleID)
+				);
 				if (
-					// Checking for the `Staff Team` role
-					member.roles.cache.has('539355590301057025') ||
-					member.hasPermission(Permissions.FLAGS.ADMINISTRATOR)
+					hasAccess || member.hasPermission(Permissions.FLAGS.ADMINISTRATOR)
 				) return true;
+        
 				return false;
 			},
 			usages: [{
@@ -58,12 +61,12 @@ export default class Warn extends Command {
 			message.author,
 			users.array(),
 			'WARN',
-			{ reason }
+			{ guild: message.guild!, reason }
 		);
 
 		await Promise.all(
 			users.map(user => this.client.database.newWarn(
-				user, message.author, { caseID, reason, timestamp }
+				message.guild!, user, message.author, { caseID, reason, timestamp }
 			))
 		);
 

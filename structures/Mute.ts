@@ -1,8 +1,9 @@
 import { Snowflake } from 'discord.js';
+import Guild from './discord.js/Guild';
 import Client from '../util/Client';
 
 const unmute = (data: Mute) => async () => {
-	const guild = data.client.config.defaultGuild;
+	const guild = data.guild;
 	// Dynamic muted role
 	const role = guild.roles.cache.find(role => role.name === 'Muted');
 	if (role) {
@@ -30,6 +31,7 @@ export default class Mute {
 	public startedTimestamp: number;
 	public timeout!: NodeJS.Timeout;
 	public userID: Snowflake;
+	public guildID: Snowflake;
 
 	constructor(client: Client, data: RawMute) {
 		Object.defineProperty(this, 'client', { value: client });
@@ -37,8 +39,10 @@ export default class Mute {
 		this.endTimestamp = new Date(data.end).getTime();
 		this.startedTimestamp = new Date(data.start).getTime();
 		this.userID = data.user_id;
+		this.guildID = data.guild_id;
 
 		if (this.endTimestamp > Date.now()) {
+			this.client.mutes.set(`${this.guildID}:${this.userID}`, this);
 			this.timeout = client.setTimeout(
 				unmute(this),
 				this.endTimestamp - Date.now()
@@ -50,8 +54,12 @@ export default class Mute {
 	}
 
 	public delete() {
-		this.client.mutes.delete(this.userID);
-		return this.client.database.deleteMute(this.userID);
+		this.client.mutes.delete(`${this.guildID}:${this.userID}`);
+		return this.client.database.deleteMute(this.guild, this.userID);
+	}
+
+	get guild() {
+		return this.client.guilds.resolve(this.guildID) as Guild;
 	}
 
 	get endAt() {
@@ -68,6 +76,7 @@ export default class Mute {
 }
 
 export interface RawMute {
+	guild_id: Snowflake;
 	end: Date;
 	start: Date;
 	user_id: Snowflake;

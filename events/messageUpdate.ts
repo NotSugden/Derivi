@@ -3,8 +3,9 @@ import { EventResponses } from '../util/Constants';
 
 export default (async (oldMessage, newMessage) => {
 	const { guild, client } = newMessage;
+	const config = guild && client.config.guilds.get(guild?.id);
 	if (
-		guild?.id !== client.config.defaultGuildID ||
+		!config ||
 		newMessage.partial || oldMessage.content === newMessage.content ||
 		newMessage.author.bot
 	) return;
@@ -15,7 +16,7 @@ export default (async (oldMessage, newMessage) => {
 	// so logs aren't spammed with my eval edits
 	if (newMessage.author.id === '381694604187009025' && newMessage.content.startsWith('+eval')) return;
 
-	const webhook = client.webhooks.get('audit-logs');
+	const webhook = config.webhooks.get('audit-logs');
 	if (!webhook) return;
 
 	const embed = EventResponses.MESSAGE_UPDATE(oldMessage, newMessage);

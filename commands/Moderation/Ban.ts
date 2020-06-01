@@ -1,6 +1,7 @@
 import { Permissions, BanOptions } from 'discord.js';
 import Command, { CommandData } from '../../structures/Command';
 import CommandArguments from '../../structures/CommandArguments';
+import Guild from '../../structures/discord.js/Guild';
 import Message from '../../structures/discord.js/Message';
 import CommandError from '../../util/CommandError';
 import CommandManager from '../../util/CommandManager';
@@ -15,12 +16,15 @@ export default class Ban extends Command {
 			cooldown: 5,
 			name: 'ban',
 			permissions: member => {
-				if (member.guild.id !== member.client.config.defaultGuildID) return false;
+				const config = member.client.config.guilds.get(member.guild.id);
+				if (!config) return false;
+				const hasAccess = config.accessLevelRoles.slice(1).some(
+					roleID => member.roles.cache.has(roleID)
+				);
 				if (
-					// Checking for the `Chat Moderator` role
-					member.roles.cache.has('539355587839000588') ||
-					member.hasPermission(Permissions.FLAGS.ADMINISTRATOR)
+					hasAccess || member.hasPermission(Permissions.FLAGS.ADMINISTRATOR)
 				) return true;
+        
 				return false;
 			},
 			usages: [{
@@ -60,9 +64,10 @@ export default class Ban extends Command {
 		);
 
 		const extras: {
-				[key: string]: unknown;
+        [key: string]: unknown;
+        guild: Guild;
 				reason: string;
-			} = { reason };
+			} = { guild: message.guild!, reason };
 
 		const banOptions = {} as BanOptions;
 

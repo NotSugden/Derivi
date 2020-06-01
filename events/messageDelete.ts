@@ -4,17 +4,18 @@ import { Events } from '../util/Client';
 import { EventResponses } from '../util/Constants';
 
 export default (async message => {
-	const { client } = message;
+	const { client, guild } = message;
+  
+	const config = guild && client.config.guilds.get(guild.id);
 	if (
-		!message.guild || (message.guild.id !== client.config.defaultGuildID) ||
-		(message.author && message.author.bot)
+		!config || message.author?.bot
 	) return;
 	
-	const webhook = client.webhooks.get('audit-logs');
+	const webhook = config.webhooks.get('audit-logs');
 	if (!webhook) return;
 
 	let files;
-	if (client.config.attachmentLogging) {
+	if (client.config.attachmentLogging && config.filePermissionsRole) {
 	/* 
 	 * this is the best way i can think of, other than storing the message IDs,
 	 * to get the file linked to the message, which i may plan on doing

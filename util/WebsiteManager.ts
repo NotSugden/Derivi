@@ -87,11 +87,11 @@ export type ProcessActionObject = {
 	type: 'GET_GUILD_MEMBERS';
 	ids?: Snowflake[];
 	query?: string;
-	guildID?: Snowflake;
+	guildID: Snowflake;
 } | {
 	type: 'GET_GUILD_CHANNELS';
 	withMessages?: boolean;
-	guildID?: Snowflake;
+	guildID: Snowflake;
 } | {
   type: 'DATABASE_QUERY';
   sql: string;

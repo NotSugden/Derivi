@@ -6,12 +6,15 @@ import { EventResponses } from '../util/Constants';
  * should be in the config.json
  */
 export default (async invite => {
-	const { client } = invite;
-	const guild = invite.client.config.defaultGuild;
+	const { client, guild } = invite;
+	const config = guild && client.config.guilds.get(guild.id);
+  
+	if (!config || !guild) return;
+  
 	if (!guild.invites.has(invite.code)) return;
 	invite = guild.invites.get(invite.code)!;
 
-	const webhook = client.webhooks.get('invite-logs');
+	const webhook = config.webhooks.get('invite-logs');
 	if (!webhook) return;
 	
 	const embed = EventResponses.INVITE_DELETE(invite);

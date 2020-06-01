@@ -6,8 +6,10 @@ import fetch from 'node-fetch';
 import Client from './Client';
 import CommandError from './CommandError';
 import { ModerationActionTypes, Responses, FLAGS_REGEX, OPTIONS_REGEX } from './Constants';
+import Guild from '../structures/discord.js/Guild';
 import GuildMember from '../structures/discord.js/GuildMember';
 import Message from '../structures/discord.js/Message';
+import TextChannel from '../structures/discord.js/TextChannel';
 import User from '../structures/discord.js/User';
 
 const arrToObject = <T extends string>(array: T[], fn: (key: string, index: number) => unknown) => {
@@ -170,12 +172,14 @@ export default class Util {
 
 	static async sendLog(moderator: User, users: User[], action: keyof typeof ModerationActionTypes, extras: {
 		[key: string]: unknown;
-		reason: string;
+    reason: string;
+    guild: Guild;
 	}) {
-		const { client } = moderator as User;
-		const { reason, screenshots } = extras;
+		const { client } = moderator;
+		const { reason, screenshots, guild } = extras;
 		delete extras.reason;
 		delete extras.screenshots;
+		delete extras.guild;
 		const embed = new MessageEmbed({
 			color: ModerationActionTypes[action],
 			fields: Responses.MODERATION_LOG_FIELDS(moderator, users)
@@ -193,11 +197,14 @@ export default class Util {
 			);
 		}
 
-		const channel = client.config.punishmentChannel;
-		const message = await channel.send('Initializing new case...') as Message;
+		const channel = client.channels.resolve(
+      client.config.guilds.get(guild.id)!.casesChannelID
+		) as TextChannel;
+		const message = await channel!.send('Initializing new case...') as Message;
 		const caseData = await client.database.newCase({
 			action,
 			extras,
+			guild,
 			message,
 			moderator,
 			reason,

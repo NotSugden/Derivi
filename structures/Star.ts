@@ -1,4 +1,5 @@
 import { Snowflake } from 'discord.js';
+import Guild from './discord.js/Guild';
 import Message from './discord.js/Message';
 import TextChannel from './discord.js/TextChannel';
 import User from './discord.js/User';
@@ -11,6 +12,7 @@ export default class Star {
 	public messageID: Snowflake;
 	public channelID: Snowflake;
 	public starboardID: Snowflake;
+	public guildID: Snowflake;
 
 	constructor(client: Client, data: RawStar) {
 		Object.defineProperty(this, 'client', { value: client });
@@ -19,6 +21,7 @@ export default class Star {
 		this.messageID = data.message_id;
 		this.channelID = data.channel_id;
 		this.starboardID = data.starboard_id;
+		this.guildID = data.guild_id;
 	}
 
 	get starCount() {
@@ -27,6 +30,7 @@ export default class Star {
 
 	public async removeStar(user: User) {
 		this.userIDs = await this.client.database.addRemoveStar(
+			this.guild,
 			this.messageID,
 			user.id,
 			false
@@ -37,12 +41,14 @@ export default class Star {
 	}
 
 	public async starboardMessage() {
-		return this.client.config.starboard!.channel
-			.messages.fetch(this.starboardID) as Promise<Message>;
+		return (this.client.channels.resolve(
+			this.client.config.guilds.get(this.guildID)!.starboard!.channelID
+		) as TextChannel).messages.fetch(this.starboardID) as Promise<Message>;
 	}
 
 	public async addStar(user: User) {
 		this.userIDs = await this.client.database.addRemoveStar(
+			this.guild,
 			this.messageID,
 			user.id,
 			true
@@ -56,6 +62,10 @@ export default class Star {
 		return (this.client.channels.resolve(this.channelID) as TextChannel)
 			.messages.fetch(this.messageID) as Promise<Message>;
 	}
+	
+	get guild() {
+		return this.client.guilds.resolve(this.guildID) as Guild;
+	}
 
 	get users() {
 		return this.userIDs.map(id => this.client.users.resolve(id));
@@ -63,6 +73,7 @@ export default class Star {
 }
 
 export interface RawStar {
+	guild_id: Snowflake;
 	message_id: Snowflake;
 	starboard_id: Snowflake;
 	channel_id: Snowflake;

@@ -1,7 +1,9 @@
 import { Permissions, MessageEmbed, Util as DJSUtil, Snowflake } from 'discord.js';
 import Command, { CommandData } from '../../structures/Command';
 import CommandArguments from '../../structures/CommandArguments';
+import Guild from '../../structures/discord.js/Guild';
 import Message from '../../structures/discord.js/Message';
+import TextChannel from '../../structures/discord.js/TextChannel';
 import CommandError from '../../util/CommandError';
 import CommandManager from '../../util/CommandManager';
 import { Responses } from '../../util/Constants';
@@ -18,7 +20,12 @@ export default class Case extends Command {
 			cooldown: 5,
 			name: 'case',
 			permissions: (member, channel) => {
-				const channelID = member.client.config.staffCommandsChannelID;
+				if (!channel.parentID) return 'You\'re not using this command in the correct category!';
+				const config = [...member.client.config.guilds.values()].find(
+					cfg => cfg.staffServerCategoryID === channel.parentID
+				);
+				if (!config) return 'You\'re not using this command in the correct category!';
+				const channelID = config.staffCommandsChannelID;
 				return channel.id === channelID || (channelID ?
 					`This command can only be used in <#${channelID}>.` :
 					'The Staff commands channel has not been configured.');
@@ -43,8 +50,14 @@ export default class Case extends Command {
 		if (isNaN(caseID)) {
 			throw new CommandError('INVALID_CASE_ID', args[1] || '');
 		}
+    
+		const config = [...this.client.config.guilds.values()].find(
+			cfg => cfg.staffServerCategoryID === (message.channel as TextChannel).parentID
+		)!;
+    
+		const guild = this.client.guilds.resolve(config.id) as Guild;
 
-		const caseData = await message.client.database.case(caseID);
+		const caseData = await message.client.database.case(guild, caseID);
 		if (!caseData) {
 			throw new CommandError('INVALID_CASE_ID', args[1]);
 		}
@@ -57,21 +70,18 @@ export default class Case extends Command {
 		}
     
 		if (mode === 'delete') {
-			const channel = this.client.config.punishmentChannel;
+			const channel = this.client.channels.resolve(config.casesChannelID) as TextChannel;
 			const caseMessage = await channel.messages.fetch(caseData.logMessageID);
 			await caseMessage.delete();
 			const response = await send(Responses.DELETE_CASE(caseID));
-			await this.client.database.deleteCase(caseID);
+			await this.client.database.deleteCase(guild, caseID);
 			const cases = await this.client.database.query(
-				'SELECT message_id, id FROM cases WHERE id > ?',
-				caseID
+				'SELECT message_id, id FROM cases WHERE id > ? AND guild_id = ?',
+				caseID, guild.id
 			) as { message_id: Snowflake; id: number }[];
 			await this.client.database.query(
-				'UPDATE cases SET id = id - 1 WHERE id > ?',
-				caseID
-			);
-			await this.client.database.query(
-				'ALTER TABLE cases AUTO_INCREMENT = 1'
+				'UPDATE cases SET id = id - 1 WHERE id > ? AND guild_id = ?',
+				caseID, guild.id
 			);
 			if (!cases.length) return response.edit(Responses.DELETE_CASE(caseID, true)) as Promise<Message>;
 			for (const data of cases) {

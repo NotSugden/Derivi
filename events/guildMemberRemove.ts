@@ -2,12 +2,14 @@ import { MessageEmbed, Constants } from 'discord.js';
 import { Events } from '../util/Client';
 
 export default (async member => {
-	const { client, user } = member;
-	if (member.guild.id !== client.config.defaultGuildID || user.bot) return;
-	const hook = client.webhooks.get('member-logs');
+	const { client, user, guild } = member;
+	const config = guild && client.config.guilds.get(guild.id);
+  
+	if (!config || !guild || user.bot) return;
+	const hook = config.webhooks.get('member-logs');
 	if (!hook) return;
 	const roles = member.roles.cache;
-	roles.delete(member.guild.roles.everyone!.id);
+	roles.delete(guild.roles.everyone!.id);
 	// This will be added to constants at a later date
 	const embed = new MessageEmbed()
 		.setAuthor(user.tag)

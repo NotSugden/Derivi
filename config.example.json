@@ -1,67 +1,93 @@
 {
-	"allowed_level_channels": [
-		"123456789012345678"
-	],
-	"attachment_files_url": "https://someurl.com/files",
-	"attachment_logging": false,
-	"default_guild": "123456789012345678",
-	"database": {
-		"host": "localhost",
-		"user": "root",
-		"password": "A secure password",
-		"database": "main"
-	},
-	"encryption_password": "A secure password",
-	"prefix": ["+"],
-	"punishment_channel": "123456789012345678",
-	"rules_channel": "123456789012345678",
-	"staff_commands_channel": "123456789012345678",
-	"token": "Your bot token",
-	"webhooks": [{
-		"name": "audit-logs",
-		"id": "123456789012345678",
-		"token": "Webhook token"
-	}],
-	"reports_channel": "123456789012345678",
-	"report_regex": [
-		"bad_w(o|0)rd",
-		"w(o|0)rd_bad"
-	],
-	"reaction_roles": [{
-		"message": "123456789012345678",
-		"emojis": [{
-			"id": "123456789012345678",
-			"role": "123456789012345678"
-		}]
-	}],
-	"partner_rewards_channel": "123456789012345678",
-	"partnership_channels": [{
-		"id": "123456789012345678",
-		"minimum": 1000,
-		"maximum": null,
-		"points": 2500
-	}],
-	"shop_items": [{
-		"action": "give_role",
-		"cost": 1000,
-		"role_id": "123456789012345678"
-	}],
-	"website": {
-		"enabled": true,
-		"filename": "index.js",
-		"directory": "/path/to/directory"
-	},
-	"level_roles": [{
-		"level": 5,
-		"id": "123456789012345678"
-	}, {
-		"level": 10,
-		"id": "123456789012345678"
-	}],
-	"starboard": {
-		"enabled": true,
-		"channel_id": "123456789012345678",
-		"minimum": 3,
-		"reaction_only": true
-	}
+  "allowed_level_channels": [
+    "123456789012345678"
+  ],
+  "attachment_files_url": "https://someurl.com/files",
+  "attachment_logging": false,
+  "database": {
+    "host": "localhost",
+    "user": "root",
+    "password": "A secure password",
+    "database": "main"
+  },
+  "encryption_password": "A secure password",
+  "prefix": [
+    "+"
+  ],
+  "token": "Your bot token",
+  "reaction_roles": [
+    {
+      "message": "123456789012345678",
+      "emojis": [
+        {
+          "id": "123456789012345678",
+          "role": "123456789012345678"
+        }
+      ]
+    }
+  ],
+  "website": {
+    "enabled": true,
+    "filename": "index.js",
+    "directory": "/path/to/directory"
+  },
+  "guilds": [
+    {
+      "_comment": "starts at level 1, ends at level 4 ,must have all 4",
+      "general_channel": "123456789012345678",
+      "access_level_roles": [
+        "123456789012345678",
+        "123456789012345678",
+        "123456789012345678",
+        "123456789012345678"
+      ],
+      "staff_server_category": "123456789012345678",
+      "id": "123456789012345678",
+      "welcome_role": "123456789012345678",
+      "file_permissions_role": "123456789012345678",
+      "partner_rewards_channel": "123456789012345678",
+      "partnership_channels": [
+        {
+          "id": "123456789012345678",
+          "minimum": 0,
+          "maximum": 1000,
+          "points": 2750
+        }
+      ],
+      "punishment_channel": "123456789012345678",
+      "reports_channel": "123456789012345678",
+      "report_regex": [
+        "bad w(o|0)rds"
+      ],
+      "rules_channel": "123456789012345678",
+      "rules_message": "123456789012345678",
+      "staff_commands_channel": "123456789012345678",
+      "shop_items": [
+        {
+          "action": "give_role",
+          "cost": 1000,
+          "role_id": "123456789012345678"
+        }
+      ],
+      "level_roles": [
+        {
+          "level": 10,
+          "id": "123456789012345678"
+        }
+      ],
+      "webhooks": [
+        {
+          "name": "audit-logs",
+          "id": "123456789012345678",
+          "token": "webhook-token"
+        }
+      ],
+      "starboard": {
+        "enabled": true,
+        "channel_id": "123456789012345678",
+        "minimum": 3,
+        "reaction_only": true
+      }
+    }
+  ]
 }

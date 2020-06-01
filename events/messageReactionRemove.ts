@@ -1,16 +1,15 @@
 import { Events } from '../util/Client';
-import { Responses } from '../util/Constants';
 
 export default (async (reaction, user) => {
-	const { client } = reaction.message;
+	const { client, guild } = reaction.message;
+  
+	const config = guild && client.config.guilds.get(guild.id);
+	if (!guild || !config) return;
 	
-	if (client.config.starboard && reaction.emoji.name === '⭐') {
+	if (config.starboard && reaction.emoji.name === '⭐') {
 		if (reaction.partial) await reaction.fetch();
-		if (reaction.message.author.id === user.id) {
-			await reaction.users.remove(user.id);
-			await reaction.message.channel.send(Responses.STAR_OWN_MESSAGE(user));
-		}
-		const existing = await client.database.stars(reaction.message.id);
+		if (reaction.message.author.id === user.id) return;
+		const existing = await client.database.stars(guild, reaction.message.id);
 		if (!existing) return;
 		await existing.removeStar(user);
 		return;

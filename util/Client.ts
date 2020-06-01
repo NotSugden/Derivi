@@ -55,125 +55,87 @@ export interface Events extends ClientEvents {
 
 export default class Client extends DJSClient {
 	public commands: CommandManager;
-	/**
-	 * The configured channels here could be null, however they aren't supposed to be
-	 */
 	public readonly config!: {
 		allowedLevelingChannels: Snowflake[];
 		attachmentLogging: boolean;
 		attachmentsURL?: string;
 		readonly encryptionPassword: string;
-		database: string;
-		readonly defaultGuild: Guild;
-		defaultGuildID: Snowflake;
+		database: mysql.ConnectionConfig;
 		filesDir: string;
-		levelRoles?: {
-			level: number;
-			id: Snowflake;
-		}[];
-		partnershipChannels: Map<Snowflake, {
-			minimum: number;
-			maximum: number;
-			points: number;
-		}>;
 		prefix: string[];
-		reactionRoles: Map<Snowflake, Map<string, Snowflake>>;
-		reportsRegex: RegExp[];
-		shopItems: ShopItems;
-		readonly partnerRewardsChannel: TextChannel;
-		partnerRewardsChannelID: Snowflake;
-		readonly punishmentChannel: TextChannel;
-		punishmentChannelID: Snowflake;
-		readonly reportsChannel: TextChannel;
-		reportsChannelID: Snowflake;
-		readonly rulesChannel: TextChannel;
-		rulesChannelID: Snowflake;
-		readonly staffCommandsChannel: TextChannel;
-		staffCommandsChannelID: Snowflake;
-		starboard: {
-			readonly channel: TextChannel;
-			channelID: Snowflake;
-			minimum: number;
-			reacionOnly: boolean;
-		} | null;
+    reactionRoles: Map<Snowflake, Map<string, Snowflake>>;
+    guilds: Map<Snowflake, GuildConfig>;
 	};
 	public database: DatabaseManager;
 	public lockedPoints = new Set<Snowflake>();
 	public mutes = new Collection<Snowflake, Mute>();
 	public token: string;
-	public webhooks = new Map<string, WebhookClient>();
 	public website?: WebsiteManager;
 
 	constructor(config: ClientConfig, options: ClientOptions) {
 		super(options);
 		DJSUtil.mergeDefault(Defaults.CLIENT_CONFIG, config);
 
-		const commandManager = this.commands = new CommandManager(this, config.commands_dir as string);
+		this.commands = new CommandManager(this, config.commands_dir as string);
 		this.database = new DatabaseManager(this, config.database);
 
 		this.token = config.token;
+    
+		Object.defineProperty(this, 'config', { value: {} });
 
-		for (const webhook of config.webhooks) {
-			this.webhooks.set(webhook.name, new WebhookClient(webhook.id, webhook.token, this.options));
-		}
-
-		Object.defineProperty(this, 'config', { value: {
-			allowedLevelingChannels: config.allowed_level_channels,
-			attachmentLogging: config.attachment_logging as boolean,
-			attachmentsURL: config.attachment_files_url,
-			database: config.database as string,
-			get defaultGuild() {
-				return commandManager.client.guilds.resolve(this.defaultGuildID);
-			},
-			defaultGuildID: config.default_guild,
-			filesDir: config.files_dir as string,
-			levelRoles: config.level_roles,
-			get partnerRewardsChannel() {
-				return commandManager.client.channels.resolve(this.partnerRewardsChannelID);
-			},
-			partnerRewardsChannelID: config.partner_rewards_channel,
-			partnershipChannels: new Map(config.partnership_channels.map(data => [
-				data.id, {
-					maximum: data.maximum ?? Infinity,
-					minimum: data.minimum,
-					points: data.points
-				}
-			])),
-			prefix: config.prefix,
-			get punishmentChannel() {
-				return commandManager.client.channels.resolve(this.punishmentChannelID);
-			},
-			punishmentChannelID: config.punishment_channel,
-			reactionRoles: new Map(config.reaction_roles.map(data => [
-				data.message,
-				new Map(data.emojis.map(emojiData => [
-					emojiData.id,
-					emojiData.role
-				]))
-			])),
-			get reportsChannel() {
-				return commandManager.client.channels.resolve(this.reportsChannelID);
-			},
-			reportsChannelID: config.reports_channel,
-			reportsRegex: config.report_regex.map(str => new RegExp(str, 'i')),
-			get rulesChannel() {
-				return commandManager.client.channels.resolve(this.rulesChannelID);
-			},
-			rulesChannelID: config.rules_channel,
-			shopItems: config.shop_items,
-			get staffCommandsChannel() {
-				return commandManager.client.channels.resolve(this.staffCommandsChannelID);
-			},
-			staffCommandsChannelID: config.staff_commands_channel,
-			starboard: config.starboard?.enabled ? {
-				get channel() {
-					return commandManager.client.channels.resolve(this.channelID);
+		this.config.allowedLevelingChannels = config.allowed_level_channels,
+		this.config.attachmentLogging = config.attachment_logging as boolean,
+		this.config.attachmentsURL = config.attachment_files_url,
+		this.config.database = config.database,
+		this.config.filesDir = config.files_dir as string,
+		this.config.prefix = config.prefix,
+		this.config.reactionRoles = new Map(config.reaction_roles.map(data => [
+			data.message,
+			new Map(data.emojis.map(emojiData => [
+				emojiData.id,
+				emojiData.role
+			]))
+		]));
+		this.config.guilds = new Map();
+		for (const rawConfig of config.guilds) {
+			const guildConfig: GuildConfig = {
+				accessLevelRoles: rawConfig.access_level_roles,
+				casesChannelID: rawConfig.punishment_channel,
+				filePermissionsRole: rawConfig.file_permissions_role || null,
+				generalChannelID: rawConfig.general_channel,
+				id: rawConfig.id,
+				levelRoles: rawConfig.level_roles || null,
+				partnerships: {
+					channels: new Map(rawConfig.partnership_channels.map(data => [
+						data.id, {
+							id: data.id,
+							maximum: data.maximum ?? Infinity,
+							minimum: data.minimum,
+							points: data.points
+						}
+					])), rewardsChannelID: rawConfig.partner_rewards_channel
 				},
-				channelID: config.starboard.channel_id,
-				minimum: config.starboard.minimum,
-				reactionOnly: config.starboard.reaction_only
-			} : null
-		} as Client['config'] });
+				reportsChannelID: rawConfig.reports_channel,
+				reportsRegex: rawConfig.report_regex.map(string => new RegExp(string, 'i')),
+				rulesChannelID: rawConfig.rules_channel,
+				rulesMessageID: rawConfig.rules_message || null,
+				shopItems: rawConfig.shop_items,
+				staffCommandsChannelID: rawConfig.staff_commands_channel,
+				staffServerCategoryID: rawConfig.staff_server_category,
+				starboard: rawConfig.starboard?.enabled ? {
+					channelID: rawConfig.starboard.channel_id,
+					minimum: rawConfig.starboard.minimum,
+					reactionOnly: rawConfig.starboard.reaction_only
+				} : null,
+				webhooks: new Map(rawConfig.webhooks.map(hook => [
+					hook.name, new WebhookClient(hook.id, hook.token, options)
+				])),
+				welcomeRoleID: rawConfig.welcome_role || null
+			};
+			
+			this.config.guilds.set(rawConfig.id, guildConfig);
+		}
+    
 		Object.defineProperty(this.config, 'encryptionPassword', {
 			value: config.encryption_password
 		});
@@ -257,41 +219,111 @@ export default class Client extends DJSClient {
 			const exists = await promisify(fs.exists)(this.config.filesDir);
 			if (!exists) throw new Error(Errors.INVALID_CLIENT_OPTION('files_dir', 'directory'));
 		}
-		if (!(config.defaultGuild instanceof Guild)) {
-			throw new TypeError(Errors.INVALID_CLIENT_OPTION('default_guild', 'Guild'));
-		}
-		if (config.punishmentChannel?.type !== 'text') {
-			throw new TypeError(Errors.INVALID_CLIENT_OPTION('punishment_channel', 'TextChannel'));
-		}
-		if (config.rulesChannel?.type !== 'text') {
-			throw new TypeError(Errors.INVALID_CLIENT_OPTION('rules_channel', 'TextChannel'));
-		}
-		if (config.staffCommandsChannel?.type !== 'text') {
-			throw new TypeError(Errors.INVALID_CLIENT_OPTION('staff_commands_channel', 'TextChannel'));
-		}
-		if (config.reportsChannel?.type !== 'text') {
-			throw new TypeError(Errors.INVALID_CLIENT_OPTION('reports_channel', 'TextChannel'));
-		}
-		if (config.partnerRewardsChannel?.type !== 'text') {
-			throw new TypeError(Errors.INVALID_CLIENT_OPTION('partner_rewards_channel', 'TextChannel'));
-		}
-		if (config.starboard) {
-			if (config.starboard.channel?.type !== 'text') {
-				throw new TypeError(Errors.INVALID_CLIENT_OPTION('starboard.channel_id', 'TextChannel'));
+		const resolve = (id: Snowflake) => this.channels.resolve(id);
+		for (const guildConfig of config.guilds.values()) {
+			const guild = this.guilds.resolve(guildConfig.id);
+			if (!guild) {
+				throw new TypeError(Errors.INVALID_CLIENT_OPTION(
+					`guilds[${guildConfig.id}].id`,
+					'Guild'
+				));
 			}
-		}
-		if (config.levelRoles) {
-			for (const { id } of config.levelRoles) {
-				if (!config.defaultGuild.roles.cache.has(id)) {
-					throw new TypeError(Errors.INVALID_CLIENT_OPTION(`level_roles[${id}]`, 'Role'));
+			for (const roleID of guildConfig.accessLevelRoles) {
+				if (!guild.roles.cache.has(roleID)) {
+					throw new TypeError(Errors.INVALID_CLIENT_OPTION(
+						`guilds[${guildConfig.id}].access_level_roles[${roleID}]`,
+						'Role'
+					));
 				}
 			}
-		}
-
-		for (const channelID of this.config.partnershipChannels.keys()) {
-			const channel = this.channels.resolve(channelID);
-			if (channel?.type !== 'text') {
-				throw new TypeError(Errors.INVALID_CLIENT_OPTION(`partnership_channels[${channelID}]`, 'TextChannel'));
+			if (resolve(guildConfig.casesChannelID)?.type !== 'text') {
+				throw new TypeError(Errors.INVALID_CLIENT_OPTION(
+					`guilds[${guildConfig.id}].punishment_channel`,
+					'TextChannel'
+				));
+			}
+			if (guildConfig.filePermissionsRole && !guild.roles.cache.has(guildConfig.filePermissionsRole)) {
+				throw new TypeError(Errors.INVALID_CLIENT_OPTION(
+					`guilds[${guildConfig.id}].filePermissionsRole`,
+					'Role'
+				));
+			}
+			if (resolve(guildConfig.generalChannelID)?.type !== 'text') {
+				throw new TypeError(Errors.INVALID_CLIENT_OPTION(
+					`guilds[${guildConfig.id}].general_channel`,
+					'TextChannel'
+				));
+			}
+			for (const { id } of guildConfig.levelRoles || []) {
+				if (!guild.roles.cache.has(id)) {
+					throw new TypeError(Errors.INVALID_CLIENT_OPTION(
+						`guilds[${guildConfig.id}].level_roles[${id}]`,
+						'Role'
+					));
+				}
+			}
+			if (resolve(guildConfig.partnerships.rewardsChannelID)?.type !== 'text') {
+				throw new TypeError(Errors.INVALID_CLIENT_OPTION(
+					`guilds[${guildConfig.id}].partner_rewards_channel`,
+					'TextChannel'
+				));
+			}
+			for (const channelID of guildConfig.partnerships.channels.keys()) {
+				if (resolve(channelID)?.type !== 'text') {
+					throw new TypeError(Errors.INVALID_CLIENT_OPTION(
+						`guilds[${guildConfig.id}]partnership_channels[${channelID}]`,
+						'TextChannel'
+					));
+				}
+			}
+			if (resolve(guildConfig.reportsChannelID)?.type !== 'text') {
+				throw new TypeError(Errors.INVALID_CLIENT_OPTION(
+					`guilds[${guildConfig.id}].reports_channel`,
+					'TextChannel'
+				));
+			}
+			const rulesChannel = resolve(guildConfig.rulesChannelID) as TextChannel | null;
+			if (rulesChannel?.type !== 'text') {
+				throw new TypeError(Errors.INVALID_CLIENT_OPTION(
+					`guilds[${guildConfig.id}].rules_channel`,
+					'TextChannel'
+				));
+			}
+			if (guildConfig.rulesMessageID) {
+				try {
+					await rulesChannel.messages.fetch(guildConfig.rulesMessageID, false);
+				} catch {
+					throw new TypeError(Errors.INVALID_CLIENT_OPTION(
+						`guilds[${guildConfig.id}].rules_message`,
+						'Message'
+					));
+				}
+			}
+			if (resolve(guildConfig.staffCommandsChannelID)?.type !== 'text') {
+				throw new TypeError(Errors.INVALID_CLIENT_OPTION(
+					`guilds[${guildConfig.id}].staff_commands_channel`,
+					'TextChannel'
+				));
+			}
+			if (resolve(guildConfig.staffServerCategoryID)?.type !== 'category') {
+				throw new TypeError(Errors.INVALID_CLIENT_OPTION(
+					`guilds[${guildConfig.id}].staff_server_category`,
+					'CategoryChannel'
+				));
+			}
+			if (guildConfig.starboard) {
+				if (resolve(guildConfig.starboard.channelID)?.type !== 'text') {
+					throw new TypeError(Errors.INVALID_CLIENT_OPTION(
+						`guilds[${guildConfig.id}].starboard.channel`,
+						'TextChannel'
+					));
+				}
+			}
+			if (guildConfig.welcomeRoleID && !guild.roles.cache.has(guildConfig.welcomeRoleID)) {
+				throw new TypeError(Errors.INVALID_CLIENT_OPTION(
+					`guilds[${guildConfig.id}].welcome_role`,
+					'Role'
+				));
 			}
 		}
 	}
@@ -304,17 +336,8 @@ export interface ClientConfig {
 	commands_dir?: string;
 	encryption_password: string;
 	database: mysql.ConnectionConfig;
-	default_guild: Snowflake;
 	files_dir?: string;
 	prefix: string[];
-	partner_rewards_channel: Snowflake;
-	partnership_channels: {
-		id: Snowflake;
-		minimum: number;
-		maximum: number | null;
-		points: number;
-	}[];
-	punishment_channel: Snowflake;
 	reaction_roles: {
 		message: Snowflake;
 		emojis: {
@@ -322,37 +345,101 @@ export interface ClientConfig {
 			role: Snowflake;
 		}[];
 	}[];
-	reports_channel: Snowflake;
-	report_regex: string[];
-	rules_channel: Snowflake;
-	staff_commands_channel: Snowflake;
-	shop_items: ShopItems;
 	token: string;
-	webhooks: {
-		name: string;
-		id: Snowflake;
-		token: string;
-	}[];
 	website?: {
 		enabled: boolean;
 		filename: string;
 		directory: string;
 	};
-	level_roles?: {
-		level: number;
-		id: Snowflake;
-	}[];
-	starboard?: {
-		enabled: boolean;
-		channel_id: Snowflake;
-		minimum: number;
-		reaction_only: boolean;
-	};
+  guilds: RawGuildConfig[];
 }
 
-export type ShopItems = {
+export type GuildConfig = {
+  accessLevelRoles: [
+    Snowflake,
+    Snowflake,
+    Snowflake,
+    Snowflake
+  ];
+  id: Snowflake;
+  partnerships: {
+    rewardsChannelID: Snowflake;
+    channels: Map<string, {
+      id: Snowflake;
+      minimum: number;
+      maximum: number;
+      points: number;
+    }>;
+  };
+  staffServerCategoryID: Snowflake;
+  generalChannelID: Snowflake;
+  filePermissionsRole: Snowflake | null;
+  welcomeRoleID: Snowflake | null;
+  casesChannelID: Snowflake;
+  reportsChannelID: Snowflake;
+  rulesChannelID: Snowflake;
+  rulesMessageID: Snowflake | null;
+  staffCommandsChannelID: Snowflake;
+  reportsRegex: RegExp[];
+  shopItems: ShopItem[];
+  levelRoles: {
+    level: number;
+    id: Snowflake;
+  }[] | null;
+  webhooks: Map<string, WebhookClient>;
+  starboard: {
+    channelID: Snowflake;
+    minimum: number;
+    reactionOnly: boolean;
+  } | null;
+}
+
+export type RawGuildConfig = {
+  general_channel: Snowflake;
+  access_level_roles: [
+    Snowflake,
+    Snowflake,
+    Snowflake,
+    Snowflake
+  ];
+  staff_server_category: Snowflake;
+  id: Snowflake;
+  welcome_role?: Snowflake;
+  file_permissions_role?: Snowflake;
+  partner_rewards_channel: Snowflake;
+  partnership_channels: {
+    id: Snowflake;
+    minimum: number;
+    maximum: number | null;
+    points: number;
+  }[];
+  punishment_channel: Snowflake;
+  reports_channel: Snowflake;
+  report_regex: string[];
+  rules_channel: Snowflake;
+  rules_message?: Snowflake;
+  staff_commands_channel: Snowflake;
+  shop_items: ShopItem[];
+  level_roles?: {
+    level: number;
+    id: Snowflake;
+  }[];
+  webhooks: {
+    name: string;
+    id: Snowflake;
+    token: string;
+  }[];
+  starboard?: {
+    enabled: boolean;
+    channel_id: Snowflake;
+    minimum: number;
+    reaction_only: boolean;
+  };
+}
+
+export type ShopItem = {
 	action: 'give_role';
 	cost: number;
 	role_id: Snowflake;
-}[]
+};
 // at some point later on more actions would be added to this

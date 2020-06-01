@@ -2,7 +2,9 @@
 import { extname } from 'path';
 import Command, { CommandData } from '../../structures/Command';
 import CommandArguments from '../../structures/CommandArguments';
+import Guild from '../../structures/discord.js/Guild';
 import Message from '../../structures/discord.js/Message';
+import TextChannel from '../../structures/discord.js/TextChannel';
 import CommandError from '../../util/CommandError';
 import CommandManager from '../../util/CommandManager';
 import Util from '../../util/Util';
@@ -17,7 +19,12 @@ export default class Attach extends Command {
 			cooldown: 5,
 			name: 'attach',
 			permissions: (member, channel) => {
-				const channelID = member.client.config.staffCommandsChannelID;
+				if (!channel.parentID) return 'You\'re not using this command in the correct category!';
+				const config = [...member.client.config.guilds.values()].find(
+					cfg => cfg.staffServerCategoryID === channel.parentID
+				);
+				if (!config) return 'You\'re not using this command in the correct category!';
+				const channelID = config.staffCommandsChannelID;
 				return channel.id === channelID || (channelID ?
 					`This command can only be used in <#${channelID}>.` :
 					'The Staff commands channel has not been configured.');
@@ -41,8 +48,14 @@ export default class Attach extends Command {
 		if (isNaN(caseID)) {
 			throw new CommandError('INVALID_CASE_ID', args[0] || '');
 		}
+    
+		const config = [...this.client.config.guilds.values()].find(
+			cfg => cfg.staffServerCategoryID === (message.channel as TextChannel).parentID
+		)!;
 
-		const caseData = await message.client.database.case(caseID);
+		const caseData = await this.client.database.case(
+      this.client.guilds.resolve(config.id) as Guild, caseID
+		);
 
 		if (!caseData) {
 			throw new CommandError('INVALID_CASE_ID', args[0]);

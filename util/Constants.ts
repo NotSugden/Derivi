@@ -1,7 +1,7 @@
 import { join } from 'path';
-import { Constants, EmbedFieldData, RoleData, MessageEmbed, Snowflake } from 'discord.js';
+import { Constants, EmbedFieldData, RoleData, MessageEmbed, Snowflake, MessageOptions } from 'discord.js';
 import * as moment from 'moment';
-import Client, { ShopItems } from './Client';
+import Client, { ShopItem } from './Client';
 import { Invite, PartialMessage } from './Types';
 import Util from './Util';
 import { Card } from '../commands/Points/Blackjack';
@@ -86,7 +86,6 @@ const messageURL = (guildID: Snowflake, channelID: Snowflake, messageID: Snowfla
 export const Defaults = {
 	CLIENT_CONFIG: {
 		commands_dir: join(__dirname, '..', 'commands'),
-		database: 'database.sqlite',
 		files_dir: join(__dirname, '..', 'saved_files')
 	},
 	// this is a getter for now, incase djs modifies the object
@@ -283,7 +282,7 @@ export const Responses = {
 		`Successfully transferred **${amount}** points to **${user.username}**.`,
 	COLLECTED_DAILY: (amount = 250) => `Collected daily **${amount}** points.`,
 	SUCCESSFUL_PURCHASE: (item: string) => `Successfully purchased **${item}**.`,
-	SHOP_LAYOUT: (items: ShopItems, guild: Guild) => {
+	SHOP_LAYOUT: (items: ShopItem[], guild: Guild) => {
 		const RIGHT_ARROW = '<:RightArrow:597212645812207633>';
 		return [...items.map(item => {
 			if (item.action === 'give_role') {
@@ -434,6 +433,16 @@ export const FLAGS_REGEX = /--([a-z]+)=("[^"]*"|[0-9a-z]*)/gi;
 export const OPTIONS_REGEX = /([a-z]*)=("[^"]*"|[0-9a-z]*)/gi;
 
 export const EventResponses = {
+	FILE_PERMISSIONS_NOTICE: (dm: true | GuildMember, guild: Guild): string | MessageOptions => {
+		// eslint-disable-next-line
+		if (dm === true) return `Please note that by sending attachments in ${guild.name} they are being downloaded and saved for moderation purposes, you can request these be deleted at any time by messaging Sugden#0562`;
+		return {
+			content: `${dm}, ${EventResponses.FILE_PERMISSIONS_NOTICE(true, guild)}`,
+			allowedMentions: {
+				users: [dm.id]
+			}
+		};
+	},
 	INVITE_CREATE: (invite: Invite) => {
 		return new MessageEmbed()
 			.setAuthor(`Invite created in #${(invite.channel as TextChannel).name} by ${
@@ -470,21 +479,25 @@ export const EventResponses = {
 			.setTimestamp(invite.createdAt!);
 	},
 
-	GUILD_MEMBER_ADD: (member: GuildMember & { client: Client }, webhook = true) => ({
-		content: `<:RightArrow:597212645812207633> ${
-			member.guild.roles.cache.has('539532117781118987') ? '<@&539532117781118987>' : 'Welcome'
-		} to **${
-			member.guild.name
-		}** ${member.user}, you can click ${
-			webhook ? `[here](<${
-				messageURL('539355100397699092', '635215364950851659', '635228291556704320')
-			}>)` : `<#${member.client.config.rulesChannelID}>`
-		} to read the rules!`,
-		allowedMentions: {
-			users: [member.id],
-			roles: ['539532117781118987']
-		}
-	}),
+	GUILD_MEMBER_ADD: (member: GuildMember & { client: Client }, webhook = true) => {
+		const config = member.client.config.guilds.get(member.guild.id)!;
+		return {
+			content: `<:RightArrow:597212645812207633> ${
+				config.welcomeRoleID && member.guild.roles.cache.has(config.welcomeRoleID) ?
+					`<@&${config.welcomeRoleID}>` : 'Welcome'
+			} to **${
+				member.guild.name
+			}** ${member.user}, you can click ${
+				webhook && config.rulesMessageID ? `[here](<${
+					messageURL(member.guild.id, config.rulesChannelID, config.rulesMessageID)
+				}>)` : `<#${config.rulesChannelID}>`
+			} to read the rules!`,
+			allowedMentions: {
+				users: [member.id],
+				roles: config.welcomeRoleID ? [config.welcomeRoleID] : []
+			}
+		};
+	},
 	GUILD_MEMBER_UPDATE: (oldMember: GuildMember, newMember: GuildMember) => {
 		const { user } = newMember;
 		const data = [];

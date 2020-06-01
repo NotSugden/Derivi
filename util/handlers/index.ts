@@ -162,9 +162,7 @@ handlers.set('SEND_MESSAGE', async (client, data) => {
 });
 
 handlers.set('GET_GUILD_MEMBERS', async (client, data) => {
-	const guild = data.guildID ?
-		client.guilds.resolve(data.guildID) :
-		client.config.defaultGuild;
+	const guild = client.guilds.resolve(data.guildID);
 	if (!guild) {
 		throw 'UNKNOWN_GUILD_ID';
 	}
@@ -186,9 +184,7 @@ handlers.set('GET_GUILD_MEMBERS', async (client, data) => {
 });
 
 handlers.set('GET_GUILD_CHANNELS', async (client, data) => {
-	const guild = data.guildID ?
-		client.guilds.resolve(data.guildID) :
-		client.config.defaultGuild;
+	const guild = client.guilds.resolve(data.guildID);
 	if (!guild) {
 		throw 'UNKNOWN_GUILD_ID';
 	}

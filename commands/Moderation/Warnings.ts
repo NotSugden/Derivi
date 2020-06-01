@@ -1,3 +1,4 @@
+import { Permissions } from 'discord.js';
 import Command, { CommandData } from '../../structures/Command';
 import CommandArguments from '../../structures/CommandArguments';
 import Message from '../../structures/discord.js/Message';
@@ -13,11 +14,17 @@ export default class Warnings extends Command {
 			category: 'Moderation',
 			cooldown: 5,
 			name: 'warnings',
-			permissions: (member, channel) => {
-				const channelID = member.client.config.staffCommandsChannelID;
-				return channel.id === channelID || (channelID ?
-					`This command can only be used in <#${channelID}>.` :
-					'The Staff commands channel has not been configured.');
+			permissions: member => {
+				const config = member.client.config.guilds.get(member.guild.id);
+				if (!config) return false;
+				const hasAccess = config.accessLevelRoles.some(
+					roleID => member.roles.cache.has(roleID)
+				);
+				if (
+					hasAccess || member.hasPermission(Permissions.FLAGS.ADMINISTRATOR)
+				) return true;
+        
+				return false;
 			},
 			usages: [{
 				required: true,
@@ -31,7 +38,7 @@ export default class Warnings extends Command {
 		
 		if (!users.size) throw new CommandError('MENTION_USERS');
 
-		const warnings = Object.entries(await this.client.database.warns(users.map(user => user.id)))
+		const warnings = Object.entries(await this.client.database.warns(message.guild!, users.map(user => user.id)))
 			.flatMap(([userID, warns]) => {
 				const arr = [`${users.get(userID)!.tag}:`];
 				if (warns) arr.push(...Responses.WARNINGS(warns));
