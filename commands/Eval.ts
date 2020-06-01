@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-var-requires */
+
 import { WebhookClient } from 'discord.js';
-const djs: typeof import('discord.js') = require('discord.js');
 import Command, { CommandData } from '../structures/Command';
 import CommandArguments from '../structures/CommandArguments';
 import Message from '../structures/discord.js/Message';
@@ -9,6 +9,8 @@ import CommandManager from '../util/CommandManager';
 import { URLs } from '../util/Constants';
 import Util from '../util/Util';
 
+// eslint-disable-next-line import/order
+const djs: typeof import('discord.js') = require('discord.js');
 const util: typeof import('util') = require('util');
 const fetch: typeof import('node-fetch').default = require('node-fetch');
 
@@ -66,7 +68,7 @@ export default class Eval extends Command {
 				);
 			}
 			const respond = (content: unknown, options?: import('discord.js').MessageOptions) => flags.silent ?
-				message.author.send(content, options) as Promise<Message> :
+        message.author.send(content, options) as Promise<Message> :
 				send(content, options);
 			if (inspected.length > 1250) {
 				const json = await fetch(URLs.HASTEBIN('documents'), {

@@ -38,7 +38,7 @@ export default class Case {
 		 * that the log message would be uncached
 		 */
 		return (this.client.channels.resolve(
-			this.client.config.guilds.get(this.guildID)!.starboard!.channelID
+			this.client.config.guilds.get(this.guildID)!.casesChannelID
 		) as TextChannel).messages.fetch(this.logMessageID);
 	}
   
