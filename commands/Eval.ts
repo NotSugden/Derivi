@@ -9,9 +9,9 @@ import CommandManager from '../util/CommandManager';
 import { URLs } from '../util/Constants';
 import Util from '../util/Util';
 
+const util: typeof import('util') = require('util');
 // eslint-disable-next-line import/order
 const djs: typeof import('discord.js') = require('discord.js');
-const util: typeof import('util') = require('util');
 const fetch: typeof import('node-fetch').default = require('node-fetch');
 
 export default class Eval extends Command {
