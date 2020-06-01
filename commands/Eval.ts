@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-var-requires */
-
+/* eslint-disable import/order */
 import { WebhookClient } from 'discord.js';
 import Command, { CommandData } from '../structures/Command';
 import CommandArguments from '../structures/CommandArguments';
@@ -10,7 +10,6 @@ import { URLs } from '../util/Constants';
 import Util from '../util/Util';
 
 const util: typeof import('util') = require('util');
-// eslint-disable-next-line import/order
 const djs: typeof import('discord.js') = require('discord.js');
 const fetch: typeof import('node-fetch').default = require('node-fetch');
 
