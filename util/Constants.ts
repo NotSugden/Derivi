@@ -373,7 +373,7 @@ export const Responses = {
 	}],
 	MODERATION_LOG_DESCRIPTION: (action: keyof typeof ModerationActionTypes, reason: string, extras: object) => {
 		const description = [
-			`ASC Logs: ${action.charAt(0) + action.slice(1).toLowerCase()}`
+			`ASC Logs: ${action.split('_').map(str => str.charAt(0) + str.slice(1).toLowerCase())}`
 		];
 		if (Object.keys(extras).length) {
 			description.push(...Object.entries(extras)
