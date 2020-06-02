@@ -49,22 +49,25 @@ export default class Util {
 		string: string;
 	} {
 		const flags = [...string.matchAll(FLAGS_REGEX)]
-			.map(arr => arr.slice(1));
+			.map(arr => arr.slice(2));
 		const flagsObj: { [key: string]: string | boolean | number } = {};
 		for (const [name, value] of flags) {
-			flagsObj[name] = value.startsWith('"') ? value.slice(1, value.length - 1) : value;
+			flagsObj[name] = /^("|'|“)/.test(value) ? value.slice(1, value.length - 1) : value;
 			if (flagTypes) {
 				const data = flagTypes.find(flag => flag.name === name);
 				if (!data) throw new CommandError('INVALID_FLAG', name, flagTypes.map(flag => flag.name));
-				if (data.type === 'boolean') {
+				const includes = (string: FlagType) => Array.isArray(data.type) && data.type.includes(string);
+				if (data.type === 'boolean' || includes('boolean')) {
 					if (value === 'true' || value === 'false') flagsObj[name] = value === 'true';
 
-				} else if (data.type === 'number') {
+				} else if (data.type === 'number' || includes('number')) {
 					const number = parseInt(value);
 					if (!isNaN(number)) flagsObj[name] = number;
 				}
+        
+				const type = typeof flagsObj[name];
 
-				if (typeof flagsObj[name] !== data.type) {
+				if (typeof data.type === 'string' ? type !== data.type : !includes(type as FlagType)) {
 					throw new CommandError('INVALID_FLAG_TYPE', data.name, data.type);
 				}
 			}
@@ -302,7 +305,9 @@ export interface FlagData {
 	[key: string]: string | boolean | number;
 }
 
+type FlagType = 'string' | 'number' | 'boolean'
+
 export interface Flag {
-	type: 'string' | 'number' | 'boolean';
+	type: FlagType | FlagType[];
 	name: string;
 }

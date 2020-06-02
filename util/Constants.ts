@@ -19,6 +19,10 @@ import TextChannel from '../structures/discord.js/TextChannel';
 import User from '../structures/discord.js/User';
 /* eslint-disable sort-keys */
 
+const neverReturn = () => {
+	throw null;
+};
+
 const EMOJI_CARDS = [
 	{ suit: 'Diamonds', value: '2', emoji: '<:2D:625291323540504616>' },
 	{ suit: 'Clubs', value: '2', emoji: '<:2C:625291323557150750>' },
@@ -126,6 +130,15 @@ export const Errors = {
 };
 
 export const CommandErrors = {
+	PURGE_NO_MESSAGES: 'There were no messages to delete',
+	CONFLICTING_FLAGS: (flags: string[]) => 
+		`The flags ${flags.map(f => `\`${f}\``).join(', ')} cannot be used together`,
+	INVALID_SNOWFLAKE: (reason: 'invalid' | 'future' | 'past') => {
+		if (reason === 'invalid') return 'The ID provided is invalid.';
+		if (reason === 'future') return 'The ID provided is too far in the future!';
+		if (reason === 'past') return 'The ID provided is too far in the past!';
+		neverReturn();
+	},
 	ALL_MUTED: 'All of the mentioned members are muted.',
 	ALREADY_REMOVED_USERS: (multiple: boolean, kick = true) =>
 		`${multiple ? 'All of the members' : 'The member'} you mentioned ${multiple ? 'have' : 'has'} already ${
@@ -140,7 +153,8 @@ export const CommandErrors = {
 	MENTION_USERS: (users = true) => `Please mention at least 1 ${users ? 'user' : 'member'}.`,
 	MENTION_USER: (user = true) => `Please mention a ${user ? 'user' : 'member'}.`,
 	PROVIDE_REASON: 'Please supply a reason for this action.',
-	INVALID_FLAG_TYPE: (flag: string, type: string) => `Flag ${flag} must be ${type}`,
+	INVALID_FLAG_TYPE: (flag: string, type: string | string[]) => `Flag ${flag} must be ${
+		Array.isArray(type) ? `one of ${type.map(t => `\`${t}\``).join(', ')}` : type}`,
 	INVALID_FLAG: (provided: string, valid: string[]) =>
 		`Provided flag '${provided}' is not valid, valid flags for this command are: ${valid.join(', ')}`,
 	INVALID_CASE_ID: (provided: string) => `'${provided}' isn't a valid case number.`,
@@ -433,8 +447,8 @@ export const URLs = {
 	HASTEBIN: (endpointOrID?: string) => `https://paste.nomsy.net${endpointOrID ? `/${endpointOrID}` : ''}`
 };
 
-export const FLAGS_REGEX = /--([a-z]+)=("[^"]*"|[0-9a-z]*)/gi;
-export const OPTIONS_REGEX = /([a-z]*)=("[^"]*"|[0-9a-z]*)/gi;
+export const FLAGS_REGEX = /(--|—)([a-z]+)=('[^']*'|“[^“]*“|"[^"]*"|[0-9a-z]*)/gi;
+export const OPTIONS_REGEX = /([a-z]*)=('[^']*'|“[^“]*“|"[^"]*"|[0-9a-z]*)/gi;
 
 export const EventResponses = {
 	FILE_PERMISSIONS_NOTICE: (dm: true | GuildMember, guild: Guild): string | MessageOptions => {
