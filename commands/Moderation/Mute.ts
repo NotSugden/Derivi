@@ -47,8 +47,6 @@ export default class Mute extends Command {
 				required: true,
 				type: 'time'
 			}, {
-				type: '--silent=true'
-			}, {
 				required: true,
 				type: 'reason'
 			}]
@@ -89,7 +87,7 @@ export default class Mute extends Command {
 			} attempted to be muted, however they have left.`;
 		}
 
-		const alreadyMuted = members.filter(member => this.client.mutes.has(member.id));
+		const alreadyMuted = members.filter(member => this.client.mutes.has(`${message.guild!.id}:${member.id}`));
 		if (alreadyMuted.size) {
 			if (alreadyMuted.size === members.size) {
 				throw new CommandError('ALL_MUTED');
@@ -148,7 +146,7 @@ export default class Mute extends Command {
 		for (const member of filtered.values()) {
 			await member.roles.add(role);
 			const mute = await this.client.database.newMute(message.guild!, member.user, start, end);
-			this.client.mutes.set(member.id, mute);
+			this.client.mutes.set(`${message.guild!.id}:${member.id}`, mute);
 		}
 
 		if (!silent) return send(Responses.MUTE_SUCCESS(filtered.array(), reason));
