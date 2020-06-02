@@ -404,7 +404,7 @@ export default class DatabaseManager {
 		const userID = this.client.users.resolveID(user!);
 		if (!userID || !/^\d{17,19}$/.test(userID)) throw new Error(Errors.MUTE_RESOLVE_ID(true));
 
-		if (this.client.mutes.has(userID)) return this.client.mutes.get(userID);
+		if (this.client.mutes.has(`${guild.id}:${userID}`)) return this.client.mutes.get(userID);
 
 		const [data] = await this.query<RawMute>(
 			'SELECT * FROM mutes WHERE user_id = ? AND guild_id = ? LIMIT 1',
