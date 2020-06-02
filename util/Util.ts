@@ -196,9 +196,11 @@ export default class Util {
 					'None attached'
 			);
 		}
+    
+		const config = client.config.guilds.get(guild.id)!;
 
 		const channel = client.channels.resolve(
-      client.config.guilds.get(guild.id)!.casesChannelID
+			config.casesChannelID
 		) as TextChannel;
 		const message = await channel!.send('Initializing new case...') as Message;
 		const caseData = await client.database.newCase({
@@ -241,7 +243,13 @@ export default class Util {
 						await caseData.update(urls);
 						await moderator.send(`Updated case ${caseData.id}`);
 					} catch (error) {
-						if (error instanceof Map) return;
+						if (error instanceof Map) {
+							await moderator.send(
+								// eslint-disable-next-line max-len
+								`Timeout for case ${caseData.id}, attach a screenshot in <#${config.staffCommandsChannelID}> using the \`attach\` command`
+							);
+							return;
+						}
 						throw error;
 					}
 				}).catch(error => {
