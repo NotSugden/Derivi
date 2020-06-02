@@ -1,5 +1,9 @@
 import { join } from 'path';
-import { Constants, EmbedFieldData, RoleData, MessageEmbed, Snowflake, MessageOptions } from 'discord.js';
+import {
+	Constants, EmbedFieldData, RoleData,
+	MessageEmbed, Snowflake, MessageOptions,
+	MessageAttachment
+} from 'discord.js';
 import * as moment from 'moment';
 import Client, { ShopItem } from './Client';
 import { Invite, PartialMessage } from './Types';
@@ -570,6 +574,22 @@ export const EventResponses = {
 			);
 		}
 		return embed;
+	},
+  
+	MESSAGE_DELETE_BULK: (channel: TextChannel, options: {
+    amount: number; json: { [key: string]: unknown }[]; previous?: Message;
+  }) => {
+		return {
+			embeds: [new MessageEmbed()
+				.setAuthor(`Bulk delete in ${channel.name} ${options.amount} messages deleted`)
+				.setDescription(
+					options.previous ? hyperlink('Previous Message', options.previous.url) : 'No previous message'
+				)
+			],
+			files: [new MessageAttachment(Buffer.from(JSON.stringify(options.json, null, 4)), `bulk-delete-${
+				moment.utc(new Date()).format('DD-MM-YYYY HH-mm A')
+			}.json`)]
+		};
 	},
 
 	MESSAGE_UPDATE: (oldMessage: Message | PartialMessage, newMessage: Message) => {
