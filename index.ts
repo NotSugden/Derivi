@@ -29,7 +29,7 @@ const client = new Client(config, {
 	partials: ['REACTION', 'MESSAGE'],
 	presence: {
 		activity: {
-			name: `${config.prefix}help`
+			name: `${config.prefix[0]}help`
 		}
 	},
 	ws: {
