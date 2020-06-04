@@ -1,5 +1,5 @@
 import { Permissions, SnowflakeUtil } from 'discord.js';
-import Command, { CommandData } from '../../structures/Command';
+import Command from '../../structures/Command';
 import CommandArguments from '../../structures/CommandArguments';
 import Message from '../../structures/discord.js/Message';
 import CommandError from '../../util/CommandError';
@@ -48,7 +48,7 @@ export default class Purge extends Command {
 		}, __filename);
 	}
 
-	public async run(message: Message, args: CommandArguments, { send }: CommandData) {
+	public async run(message: Message, args: CommandArguments) {
 		await message.delete();
 		const limit = parseInt(args[0]!);
     
@@ -87,7 +87,7 @@ export default class Purge extends Command {
 			throw new CommandError('CONFLICTING_FLAGS', ['before', 'after']);
 		}
     
-		if (flags.bots === true && (flags.user || flags.mentions || flags.match)) {
+		if (typeof flags.bots === 'boolean' && (flags.user || flags.mentions || flags.match)) {
 			const conflicting = ['bots'];
 			if (flags.user) conflicting.push('user');
 			if (flags.mentions) conflicting.push('mentions');
@@ -101,8 +101,8 @@ export default class Purge extends Command {
 			limit
 		});
     
-		if (flags.bots === true) {
-			messages = messages.filter(msg => msg.author?.bot);
+		if (typeof flags.bots === 'boolean') {
+			messages = messages.filter(msg => msg.author?.bot === flags.bots);
 		} else {
 			if (typeof flags.match === 'string') {
 				messages = messages.filter(msg => msg.content.includes(flags.match as string));
