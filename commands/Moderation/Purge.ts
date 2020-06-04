@@ -74,6 +74,9 @@ export default class Purge extends Command {
 		}, {
 			name: 'after',
 			type: 'string'
+		}, {
+			name: 'matchexact',
+			type: 'string'
 		}]);
 
 		if (typeof flags.before === 'string') {
@@ -87,12 +90,16 @@ export default class Purge extends Command {
 			throw new CommandError('CONFLICTING_FLAGS', ['before', 'after']);
 		}
     
-		if (typeof flags.bots === 'boolean' && (flags.user || flags.mentions || flags.match)) {
+		const botsIsBoolean = typeof flags.bots === 'boolean';
+    
+		if (botsIsBoolean) {
 			const conflicting = ['bots'];
-			if (flags.user) conflicting.push('user');
-			if (flags.mentions) conflicting.push('mentions');
-			if (flags.match) conflicting.push('match');
-			throw new CommandError('CONFLICTING_FLAGS', conflicting);
+			if (botsIsBoolean && typeof flags.user === 'string') conflicting.push('user');
+			if (conflicting.length > 1) throw new CommandError('CONFLICTING_FLAGS', conflicting);
+		}
+    
+		if (typeof flags.match === 'string' && typeof flags.matchexact === 'string') {
+			throw new CommandError('CONFLICTING_FLAGS', ['match', 'matchexact']);
 		}
     
 		let messages = await message.channel.messages.fetch({
@@ -103,47 +110,48 @@ export default class Purge extends Command {
     
 		if (typeof flags.bots === 'boolean') {
 			messages = messages.filter(msg => msg.author?.bot === flags.bots);
-		} else {
-			if (typeof flags.match === 'string') {
-				messages = messages.filter(msg => msg.content.includes(flags.match as string));
-			}
-			if (typeof flags.user === 'string') {
-				const users = flags.user.split(/ ?, ?/g)
+		} else if (typeof flags.user === 'string') {
+			const users = flags.user.split(/ ?, ?/g)
+				.map(str => {
+					const [match] = str.match(SNOWFLAKE_REGEX) || [];
+					if (!match) return '';
+					return match.replace(/^ | $/, '');
+				});
+      
+			for (const userID of users) validateSnowflake(userID);
+      
+			messages = messages.filter(msg => msg.author && users.includes(msg.author.id));
+		}
+    
+		if (typeof flags.match === 'string') {
+			messages = messages.filter(msg => msg.content.includes(flags.match as string));
+		} else if (typeof flags.matchexact === 'string') {
+			messages = messages.filter(msg => msg.content === flags.matchexact);
+		}
+			
+		if (['boolean', 'string'].includes(typeof flags.mentions)) {
+			if (flags.mentions === true) {
+				messages = messages.filter(
+					msg => Boolean(msg.mentions.users.size || msg.mentions.roles.size || msg.mentions.everyone)
+				);
+			} else if (typeof flags.mentions === 'string') {
+				const ids = flags.mentions.split(/ ?, ?/g)
 					.map(str => {
 						const [match] = str.match(SNOWFLAKE_REGEX) || [];
 						if (!match) return '';
 						return match.replace(/^ | $/, '');
 					});
         
-				for (const userID of users) validateSnowflake(userID);
-        
-				messages = messages.filter(msg => msg.author && users.includes(msg.author.id));
-			}
-			if (['boolean', 'string'].includes(typeof flags.mentions)) {
-				if (flags.mentions === true) {
-					messages = messages.filter(
-						msg => Boolean(msg.mentions.users.size || msg.mentions.roles.size || msg.mentions.everyone)
-					);
-				} else if (typeof flags.mentions === 'string') {
-					const ids = flags.mentions.split(/ ?, ?/g)
-						.map(str => {
-							const [match] = str.match(SNOWFLAKE_REGEX) || [];
-							if (!match) return '';
-							return match.replace(/^ | $/, '');
-						});
-        
-					for (const id of ids) validateSnowflake(id);
+				for (const id of ids) validateSnowflake(id);
           
-					messages = messages.filter(msg => ids.some(id => 
-						msg.mentions.roles.has(id) || msg.mentions.users.has(id) ||
-            msg.mentions.roles.some(role => role.name === id)
-					));
-				}
+				messages = messages.filter(msg => ids.some(id => 
+					msg.mentions.roles.has(id) || msg.mentions.users.has(id)
+				));
 			}
+		}
 
-			if (messages.size === 0) {
-				throw new CommandError('PURGE_NO_MESSAGES');
-			}
+		if (messages.size === 0) {
+			throw new CommandError('PURGE_NO_MESSAGES');
 		}
 		await message.channel.bulkDelete(messages);
 	}
