@@ -595,10 +595,10 @@ export const EventResponses = {
   }) => {
 		return {
 			embeds: [new MessageEmbed()
-				.setAuthor(`Bulk delete in ${channel.name} ${options.amount} messages deleted`)
+				.setAuthor(`Bulk delete in #${channel.name} ${options.amount} messages deleted`)
 				.setDescription(
 					options.previous ? hyperlink('Previous Message', options.previous.url) : 'No previous message'
-				)
+				).setColor(Constants.Colors.BLUE)
 			],
 			files: [new MessageAttachment(Buffer.from(JSON.stringify(options.json, null, 4)), `bulk-delete-${
 				moment.utc(new Date()).format('DD-MM-YYYY HH-mm A')
