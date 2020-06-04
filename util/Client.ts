@@ -65,6 +65,8 @@ export default class Client extends DJSClient {
 		prefix: string[];
     reactionRoles: Map<Snowflake, Map<string, Snowflake>>;
     guilds: Map<Snowflake, GuildConfig>;
+    loginURL?: string;
+    mfaModeration: boolean;
 	};
 	public database: DatabaseManager;
 	public lockedPoints = new Set<Snowflake>();
@@ -83,6 +85,8 @@ export default class Client extends DJSClient {
     
 		Object.defineProperty(this, 'config', { value: {} });
 
+		this.config.loginURL = config.login_url;
+		this.config.mfaModeration = config.mfa_moderation ?? false;
 		this.config.allowedLevelingChannels = config.allowed_level_channels,
 		this.config.attachmentLogging = config.attachment_logging as boolean,
 		this.config.attachmentsURL = config.attachment_files_url,
@@ -352,6 +356,8 @@ export interface ClientConfig {
 		directory: string;
 	};
   guilds: RawGuildConfig[];
+  login_url?: string;
+  mfa_moderation?: boolean;
 }
 
 export type GuildConfig = {

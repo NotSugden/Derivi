@@ -3,6 +3,8 @@
     "123456789012345678"
   ],
   "attachment_files_url": "https://someurl.com/files",
+  "login_url": "https://someurl.com/login",
+  "mfa_moderation": true,
   "attachment_logging": false,
   "database": {
     "host": "localhost",

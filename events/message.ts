@@ -169,6 +169,27 @@ export default (async message => {
 				hasPermissions : CommandErrors.INSUFFICIENT_PERMISSIONS
 			);
 		}
+    
+		if (command.category === 'Moderation' && client.config.mfaModeration) {
+			const [data] = await client.database.query(
+				'SELECT access_token, token_type, expires_at FROM users WHERE id = ?',
+				message.author.id
+			) as [{ access_token?: string; token_type?: string; expires_at?: Date }?];
+			const error = new CommandError('NOT_LOGGED_IN', client.config.loginURL!).dm();
+			if (!data || !data.expires_at || data.expires_at.getTime() < Date.now()) {
+				throw error;
+			}
+      
+			try {
+				const user = await Util.fetchOauthUser(client, data.access_token!, data.token_type!);
+				if (!user.mfaEnabled) {
+					throw new CommandError('NEED_MFA').dm();
+				}
+			} catch (err) {
+				if (err.message === '401: Unauthorized') throw error;
+				throw err;
+			}
+		}
 
 		await command.run(message, args, {
 			edited,

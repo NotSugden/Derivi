@@ -6,6 +6,7 @@ import fetch from 'node-fetch';
 import Client from './Client';
 import CommandError from './CommandError';
 import { ModerationActionTypes, Responses, FLAGS_REGEX, OPTIONS_REGEX } from './Constants';
+import OAuthUser from '../structures/OAuthUser';
 import Guild from '../structures/discord.js/Guild';
 import GuildMember from '../structures/discord.js/GuildMember';
 import Message from '../structures/discord.js/Message';
@@ -288,6 +289,17 @@ export default class Util {
 			(level + 1) *
 			(2 * (level + 1) * (level + 1) + 27 * (level + 1) + 91)
 		);
+	}
+  
+	static async fetchOauthUser(client: Client, accessToken: string, tokenType = 'Bearer') {
+		const data = await fetch('https://discord.com/api/users/@me', {
+			headers: {
+				Authorization: `${tokenType} ${accessToken}`
+			}
+		}).then(response => response.json());
+		if (data.error) throw data;
+
+		return new OAuthUser(client, data);
 	}
 }
 
