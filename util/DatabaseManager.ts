@@ -424,7 +424,7 @@ export default class DatabaseManager {
 
 		await this.query(
 			'INSERT INTO mutes (guild_id, user_id, start, end) VALUES (?, ?, ?, ?)',
-			guild.id,
+			data.guild_id = guild.id,
 			userID,
 			(data.start = start).toISOString(),
 			(data.end = end).toISOString()
