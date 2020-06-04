@@ -66,7 +66,7 @@ export default class Mute extends Command {
 
 		if (!reason) throw new CommandError('PROVIDE_REASON');
 		if (!members.size) {
-			throw new CommandError('MENTION_USERS');
+			throw new CommandError('MENTION_USERS', false);
 		}
 
 		const notManageable = members.filter(member => !Util.manageable(member, message.member!));
