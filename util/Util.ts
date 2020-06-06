@@ -79,14 +79,20 @@ export default class Util {
 		};
 	}
 
-	static encrypt(data: Buffer, password: string) {
+	static encrypt(data: Buffer | string, password: string) {
+		if (typeof data === 'string') {
+			data = Buffer.from(data);
+		}
 		const iv = crypto.randomBytes(16);
 		const cipher = crypto.createCipheriv('aes256', getCipherKey(password), iv);
 		const buffer = Buffer.concat([iv, cipher.update(data), cipher.final()]);
 		return buffer;
 	}
 
-	static decrypt(encryptedData: Buffer, password: string) {
+	static decrypt(encryptedData: Buffer | string, password: string) {
+		if (typeof encryptedData === 'string') {
+			encryptedData = Buffer.from(encryptedData, 'base64');
+		}
 		const iv = encryptedData.slice(0, 16);
 		const data = encryptedData.slice(16);
 		const decipher = crypto.createDecipheriv('aes256', getCipherKey(password), iv);

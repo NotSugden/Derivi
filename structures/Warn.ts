@@ -2,6 +2,7 @@ import { Snowflake } from 'discord.js';
 import Case from './Case';
 import Guild from './discord.js/Guild';
 import Client from '../util/Client';
+import Util from '../util/Util';
 
 export default class Warn {
 	public caseID: number;
@@ -17,7 +18,7 @@ export default class Warn {
 
 		this.caseID = data.case_id;
 		this.moderatorID = data.moderator_id;
-		this.reason = data.reason;
+		this.reason = Util.decrypt(data.reason, client.config.encryptionPassword).toString();
 		this.timestamp = new Date(data.timestamp);
 		this.userID = data.user_id;
 		this.guildID = data.guild_id;

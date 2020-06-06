@@ -2,6 +2,7 @@ import { UserResolvable, Snowflake } from 'discord.js';
 import * as mysql from 'mysql';
 import Client from './Client';
 import { Errors, ModerationActionTypes } from './Constants';
+import Util from './Util';
 import Case, { RawCase } from '../structures/Case';
 import Levels, { RawLevels } from '../structures/Levels';
 import Mute, { RawMute } from '../structures/Mute';
@@ -259,7 +260,14 @@ export default class DatabaseManager {
 		screenshots?: string[];
 		users: UserResolvable[];
 	}) {
-		const data = { reason } as RawCase;
+		const data = {
+			action,
+			extras: extras ? stringify(extras) : '{}',
+			guild_id: guild.id,
+			message_id: message.id,
+			reason: Util.encrypt(reason, this.client.config.encryptionPassword).toString('base64'),
+			screenshots: JSON.stringify(screenshots)
+		} as RawCase;
 		const error = new Error(Errors.RESOLVE_PROVIDED('moderator'));
 		try {
 			const moderatorID = this.client.users.resolveID(moderator);
@@ -297,14 +305,13 @@ export default class DatabaseManager {
 			`INSERT INTO cases (id, action, extras, guild_id, message_id, moderator_id, reason, screenshots, user_ids)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 			data.id = id,
-			data.action = action,
-			data.extras = extras ? stringify(extras) : '{}',
-			data.guild_id = guild.id,
-			data.message_id = message.id,
-			// this was converted into a `string`
+			data.action,
+			data.extras,
+			data.guild_id,
+			data.message_id,
 			data.moderator_id,
 			data.reason,
-			data.screenshots = JSON.stringify(screenshots),
+			data.screenshots,
 			data.user_ids = JSON.stringify(_users)
 		);
     
@@ -359,7 +366,12 @@ export default class DatabaseManager {
 	}: {
 		caseID: number; reason: string; timestamp?: Date;
 	}) {
-		const data = { case_id: caseID, reason } as RawWarn;
+		const data = {
+			case_id: caseID,
+			guild_id: guild.id,
+			reason: Util.encrypt(reason, this.client.config.encryptionPassword).toString('base64'),
+			timestamp
+		} as RawWarn;
 		const resolve = (resolvable: UserResolvable, error: Error) => {
 			try {
 				const userID = this.client.users.resolveID(resolvable);
@@ -377,12 +389,12 @@ export default class DatabaseManager {
 		await this.query(
 			// eslint-disable-next-line max-len
 			'INSERT INTO warnings (guild_id, case_id, moderator_id, reason, user_id, timestamp) VALUES (?, ?, ?, ?, ?, ?)',
-			data.guild_id = guild.id,
-			caseID,
+			data.guild_id,
+			data.case_id,
 			data.moderator_id,
-			reason,
+			data.reason,
 			data.user_id,
-			(data.timestamp = timestamp).toISOString()
+			data.timestamp.toISOString()
 		);
 
 		return new Warn(this.client, data);
@@ -420,14 +432,19 @@ export default class DatabaseManager {
 		const userID = this.client.users.resolveID(user);
 		if (!userID || !/^\d{17,19}$/.test(userID)) throw new Error(Errors.RESOLVE_PROVIDED('user'));
 
-		const data = { user_id: userID } as RawMute;
+		const data = {
+			end,
+			guild_id: guild.id,
+			start,
+			user_id: userID
+		} as RawMute;
 
 		await this.query(
 			'INSERT INTO mutes (guild_id, user_id, start, end) VALUES (?, ?, ?, ?)',
-			data.guild_id = guild.id,
-			userID,
-			(data.start = start).toISOString(),
-			(data.end = end).toISOString()
+			data.guild_id,
+			data.user_id,
+			data.start.toISOString(),
+			data.end.toISOString()
 		);
 
 		return new Mute(this.client, data);
@@ -539,16 +556,23 @@ export default class DatabaseManager {
 		channelID: Snowflake;
 		users: Snowflake[];
 	}) {
-		const rawData = {} as RawStar;
+		const rawData = {
+			channel_id: data.channelID,
+			guild_id: guild.id,
+			message_id: data.messageID,
+			starboard_id: data.starboardID,
+			stars: data.users.length,
+			users: JSON.stringify(data.users)
+		} as RawStar;
 		await this.query(
 			// eslint-disable-next-line
 			'INSERT INTO starboard (guild_id, message_id, starboard_id, channel_id, users, stars) VALUES (?, ?, ?, ?, ?, ?)',
-			rawData.guild_id = guild.id,
-			rawData.message_id = data.messageID,
-			rawData.starboard_id = data.starboardID,
-			rawData.channel_id = data.channelID,
-			rawData.users = JSON.stringify(data.users),
-			rawData.stars = data.users.length
+			rawData.guild_id,
+			rawData.message_id,
+			rawData.starboard_id,
+			rawData.channel_id,
+			rawData.users,
+			rawData.stars
 		);
 		return new Star(this.client, rawData);
 	}

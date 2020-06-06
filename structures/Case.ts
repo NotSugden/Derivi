@@ -3,6 +3,7 @@ import Guild from './discord.js/Guild';
 import TextChannel from './discord.js/TextChannel';
 import Client from '../util/Client';
 import { ModerationActionTypes } from '../util/Constants';
+import Util from '../util/Util';
 
 export default class Case {
 	public client!: Client;
@@ -25,7 +26,7 @@ export default class Case {
 		this.id = data.id;
 		this.logMessageID = data.message_id;
 		this.moderatorID = data.moderator_id;
-		this.reason = data.reason;
+		this.reason = Util.decrypt(data.reason, client.config.encryptionPassword).toString();
 		this.screenshots = JSON.parse(data.screenshots);
 		this.timestamp = new Date(data.timestamp);
 		this.userIDs = JSON.parse(data.user_ids);
