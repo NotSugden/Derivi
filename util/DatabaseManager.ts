@@ -1,4 +1,4 @@
-import { UserResolvable, Snowflake } from 'discord.js';
+import { UserResolvable, Snowflake, SnowflakeUtil } from 'discord.js';
 import * as mysql from 'mysql';
 import Client from './Client';
 import { Errors, ModerationActionTypes } from './Constants';
@@ -369,6 +369,7 @@ export default class DatabaseManager {
 		const data = {
 			case_id: caseID,
 			guild_id: guild.id,
+			id: SnowflakeUtil.generate(),
 			reason: Util.encrypt(reason, this.client.config.encryptionPassword).toString('base64'),
 			timestamp
 		} as RawWarn;
@@ -388,7 +389,8 @@ export default class DatabaseManager {
 
 		await this.query(
 			// eslint-disable-next-line max-len
-			'INSERT INTO warnings (guild_id, case_id, moderator_id, reason, user_id, timestamp) VALUES (?, ?, ?, ?, ?, ?)',
+			'INSERT INTO warnings (id, guild_id, case_id, moderator_id, reason, user_id, timestamp) VALUES (?, ?, ?, ?, ?, ?, ?)',
+			data.id,
 			data.guild_id,
 			data.case_id,
 			data.moderator_id,

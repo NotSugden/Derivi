@@ -12,10 +12,12 @@ export default class Warn {
 	public timestamp: Date;
 	public userID: Snowflake;
 	public guildID: Snowflake;
+	public id: Snowflake;
 
 	constructor(client: Client, data: RawWarn) {
 		Object.defineProperty(this, 'client', { value: client });
 
+		this.id = data.id;
 		this.caseID = data.case_id;
 		this.moderatorID = data.moderator_id;
 		this.reason = Util.decrypt(data.reason, client.config.encryptionPassword).toString();
@@ -43,6 +45,7 @@ export default class Warn {
 }
 
 export interface RawWarn {
+	id: Snowflake;
 	guild_id: Snowflake;
 	case_id: number;
 	moderator_id: Snowflake;
