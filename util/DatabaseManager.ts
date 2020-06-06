@@ -1,4 +1,4 @@
-import { UserResolvable, Snowflake, SnowflakeUtil } from 'discord.js';
+import { Snowflake, SnowflakeUtil } from 'discord.js';
 import * as mysql from 'mysql';
 import Client from './Client';
 import { Errors, ModerationActionTypes } from './Constants';
@@ -61,27 +61,19 @@ export default class DatabaseManager {
 	}
 
 	public async setPoints(
-		user: UserResolvable,
+		user: User | Snowflake,
 		options: { points?: number; vault: number; daily?: boolean | number },
 	): Promise<Points>;
 	public async setPoints(
-		user: UserResolvable,
+		user: User | Snowflake,
 		options: { points: number; vault?: number; daily?: boolean | number },
 	): Promise<Points>;
 	public async setPoints(
-		user: UserResolvable,
+		user: User | Snowflake,
 		{ points, vault, daily }: { points?: number; vault?: number; daily?: boolean | number | Date }
 	) {
-		const userID = this.client.users.resolveID(user);
-		const error = new Error(Errors.POINTS_RESOLVE_ID(false));
-		if (!userID || !/^\d{17,19}$/.test(userID)) throw error;
-		let existing: Points;
-		try {
-			existing = await this.points(userID);
-		} catch (err) {
-			if (err.name === Errors.POINTS_RESOLVE_ID(false)) throw error;
-			else throw err;
-		}
+		const userID = this.client.users.resolveID(user)!;
+		const existing = await this.points(userID);
 
 		const set: [Exclude<keyof RawPoints, 'id'>, number | string][] = [];
 
@@ -111,12 +103,11 @@ export default class DatabaseManager {
 		return existing;
 	}
 
-	public async points(user: UserResolvable): Promise<Points>;
-	public async points(users: UserResolvable[]): Promise<Points[]>;
-	public async points(user: UserResolvable | UserResolvable[]) {
+	public async points(user: User | Snowflake): Promise<Points>;
+	public async points(users: (User | Snowflake)[]): Promise<Points[]>;
+	public async points(user: User | Snowflake | (User | Snowflake)[]) {
 		if (Array.isArray(user)) return Promise.all(user.map(u => this.points(u)));
-		const userID = this.client.users.resolveID(user);
-		if (!userID || !/^\d{17,19}$/.test(userID)) throw new Error(Errors.POINTS_RESOLVE_ID(true));
+		const userID = this.client.users.resolveID(user)!;
 		
 		const [data] = await this.query<RawPoints>('SELECT * FROM points WHERE user_id = ? LIMIT 1', userID);
 		if (!data) {
@@ -129,20 +120,12 @@ export default class DatabaseManager {
 		return new Points(this.client, data);
 	}
 
-	public async setLevels(user: UserResolvable, options: { level?: number; xp: number }): Promise<Levels>;
-	public async setLevels(user: UserResolvable, options: { level: number; xp?: number }): Promise<Levels>;
-	public async setLevels(user: UserResolvable, { level, xp }: { level?: number; xp?: number }) {
-		const userID = this.client.users.resolveID(user);
-		const error = new Error(Errors.LEVELS_RESOLVE_ID(false));
-		if (!userID || !/^\d{17,19}$/.test(userID)) throw error;
+	public async setLevels(user: User | Snowflake, options: { level?: number; xp: number }): Promise<Levels>;
+	public async setLevels(user: User | Snowflake, options: { level: number; xp?: number }): Promise<Levels>;
+	public async setLevels(user: User | Snowflake, { level, xp }: { level?: number; xp?: number }) {
+		const userID = this.client.users.resolveID(user)!;
 
-		let existing: Levels;
-		try {
-			existing = await this.levels(userID);
-		} catch (err) {
-			if (err.name === Errors.LEVELS_RESOLVE_ID()) throw error;
-			else throw err;
-		}
+		const existing = await this.levels(userID);
 
 		if (typeof xp === 'number') {
 			level = 0;
@@ -167,9 +150,9 @@ export default class DatabaseManager {
 	}
 
 	public async levels(top: number): Promise<Levels[]>;
-	public async levels(user: UserResolvable): Promise<Levels>;
-	public async levels(users: UserResolvable[]): Promise<Levels[]>;
-	public async levels(user: UserResolvable | UserResolvable[] | number) {
+	public async levels(user: User | Snowflake): Promise<Levels>;
+	public async levels(users: (User | Snowflake)[]): Promise<Levels[]>;
+	public async levels(user: User | Snowflake | (User | Snowflake)[] | number) {
 		if (Array.isArray(user)) return Promise.all(user.map(u => this.levels(u)));
 		if (typeof user === 'number') {
 			const topLevels = await this.query<RawLevels>(
@@ -179,8 +162,7 @@ export default class DatabaseManager {
 			return topLevels
 				.map(data => new Levels(this.client, data));
 		}
-		const userID = this.client.users.resolveID(user);
-		if (!userID || !/^\d{17,19}$/.test(userID)) throw new Error(Errors.LEVELS_RESOLVE_ID());
+		const userID = this.client.users.resolveID(user)!;
 
 		const [data] = await this.query<RawLevels>(
 			'SELECT * FROM levels WHERE user_id = ? LIMIT 1',
@@ -255,48 +237,21 @@ export default class DatabaseManager {
     extras?: object;
     guild: Guild;
 		message: Message;
-		moderator: UserResolvable;
+		moderator: User | Snowflake;
 		reason: string;
 		screenshots?: string[];
-		users: UserResolvable[];
+		users: (User | Snowflake)[];
 	}) {
 		const data = {
 			action,
 			extras: extras ? stringify(extras) : '{}',
 			guild_id: guild.id,
 			message_id: message.id,
+			moderator_id: this.client.users.resolveID(moderator)!,
 			reason: Util.encrypt(reason, this.client.config.encryptionPassword).toString('base64'),
-			screenshots: JSON.stringify(screenshots)
+			screenshots: JSON.stringify(screenshots),
+			user_ids: JSON.stringify(users.map(user => this.client.users.resolveID(user)!))
 		} as RawCase;
-		const error = new Error(Errors.RESOLVE_PROVIDED('moderator'));
-		try {
-			const moderatorID = this.client.users.resolveID(moderator);
-			if (!moderatorID || !/^\d{17,19}$/.test(moderatorID)) {
-				throw error;
-			}
-			const user = await this.client.users.fetch(moderatorID);
-			data.moderator_id = user.id;
-		} catch {
-			throw error;
-		}
-		// same as above
-		const _users = [];
-		for (const idOrUser of users) {
-			if (idOrUser instanceof User) {
-				_users.push(idOrUser.id);
-				continue;
-			}
-			try {
-				const userID = this.client.users.resolveID(idOrUser);
-				if (!userID) throw null;
-				const user = await this.client.users.fetch(
-					userID
-				);
-				_users.push(user.id);
-			} catch {
-				throw new Error(Errors.CASE_RESOLVE_USER(users.indexOf(idOrUser)));
-			}
-		}
     
 		const id = (await this.query('SELECT * FROM cases WHERE guild_id = ?', guild.id)).length + 1;
 
@@ -312,7 +267,7 @@ export default class DatabaseManager {
 			data.moderator_id,
 			data.reason,
 			data.screenshots,
-			data.user_ids = JSON.stringify(_users)
+			data.user_ids
 		);
     
 		return new Case(this.client, data);
@@ -320,9 +275,9 @@ export default class DatabaseManager {
 
 	public async warns(guild: Guild, caseID: number): Promise<Warn[] | null>;
 	public async warns(guild: Guild, caseIDs: number[]): Promise<{ [key: number]: Warn[] | null }>;
-	public async warns(guild: Guild, users: UserResolvable[]): Promise<{ [key: string]: Warn[] | null }>;
-	public async warns(guild: Guild, user: UserResolvable): Promise<Warn[]>;
-	public async warns(guild: Guild, caseOrUser: UserResolvable | number | UserResolvable[] | number[]): Promise<
+	public async warns(guild: Guild, users: (User | Snowflake)[]): Promise<{ [key: string]: Warn[] | null }>;
+	public async warns(guild: Guild, user: User | Snowflake): Promise<Warn[]>;
+	public async warns(guild: Guild, caseOrUser: User | Snowflake | number | (User | Snowflake)[] | number[]): Promise<
 		Warn[] |
 		{ [key: number]: Warn[] | null } |
 		{ [key: string]: Warn[] | null } | null
@@ -333,8 +288,8 @@ export default class DatabaseManager {
 			 * i'm not sure if all the types are correct internally in that mess
 			 * but it should return them properly which is what matters
 			 */
-			const objects = await Promise.all((caseOrUser as (number | UserResolvable)[])
-				.map((id: number | UserResolvable) => this.warns(guild, id as number)
+			const objects = await Promise.all((caseOrUser as (number | User | Snowflake)[])
+				.map((id: number | User | Snowflake) => this.warns(guild, id as number)
 					.then(data => ({
 						[id as string | number]: data
 					}))));
@@ -350,8 +305,7 @@ export default class DatabaseManager {
 			if (!rawWarns.length) return null;
 			return rawWarns.map(data => new Warn(this.client, data));
 		}
-		const userID = this.client.users.resolveID(caseOrUser);
-		if (!userID || !/^\d{17,19}$/.test(userID)) throw new Error(Errors.WARNS_RESOLVE_ID);
+		const userID = this.client.users.resolveID(caseOrUser)!;
 
 		const rawWarns = await this.query<RawWarn>(
 			'SELECT * FROM warnings WHERE user_id = ? AND guild_id = ?',
@@ -361,7 +315,7 @@ export default class DatabaseManager {
 		return rawWarns.map(data => new Warn(this.client, data));
 	}
 
-	public async newWarn(guild: Guild, user: UserResolvable, moderator: UserResolvable, {
+	public async newWarn(guild: Guild, user: User | Snowflake, moderator: User | Snowflake, {
 		caseID, reason, timestamp = new Date()
 	}: {
 		caseID: number; reason: string; timestamp?: Date;
@@ -370,22 +324,11 @@ export default class DatabaseManager {
 			case_id: caseID,
 			guild_id: guild.id,
 			id: SnowflakeUtil.generate(),
+			moderator_id: this.client.users.resolveID(moderator)!,
 			reason: Util.encrypt(reason, this.client.config.encryptionPassword).toString('base64'),
-			timestamp
+			timestamp,
+			user_id: this.client.users.resolveID(user)!
 		} as RawWarn;
-		const resolve = (resolvable: UserResolvable, error: Error) => {
-			try {
-				const userID = this.client.users.resolveID(resolvable);
-				if (!userID || !/^\d{17,19}$/.test(userID)) {
-					throw error;
-				}
-				return this.client.users.fetch(userID);
-			} catch {
-				throw error;
-			}
-		};
-		data.moderator_id = (await resolve(moderator, new Error(Errors.RESOLVE_PROVIDED('moderator')))).id;
-		data.user_id = (await resolve(user, new Error(Errors.RESOLVE_PROVIDED('user')))).id;
 
 		await this.query(
 			// eslint-disable-next-line max-len
@@ -403,9 +346,9 @@ export default class DatabaseManager {
 	}
 
 	public async mute(all: true): Promise<Mute[]>;
-	public async mute(guild: Guild, user: UserResolvable): Promise<Mute | null>;
-	public async mute(guild: Guild, users: UserResolvable[]): Promise<(Mute | null)[]>;
-	public async mute(guild: Guild | true, user?: UserResolvable | UserResolvable[]) {
+	public async mute(guild: Guild, user: User | Snowflake): Promise<Mute | null>;
+	public async mute(guild: Guild, users: (User | Snowflake)[]): Promise<(Mute | null)[]>;
+	public async mute(guild: Guild | true, user?: User | Snowflake | (User | Snowflake)[]) {
 		if (typeof guild === 'boolean'){
 			const rawData = await this.query<RawMute>('SELECT * FROM mutes');
 			return rawData.reduce((acc, data) => {
@@ -415,10 +358,11 @@ export default class DatabaseManager {
 			}, [] as Mute[]) as Mute[];
 		}
 		if (Array.isArray(user)) return Promise.all(user.map(u => this.mute(guild, u)));
-		const userID = this.client.users.resolveID(user!);
-		if (!userID || !/^\d{17,19}$/.test(userID)) throw new Error(Errors.MUTE_RESOLVE_ID(true));
+		const userID = this.client.users.resolveID(user!)!;
+    
+		const key = `${guild.id}:${userID}`;
 
-		if (this.client.mutes.has(`${guild.id}:${userID}`)) return this.client.mutes.get(userID);
+		if (this.client.mutes.has(key)) return this.client.mutes.get(key);
 
 		const [data] = await this.query<RawMute>(
 			'SELECT * FROM mutes WHERE user_id = ? AND guild_id = ? LIMIT 1',
@@ -430,15 +374,12 @@ export default class DatabaseManager {
 		else return mute;
 	}
 
-	public async newMute(guild: Guild, user: UserResolvable, start: Date, end: Date) {
-		const userID = this.client.users.resolveID(user);
-		if (!userID || !/^\d{17,19}$/.test(userID)) throw new Error(Errors.RESOLVE_PROVIDED('user'));
-
+	public async newMute(guild: Guild, user: User | Snowflake, start: Date, end: Date) {
 		const data = {
 			end,
 			guild_id: guild.id,
 			start,
-			user_id: userID
+			user_id: this.client.users.resolveID(user)
 		} as RawMute;
 
 		await this.query(
@@ -452,11 +393,13 @@ export default class DatabaseManager {
 		return new Mute(this.client, data);
 	}
 
-	public async deleteMute(guild: Guild, user: UserResolvable) {
+	public async deleteMute(guild: Guild, user: User | Snowflake) {
 		const userID = this.client.users.resolveID(user);
-		if (!userID || !/^\d{17,19}$/.test(userID)) throw new Error(Errors.MUTE_RESOLVE_ID(false));
 
-		await this.query('DELETE FROM mutes WHERE user_id = ? AND guild_id = ?', userID, guild.id);
+		await this.query(
+			'DELETE FROM mutes WHERE user_id = ? AND guild_id = ?',
+			userID, guild.id
+		);
 		return;
 	}
 
@@ -506,9 +449,9 @@ export default class DatabaseManager {
 		}));
 	}
 
-	public async newPartnership(guild: { invite: string; id: Snowflake }, user: UserResolvable, timestamp: Date) {
-		const userID = this.client.users.resolveID(user);
-		if (!userID || !/^\d{17,19}$/.test(userID)) throw new Error(Errors.RESOLVE_PROVIDED('user'));
+	public async newPartnership(guild: { invite: string; id: Snowflake }, user: User | Snowflake, timestamp: Date) {
+		const userID = this.client.users.resolveID(user)!;
+    
 		await this.query(
 			'INSERT INTO partnerships (guild_id, guild_invite, user_id, timestamp) VALUES (?, ?, ?, ?)',
 			guild.id, guild.invite, userID, timestamp.getTime()
@@ -526,13 +469,7 @@ export default class DatabaseManager {
 	}
 
 	public async addRemoveStar(guild: Guild, messageID: Snowflake, userID: Snowflake | Snowflake[], add = true) {
-		if (!/^\d{17,19}$/.test(messageID)) throw new Error(Errors.RESOLVE_PROVIDED('messageID'));
 		let newUsers: Snowflake[] = [];
-		if (Array.isArray(userID)) {
-			for (const id of userID) {
-				if (!/^\d{17,19}$/.test(id)) throw new Error(Errors.RESOLVE_PROVIDED(`userIDs[${id}]`));
-			}
-		} else if (!/^\d{17,19}$/.test(userID)) throw new Error(Errors.RESOLVE_PROVIDED('userID'));
 
 		newUsers.push(...(Array.isArray(userID) ? userID : [userID]));
 
@@ -604,7 +541,7 @@ export default class DatabaseManager {
 			);
 			return stars.map(data => new Star(this.client, data));
 		}
-		if (!/^\d{17,19}$/.test(messageID)) throw new Error(Errors.RESOLVE_PROVIDED('messageID'));
+    
 		const [data] = await this.query<RawStar>(
 			'SELECT * FROM starboard WHERE message_id = ? AND guild_id = ?',
 			messageID, guild.id

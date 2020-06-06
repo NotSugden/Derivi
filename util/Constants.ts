@@ -112,16 +112,6 @@ export const Errors = {
 	INVALID_CLIENT_OPTION: (option: string, className: string) =>
 		`Client config option '${option}' couldn't be resolved to a valid ${className}.`,
 
-	CASE_RESOLVE_USER: (index: number) => `Couldn't resolve a User from 'users[${index}]'.`,
-
-	RESOLVE_PROVIDED: (parameter: string) => `Couldn't resolve the User from the provided '${parameter}'.`,
-
-	LEVELS_RESOLVE_ID: (fetch = true) => `Couldn't resolve the User ID to ${fetch ? 'fetch' : 'set'} levels of.`,
-	POINTS_RESOLVE_ID: (fetch = true) => `Couldn't resolve the User ID to ${fetch ? 'fetch' : 'set'} points of.`,
-	WARNS_RESOLVE_ID: 'Couldn\'t resolve the User ID to fetch warns from.',
-	MUTE_RESOLVE_ID: (fetch = true) =>
-		`Couldn't resolve the User ID to ${fetch ? 'fetch the mute of' : 'delete the mute'}.`,
-
 	NEGATIVE_NUMBER: (variable: string) => `Provided '${variable}' is negative, and should be positive.`,
 	RESOLVE_COMMAND: 'The command passed couldn\'t be resolved',
 
