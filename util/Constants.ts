@@ -11,6 +11,7 @@ import Util from './Util';
 import { Card } from '../commands/Points/Blackjack';
 import Case from '../structures/Case';
 import Levels from '../structures/Levels';
+import Profile from '../structures/Profile';
 import Warn from '../structures/Warn';
 import Guild from '../structures/discord.js/Guild';
 import GuildMember from '../structures/discord.js/GuildMember';
@@ -205,6 +206,11 @@ export const CommandErrors = {
 export type MatchState = 'won' | 'lost' | 'draw' | 'idle'
 
 export const Responses = {
+	PROFILE: (profile: Profile) => [
+    profile.user!.tag,
+    `Description: ${profile.description}`,
+    `Reputation: ${profile.rep}`
+	],
 	SUCCESSFULLY_EDITED_CASE: (id: number) => `Successfully edited case ${id}.`,
 	STARBOARD_EMBED: (stars: number, message: Message) => {
 		const embed = new MessageEmbed()

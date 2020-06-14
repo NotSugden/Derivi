@@ -7,6 +7,7 @@ import Case, { RawCase } from '../structures/Case';
 import Levels, { RawLevels } from '../structures/Levels';
 import Mute, { RawMute } from '../structures/Mute';
 import Points, { RawPoints } from '../structures/Points';
+import Profile, { RawProfile } from '../structures/Profile';
 import Star, { RawStar } from '../structures/Star';
 import Warn, { RawWarn } from '../structures/Warn';
 import Guild from '../structures/discord.js/Guild';
@@ -548,6 +549,45 @@ export default class DatabaseManager {
 		);
 		if (!data) return null;
 		return new Star(this.client, data);
+	}
+  
+	public async profile(user: User | Snowflake): Promise<Profile>;
+	public async profile(user: (User | Snowflake)[]): Promise<Profile[]>;
+	public async profile(user: User | Snowflake | (User | Snowflake)[]) {
+		if (Array.isArray(user)) return Promise.all(user.map(u => this.profile(u)));
+		const userID = this.client.users.resolveID(user)!;
+
+		const [data] = await this.query<RawProfile>(
+			'SELECT * FROM profiles WHERE user_id = ? LIMIT 1',
+			userID
+		);
+		if (!data) {
+			await this.query(
+				'INSERT INTO profiles (user_id, description) VALUES (?, ?)',
+				userID,
+				Util.encrypt('No description', this.client.config.encryptionPassword).toString('base64')
+			);
+			return this.profile(userID);
+		}
+    
+		return new Profile(this.client, data);
+	}
+  
+	public async updateProfile(user: User | Snowflake, newData: Partial<Omit<RawProfile, 'user_id'>>) {
+		if (newData.description) {
+			newData.description = Util.encrypt(
+				newData.description, this.client.config.encryptionPassword
+			).toString('base64');
+		}
+		const entries = Object.entries(newData);
+		const userID = this.client.users.resolveID(user)!;
+    
+		await this.query(
+			`UPDATE profiles SET ${entries.map(([key]) => `${key} = ?`).join(', ')} WHERE user_id = ?`,
+			...entries.map(([, value]) => value), userID
+		);
+    
+		return;
 	}
 }
 
