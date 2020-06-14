@@ -28,8 +28,8 @@ export default (async messages => {
 			tag: message.author.tag
 		} : 'Unknown User#0000',
 		content: message.content ?
-			message.cleanContent : typeof message.content === 'string' ?
-				'No content.' : 'Message content was not cached.',
+			message.cleanContent!.split('\n') : [typeof message.content === 'string' ?
+				'No content.' : 'Message content was not cached.'],
 		embed: message.embeds![0]?.toJSON(),
 		id: message.id,
 		mentions: {
