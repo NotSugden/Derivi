@@ -15,6 +15,7 @@ import * as mysql from 'mysql';
 import CommandManager from './CommandManager';
 import { Defaults, Errors } from './Constants';
 import DatabaseManager from './DatabaseManager';
+import EmojiStore from './EmojiStore';
 import { Invite, PartialMessage } from './Types';
 import WebsiteManager from './WebsiteManager';
 import Mute from '../structures/Mute';
@@ -59,7 +60,8 @@ export default class Client extends DJSClient {
 		allowedLevelingChannels: Snowflake[];
 		attachmentLogging: boolean;
 		attachmentsURL?: string;
-		readonly encryptionPassword: string;
+    readonly encryptionPassword: string;
+    emojis: EmojiStore;
 		database: mysql.ConnectionConfig;
 		filesDir: string;
 		prefix: string[];
@@ -100,6 +102,10 @@ export default class Client extends DJSClient {
 				emojiData.role
 			]))
 		]));
+		this.config.emojis = new EmojiStore(this);
+		for (const { name, id } of config.emojis) {
+			this.config.emojis.set(name, id);
+		}
 		this.config.guilds = new Map();
 		for (const rawConfig of config.guilds) {
 			const guildConfig: GuildConfig = {
@@ -214,8 +220,7 @@ export default class Client extends DJSClient {
 			const ch = this.channels.resolve(channelID);
 			if (ch?.type !== 'text') {
 				throw new TypeError(Errors.INVALID_CLIENT_OPTION(
-					`allowed_level_channels[${channelID}]`,
-					'TextChannel'
+					`allowed_level_channels[${channelID}]`, 'TextChannel'
 				));
 			}
 		}
@@ -223,74 +228,70 @@ export default class Client extends DJSClient {
 			const exists = await promisify(fs.exists)(this.config.filesDir);
 			if (!exists) throw new Error(Errors.INVALID_CLIENT_OPTION('files_dir', 'directory'));
 		}
+		for (const [name, emoji] of this.config.emojis) {
+			if (emoji) continue;
+			throw new TypeError(Errors.INVALID_CLIENT_OPTION(
+				`emojis[${name}]`, 'GuildEmoji'
+			));
+		}
 		const resolve = (id: Snowflake) => this.channels.resolve(id);
 		for (const guildConfig of config.guilds.values()) {
 			const guild = this.guilds.resolve(guildConfig.id);
 			if (!guild) {
 				throw new TypeError(Errors.INVALID_CLIENT_OPTION(
-					`guilds[${guildConfig.id}].id`,
-					'Guild'
+					`guilds[${guildConfig.id}].id`, 'Guild'
 				));
 			}
 			for (const roleID of guildConfig.accessLevelRoles) {
 				if (!guild.roles.cache.has(roleID)) {
 					throw new TypeError(Errors.INVALID_CLIENT_OPTION(
-						`guilds[${guildConfig.id}].access_level_roles[${roleID}]`,
-						'Role'
+						`guilds[${guildConfig.id}].access_level_roles[${roleID}]`, 'Role'
 					));
 				}
 			}
 			if (resolve(guildConfig.casesChannelID)?.type !== 'text') {
 				throw new TypeError(Errors.INVALID_CLIENT_OPTION(
-					`guilds[${guildConfig.id}].punishment_channel`,
-					'TextChannel'
+					`guilds[${guildConfig.id}].punishment_channel`, 'TextChannel'
 				));
 			}
 			if (guildConfig.filePermissionsRole && !guild.roles.cache.has(guildConfig.filePermissionsRole)) {
 				throw new TypeError(Errors.INVALID_CLIENT_OPTION(
-					`guilds[${guildConfig.id}].filePermissionsRole`,
-					'Role'
+					`guilds[${guildConfig.id}].filePermissionsRole`, 'Role'
 				));
 			}
 			if (resolve(guildConfig.generalChannelID)?.type !== 'text') {
 				throw new TypeError(Errors.INVALID_CLIENT_OPTION(
-					`guilds[${guildConfig.id}].general_channel`,
-					'TextChannel'
+					`guilds[${guildConfig.id}].general_channel`, 'TextChannel'
 				));
 			}
 			for (const { id } of guildConfig.levelRoles || []) {
 				if (!guild.roles.cache.has(id)) {
 					throw new TypeError(Errors.INVALID_CLIENT_OPTION(
-						`guilds[${guildConfig.id}].level_roles[${id}]`,
-						'Role'
+						`guilds[${guildConfig.id}].level_roles[${id}]`, 'Role'
 					));
 				}
 			}
 			if (resolve(guildConfig.partnerships.rewardsChannelID)?.type !== 'text') {
 				throw new TypeError(Errors.INVALID_CLIENT_OPTION(
-					`guilds[${guildConfig.id}].partner_rewards_channel`,
-					'TextChannel'
+					`guilds[${guildConfig.id}].partner_rewards_channel`, 'TextChannel'
 				));
 			}
 			for (const channelID of guildConfig.partnerships.channels.keys()) {
 				if (resolve(channelID)?.type !== 'text') {
 					throw new TypeError(Errors.INVALID_CLIENT_OPTION(
-						`guilds[${guildConfig.id}]partnership_channels[${channelID}]`,
-						'TextChannel'
+						`guilds[${guildConfig.id}]partnership_channels[${channelID}]`, 'TextChannel'
 					));
 				}
 			}
 			if (resolve(guildConfig.reportsChannelID)?.type !== 'text') {
 				throw new TypeError(Errors.INVALID_CLIENT_OPTION(
-					`guilds[${guildConfig.id}].reports_channel`,
-					'TextChannel'
+					`guilds[${guildConfig.id}].reports_channel`, 'TextChannel'
 				));
 			}
 			const rulesChannel = resolve(guildConfig.rulesChannelID) as TextChannel | null;
 			if (rulesChannel?.type !== 'text') {
 				throw new TypeError(Errors.INVALID_CLIENT_OPTION(
-					`guilds[${guildConfig.id}].rules_channel`,
-					'TextChannel'
+					`guilds[${guildConfig.id}].rules_channel`, 'TextChannel'
 				));
 			}
 			if (guildConfig.rulesMessageID) {
@@ -298,35 +299,30 @@ export default class Client extends DJSClient {
 					await rulesChannel.messages.fetch(guildConfig.rulesMessageID, false);
 				} catch {
 					throw new TypeError(Errors.INVALID_CLIENT_OPTION(
-						`guilds[${guildConfig.id}].rules_message`,
-						'Message'
+						`guilds[${guildConfig.id}].rules_message`, 'Message'
 					));
 				}
 			}
 			if (resolve(guildConfig.staffCommandsChannelID)?.type !== 'text') {
 				throw new TypeError(Errors.INVALID_CLIENT_OPTION(
-					`guilds[${guildConfig.id}].staff_commands_channel`,
-					'TextChannel'
+					`guilds[${guildConfig.id}].staff_commands_channel`, 'TextChannel'
 				));
 			}
 			if (resolve(guildConfig.staffServerCategoryID)?.type !== 'category') {
 				throw new TypeError(Errors.INVALID_CLIENT_OPTION(
-					`guilds[${guildConfig.id}].staff_server_category`,
-					'CategoryChannel'
+					`guilds[${guildConfig.id}].staff_server_category`, 'CategoryChannel'
 				));
 			}
 			if (guildConfig.starboard) {
 				if (resolve(guildConfig.starboard.channelID)?.type !== 'text') {
 					throw new TypeError(Errors.INVALID_CLIENT_OPTION(
-						`guilds[${guildConfig.id}].starboard.channel`,
-						'TextChannel'
+						`guilds[${guildConfig.id}].starboard.channel`, 'TextChannel'
 					));
 				}
 			}
 			if (guildConfig.welcomeRoleID && !guild.roles.cache.has(guildConfig.welcomeRoleID)) {
 				throw new TypeError(Errors.INVALID_CLIENT_OPTION(
-					`guilds[${guildConfig.id}].welcome_role`,
-					'Role'
+					`guilds[${guildConfig.id}].welcome_role`, 'Role'
 				));
 			}
 		}
@@ -338,7 +334,11 @@ export interface ClientConfig {
 	attachment_files_url?: string;
 	attachment_logging: boolean;
 	commands_dir?: string;
-	encryption_password: string;
+  encryption_password: string;
+  emojis: {
+    name: string;
+    id: Snowflake;
+  }[];
 	database: mysql.ConnectionConfig;
 	files_dir?: string;
 	prefix: string[];

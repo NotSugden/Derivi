@@ -275,8 +275,8 @@ export const Responses = {
 			})
 			.setFooter(`Your bet: ${bet}`);
 	},
-	BLACKJACK_RULES: () => {
-		const RIGHT_ARROW = '<:RightArrow:597212645812207633>';
+	BLACKJACK_RULES: (client: Client) => {
+		const RIGHT_ARROW = client.config.emojis.get('RIGHT_ARROW')!;
 		return new MessageEmbed()
 			.setTitle('How to play')
 			.addFields({
@@ -300,7 +300,7 @@ export const Responses = {
 	COLLECTED_DAILY: (amount = 250) => `Collected daily **${amount}** points.`,
 	SUCCESSFUL_PURCHASE: (item: string) => `Successfully purchased **${item}**.`,
 	SHOP_LAYOUT: (items: ShopItem[], guild: Guild) => {
-		const RIGHT_ARROW = '<:RightArrow:597212645812207633>';
+		const RIGHT_ARROW = guild.client.config.emojis.get('RIGHT_ARROW')!;
 		return [...items.map(item => {
 			if (item.action === 'give_role') {
 				const role = guild.roles.cache.get(item.role_id)!;
@@ -327,17 +327,17 @@ export const Responses = {
 			.setColor('WHITE');
 	},
 	LEVEL: (user: User, level: number, xp: number) => {
-		const LEFT_BORDER = '<:Lines2:597212619299880962>';
-		const RIGHT_BORDER = '<:Lines3:594509306364297228>';
-		const RIGHT_ARROW = '<:RightArrow:597212645812207633>';
-		const MIDDLE_BORDER = '<:Lines:597212592167059456>';
+		const LEFT_BORDER = user.client.config.emojis.get('LEFT_BORDER')!;
+		const RIGHT_BORDER = user.client.config.emojis.get('RIGHT_BORDER')!;
+		const RIGHT_ARROW = user.client.config.emojis.get('RIGHT_ARROW')!;
+		const MIDDLE_BORDER = user.client.config.emojis.get('MIDDLE_BORDER')!;
 
 		return [
 			`**${user.username}**#${user.discriminator}`,
-			`${LEFT_BORDER}${MIDDLE_BORDER.repeat(6)}${RIGHT_BORDER}`,
+			`${LEFT_BORDER}${MIDDLE_BORDER.toString().repeat(6)}${RIGHT_BORDER}`,
 			//`${RIGHT_ARROW} Rank **${rank}**`,
 			`${RIGHT_ARROW} Level **${level}**`,
-			`${LEFT_BORDER}${MIDDLE_BORDER.repeat(6)}${RIGHT_BORDER}`,
+			`${LEFT_BORDER}${MIDDLE_BORDER.toString().repeat(6)}${RIGHT_BORDER}`,
 			`XP: **${xp}**/**${Util.levelCalc(level).toFixed(0)}**`
 		];
 	},
@@ -499,7 +499,7 @@ export const EventResponses = {
 	GUILD_MEMBER_ADD: (member: GuildMember & { client: Client }, webhook = true) => {
 		const config = member.client.config.guilds.get(member.guild.id)!;
 		return {
-			content: `<:RightArrow:597212645812207633> ${
+			content: `${member.client.config.emojis.get('RIGHT_ARROW')!} ${
 				config.welcomeRoleID && member.guild.roles.cache.has(config.welcomeRoleID) ?
 					`<@&${config.welcomeRoleID}>` : 'Welcome'
 			} to **${

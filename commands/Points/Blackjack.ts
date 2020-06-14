@@ -97,7 +97,7 @@ const play = async (message: Message, points: Points, bet: { bet: number }): Pro
 		collector.on('collect', async (msg: Message) => {
 			const content = msg.content.toLowerCase();
 			if (content === 'rules') {
-				msg.channel.send(Responses.BLACKJACK_RULES())
+				msg.channel.send(Responses.BLACKJACK_RULES(msg.client))
 					.catch(reject);
 			} else if (['hit', 'double'].includes(content)) {
 				if (content === 'double') {
@@ -159,7 +159,7 @@ export default class Blackjack extends Command {
 	public async run(message: Message, args: CommandArguments, { send }: CommandData) {
 		if (message.editedTimestamp) return;
 		if (!args[0]) {
-			return send(Responses.BLACKJACK_RULES());
+			return send(Responses.BLACKJACK_RULES(this.client));
 		}
 
 		if (this.client.lockedPoints.has(message.author.id)) {

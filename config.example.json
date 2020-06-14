@@ -33,6 +33,24 @@
     "filename": "index.js",
     "directory": "/path/to/directory"
   },
+  "emojis": [
+    {
+      "name": "RIGHT_ARROW",
+      "id": "123456789012345678"
+    },
+    {
+      "name": "RIGHT_BORDER",
+      "id": "123456789012345678"
+    },
+    {
+      "name": "MIDDLE_BORDER",
+      "id": "123456789012345678"
+    },
+    {
+      "name": "LEFT_BORDER",
+      "id": "123456789012345678"
+    }
+  ],
   "guilds": [
     {
       "_comment": "starts at level 1, ends at level 4 ,must have all 4",
