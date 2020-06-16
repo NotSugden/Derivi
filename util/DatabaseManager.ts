@@ -50,8 +50,8 @@ export default class DatabaseManager {
 	}
 
 	/**
-   * Warning: database file will need to be properly configured.
-   */
+	 * Warning: database file will need to be properly configured.
+	 */
 	public open() {
 		return new Promise<this>((resolve, reject) => {
 			this.rawDatabase.connect(error => {
@@ -196,7 +196,7 @@ export default class DatabaseManager {
 				values[0].push('timestamp < ?');
 				values[1].push(new Date(id.before).toISOString());
 			}
-      
+			
 			values[0].push('guild_id = ?');
 			values[1].push(guild.id);
 
@@ -206,7 +206,10 @@ export default class DatabaseManager {
 			);
 			return cases.map(data => new Case(this.client, data));
 		}
-		const [data] = await this.query<RawCase>('SELECT * FROM cases WHERE id = ? LIMIT 1', id);
+		const [data] = await this.query<RawCase>(
+			'SELECT * FROM cases WHERE id = ? AND guild_id = ? LIMIT 1',
+			id, guild.id
+		);
 		if (!data) return null;
 		return new Case(this.client, data);
 	}
@@ -235,8 +238,8 @@ export default class DatabaseManager {
 		users
 	}: {
 		action: keyof typeof ModerationActionTypes;
-    extras?: object;
-    guild: Guild;
+		extras?: object;
+		guild: Guild;
 		message: Message;
 		moderator: User | Snowflake;
 		reason: string;
@@ -253,13 +256,13 @@ export default class DatabaseManager {
 			screenshots: JSON.stringify(screenshots),
 			user_ids: JSON.stringify(users.map(user => this.client.users.resolveID(user)!))
 		} as RawCase;
-    
+		
 		const id = (await this.query('SELECT * FROM cases WHERE guild_id = ?', guild.id)).length + 1;
 
 		await this.query(
 			// cases table should have an auto-incrementing unique key, id
 			`INSERT INTO cases (id, action, extras, guild_id, message_id, moderator_id, reason, screenshots, user_ids)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 			data.id = id,
 			data.action,
 			data.extras,
@@ -270,7 +273,7 @@ export default class DatabaseManager {
 			data.screenshots,
 			data.user_ids
 		);
-    
+		
 		return new Case(this.client, data);
 	}
 
@@ -360,7 +363,7 @@ export default class DatabaseManager {
 		}
 		if (Array.isArray(user)) return Promise.all(user.map(u => this.mute(guild, u)));
 		const userID = this.client.users.resolveID(user!)!;
-    
+		
 		const key = `${guild.id}:${userID}`;
 
 		if (this.client.mutes.has(key)) return this.client.mutes.get(key);
@@ -452,7 +455,7 @@ export default class DatabaseManager {
 
 	public async newPartnership(guild: { invite: string; id: Snowflake }, user: User | Snowflake, timestamp: Date) {
 		const userID = this.client.users.resolveID(user)!;
-    
+		
 		await this.query(
 			'INSERT INTO partnerships (guild_id, guild_invite, user_id, timestamp) VALUES (?, ?, ?, ?)',
 			guild.id, guild.invite, userID, timestamp.getTime()
@@ -532,7 +535,7 @@ export default class DatabaseManager {
 				values[0].push('stars < ?');
 				values[1].push(new Date(messageID.below).toISOString());
 			}
-      
+			
 			values[0].push('guild_id = ?');
 			values[1].push(guild.id);
 
@@ -542,7 +545,7 @@ export default class DatabaseManager {
 			);
 			return stars.map(data => new Star(this.client, data));
 		}
-    
+		
 		const [data] = await this.query<RawStar>(
 			'SELECT * FROM starboard WHERE message_id = ? AND guild_id = ?',
 			messageID, guild.id
@@ -550,7 +553,7 @@ export default class DatabaseManager {
 		if (!data) return null;
 		return new Star(this.client, data);
 	}
-  
+	
 	public async profile(user: User | Snowflake): Promise<Profile>;
 	public async profile(user: (User | Snowflake)[]): Promise<Profile[]>;
 	public async profile(user: User | Snowflake | (User | Snowflake)[]) {
@@ -569,10 +572,10 @@ export default class DatabaseManager {
 			);
 			return this.profile(userID);
 		}
-    
+		
 		return new Profile(this.client, data);
 	}
-  
+	
 	public async updateProfile(user: User | Snowflake, newData: Partial<Omit<RawProfile, 'user_id'>>) {
 		if (newData.description) {
 			newData.description = Util.encrypt(
@@ -581,12 +584,12 @@ export default class DatabaseManager {
 		}
 		const entries = Object.entries(newData);
 		const userID = this.client.users.resolveID(user)!;
-    
+		
 		await this.query(
 			`UPDATE profiles SET ${entries.map(([key]) => `${key} = ?`).join(', ')} WHERE user_id = ?`,
 			...entries.map(([, value]) => value), userID
 		);
-    
+		
 		return;
 	}
 }
