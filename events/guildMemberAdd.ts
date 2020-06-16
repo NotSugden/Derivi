@@ -34,7 +34,8 @@ export default (async member => {
 		.setColor(Constants.Colors.GREEN)
 		.setDescription(`${user} (${user.id}) Joined`)
 		.setFooter(user.id)
-		.setTimestamp(member.joinedAt!);
+		.setTimestamp(member.joinedAt!)
+		.setThumbnail(user.displayAvatarURL({ dynamic: true }));
 	hook.send({
 		embeds: [embed],
 		username: 'Member Joined'

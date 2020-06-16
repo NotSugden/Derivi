@@ -19,7 +19,8 @@ export default (async member => {
 			`Roles: ${roles.size > 1 ? roles.map(role => role.name) : 'No roles'}`
 		])
 		.setFooter(user.id)
-		.setTimestamp();
+		.setTimestamp()
+		.setThumbnail(user.displayAvatarURL({ dynamic: true }));
 	hook.send({
 		embeds: [embed],
 		username: 'Member Left'
