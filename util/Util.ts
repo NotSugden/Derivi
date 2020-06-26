@@ -180,53 +180,55 @@ export default class Util {
 		return data;
 	}
 
-	static async sendLog(moderator: User, users: User[], action: keyof typeof ModerationActionTypes, extras: {
-		[key: string]: unknown;
-    reason: string;
+	static async sendLog(options: {
+		action: keyof typeof ModerationActionTypes;
+		context?: Message;
+		extras: { [key: string]: string };
     guild: Guild;
+		moderator: User;
+		reason: string;
+		screenshots: string[];
+		users: User[];
 	}) {
-		const { client } = moderator;
-		const { reason, screenshots, guild } = extras;
-		delete extras.reason;
-		delete extras.screenshots;
-		delete extras.guild;
+		const { client } = options.guild;
 		const embed = new MessageEmbed({
-			color: ModerationActionTypes[action],
-			fields: Responses.MODERATION_LOG_FIELDS(moderator, users)
+			color: ModerationActionTypes[options.action],
+			fields: Responses.MODERATION_LOG_FIELDS(options.moderator, options.users)
 			/* Description set using setDescription as passing it
 			 * in the options object doesn't take a StringResolvable
 			 * which *is* what the `MODERATION_LOG_DESCRIPTION` returns
 			 */
-		}).setDescription(Responses.MODERATION_LOG_DESCRIPTION(action, reason, extras));
+		}).setDescription(Responses.MODERATION_LOG_DESCRIPTION(options.action, options.reason, {
+			context: options.context,
+			extras: options.extras
+		}));
 		if (client.config.attachmentLogging) {
 			embed.addField(
-				'Screenshots',
-				Array.isArray(screenshots) ?
-					screenshots.join('\n') :
-					'None attached'
+				'Screenshots', options.screenshots.length ?
+					options.screenshots.join('\n') : 'None attached'
 			);
 		}
     
-		const config = client.config.guilds.get(guild.id)!;
+		const config = client.config.guilds.get(options.guild.id)!;
 
 		const channel = client.channels.resolve(
 			config.casesChannelID
 		) as TextChannel;
 		const message = await channel!.send('Initializing new case...') as Message;
 		const caseData = await client.database.newCase({
-			action,
-			extras,
-			guild,
+			action: options.action,
+			extras: options.extras,
+			guild: options.guild,
 			message,
-			moderator,
-			reason,
-			screenshots: Array.isArray(screenshots) ? screenshots : undefined,
-			users
+			moderator: options.moderator,
+			reason: options.reason,
+			screenshots: options.screenshots,
+			users: options.users
 		});
 		await message.edit(`Case ${caseData.id}`, embed);
 		if (client.config.attachmentLogging) {
 			const VALID_EXTENSIONS = ['png', 'jpg', 'jpeg', 'gif'];
-			moderator.send(`Please reply to this message with a screenshot to attach to case ${caseData.id}!`)
+			options.moderator.send(`Please reply to this message with a screenshot to attach to case ${caseData.id}!`)
 				.then(async ({ channel }) => {
 					try {
 						const response = (await channel.awaitMessages((msg: Message) => {
@@ -251,12 +253,12 @@ export default class Util {
 							urls.push(url);
 						}
 						await caseData.update(urls);
-						await moderator.send(`Updated case ${caseData.id}`);
+						await options.moderator.send(`Updated case ${caseData.id}`);
 					} catch (error) {
 						if (error instanceof Map) {
-							await moderator.send(
-								// eslint-disable-next-line max-len
-								`Timeout for case ${caseData.id}, attach a screenshot in <#${config.staffCommandsChannelID}> using the \`attach\` command`
+							await options.moderator.send(
+								`Timeout for case ${caseData.id}, attach a screenshot in ` +
+								`<#${config.staffCommandsChannelID}> using the \`attach\` command`
 							);
 							return;
 						}

@@ -1,7 +1,6 @@
 import { Permissions } from 'discord.js';
 import Command, { CommandData } from '../../structures/Command';
 import CommandArguments from '../../structures/CommandArguments';
-import Guild from '../../structures/discord.js/Guild';
 import Message from '../../structures/discord.js/Message';
 import CommandError from '../../util/CommandError';
 import CommandManager from '../../util/CommandManager';
@@ -59,32 +58,36 @@ export default class Kick extends Command {
 			'CANNOT_ACTION_USER', 'KICK', members.size > 1
 		);
 
-		const extras: {
-        [key: string]: unknown;
-        guild: Guild;
-				reason: string;
-			} = { guild: message.guild!, reason };
+		const extras: { [key: string]: string } = { };
 
 		if (members.size !== users.size) {
 			const left = users.filter(user => !members.has(user.id));
 			extras.Note = `${left.size} Other users were attempted to be kicked, however they had already left`;
 		}
 
-		const { id: caseID } = await Util.sendLog(
-			message.author,
-			members.map(({ user }) => user),
-			'KICK',
-			extras
-		);
+		let context: Message | undefined;
+
+		if (!silent) {
+			context = await send(Responses.MEMBER_REMOVE_SUCCESSFUL({
+				members: members.array(), users: users.array()
+			}, true));
+		}
+
+		const { id: caseID } = await Util.sendLog({
+			action: 'KICK',
+			context,
+			extras,
+			guild: message.guild!,
+			moderator: message.author,
+			reason,
+			screenshots: [],
+			users: members.map(({ user }) => user)
+		});
 
 		for (const member of members.values()) {
 			await member.kick(Responses.AUDIT_LOG_MEMBER_REMOVE(message.author, caseID));
 		}
 
-		if (!silent) {
-			return send(Responses.MEMBER_REMOVE_SUCCESSFUL({
-				members: members.array(), users: users.array()
-			}, true));
-		}
+		return context;
 	}
 }

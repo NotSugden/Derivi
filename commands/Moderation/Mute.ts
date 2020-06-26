@@ -2,7 +2,6 @@ import ms from '@naval-base/ms';
 import { Permissions, PermissionOverwriteOption } from 'discord.js';
 import Command, { CommandData } from '../../structures/Command';
 import CommandArguments from '../../structures/CommandArguments';
-import Guild from '../../structures/discord.js/Guild';
 import Message from '../../structures/discord.js/Message';
 import CommandError from '../../util/CommandError';
 import CommandManager from '../../util/CommandManager';
@@ -74,11 +73,7 @@ export default class Mute extends Command {
 			'CANNOT_ACTION_USER', 'MUTE', members.size > 1
 		);
 
-		const extras: {
-        [key: string]: unknown;
-        guild: Guild;
-				reason: string;
-			} = { guild: message.guild!, reason };
+		const extras: { [key: string]: string } = { };
 
 		if (members.size !== users.size) {
 			const left = users.filter(user => !members.has(user.id));
@@ -106,12 +101,20 @@ export default class Mute extends Command {
 
 		const filtered = members.filter(member => !alreadyMuted.keyArray().includes(member.id));
 
-		await Util.sendLog(
-			message.author,
-			filtered.map(({ user }) => user),
-			'MUTE',
-			extras
-		);
+		let context: Message | undefined;
+
+		if (!silent) context = await send(Responses.MUTE_SUCCESS(filtered.array(), reason));
+
+		await Util.sendLog({
+			action: 'MUTE',
+			context,
+			extras,
+			guild: message.guild!,
+			moderator: message.author,
+			reason,
+			screenshots: [],
+			users: filtered.map(({ user }) => user)
+		});
 			
 		// have to non-null assert
 		const guild = message.guild!;
@@ -149,6 +152,6 @@ export default class Mute extends Command {
 			this.client.mutes.set(`${message.guild!.id}:${member.id}`, mute);
 		}
 
-		if (!silent) return send(Responses.MUTE_SUCCESS(filtered.array(), reason));
+		return context;
 	}
 }

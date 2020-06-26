@@ -57,12 +57,20 @@ export default class Warn extends Command {
 
 		const timestamp = new Date();
 
-		const { id: caseID } = await Util.sendLog(
-			message.author,
-			users.array(),
-			'WARN',
-			{ guild: message.guild!, reason }
-		);
+		let context: Message | undefined;
+
+		if (!silent) context = await send(Responses.WARN_SUCCESS(users.array(), reason));
+
+		const { id: caseID } = await Util.sendLog({
+			action: 'WARN',
+			context,
+			extras: {},
+			guild: message.guild!,
+			moderator: message.author,
+			reason,
+			screenshots: [],
+			users: users.array()
+		});
 
 		await Promise.all(
 			users.map(user => this.client.database.newWarn(
@@ -70,6 +78,6 @@ export default class Warn extends Command {
 			))
 		);
 
-		if (!silent) return send(Responses.WARN_SUCCESS(users.array(), reason));
+		return context;
 	}
 }

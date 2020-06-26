@@ -388,7 +388,9 @@ export const Responses = {
 		name: `User${users.length > 1 ? 's' : ''} punished`,
 		value: users.map(({ tag, id }) => `${tag} (${id})`)
 	}],
-	MODERATION_LOG_DESCRIPTION: (action: keyof typeof ModerationActionTypes, reason: string, extras: object) => {
+	MODERATION_LOG_DESCRIPTION: (action: keyof typeof ModerationActionTypes, reason: string, {
+		context, extras
+	}: { context?: Message; extras: { [key: string]: string } }) => {
 		const description = [
 			`ASC Logs: ${action.split('_').map(str => str.charAt(0) + str.slice(1).toLowerCase())}`
 		];
@@ -396,7 +398,9 @@ export const Responses = {
 			description.push(...Object.entries(extras)
 				.map(([key, value]) => `${key}: ${value}`));
 		}
-		return [...description, `Reason: ${reason}`];
+		description.push(`Reason: ${reason}`);
+		if (context) description.push(hyperlink('Context', context.url));
+		return description;
 	},
 
 	AUDIT_LOG_MEMBER_REMOVE: (moderator: User, caseID: number, kick: boolean | null = true) =>

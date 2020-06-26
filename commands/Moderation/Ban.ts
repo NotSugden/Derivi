@@ -1,7 +1,6 @@
 import { Permissions, BanOptions } from 'discord.js';
 import Command, { CommandData } from '../../structures/Command';
 import CommandArguments from '../../structures/CommandArguments';
-import Guild from '../../structures/discord.js/Guild';
 import Message from '../../structures/discord.js/Message';
 import CommandError from '../../util/CommandError';
 import CommandManager from '../../util/CommandManager';
@@ -63,11 +62,7 @@ export default class Ban extends Command {
 			'CANNOT_ACTION_USER', 'BAN', members.size > 1
 		);
 
-		const extras: {
-        [key: string]: unknown;
-        guild: Guild;
-				reason: string;
-			} = { guild: message.guild!, reason };
+		const extras: { [key: string]: string } = { };
 
 		const banOptions = {} as BanOptions;
 
@@ -102,12 +97,24 @@ export default class Ban extends Command {
 
 		const filteredUsers = users.array().filter(user => !alreadyBanned.some(data => data.user.id === user.id));
 
-		const { id: caseID } = await Util.sendLog(
-			message.author,
-			filteredUsers,
-			flags.soft ? 'SOFT_BAN' : 'BAN',
-			extras
-		);
+		let context: Message | undefined;
+
+		if (!flags.silent) {
+			context = await send(Responses.MEMBER_REMOVE_SUCCESSFUL({
+				filteredUsers, users: users.array()
+			}, false));
+		}
+		
+		const { id: caseID } = await Util.sendLog({
+			action: flags.soft ? 'SOFT_BAN' : 'BAN',
+			context,
+			extras,
+			guild: message.guild!,
+			moderator: message.author,
+			reason,
+			screenshots: [],
+			users: filteredUsers
+		});
 
 		banOptions.reason = Responses.AUDIT_LOG_MEMBER_REMOVE(message.author, caseID, false);
 
@@ -122,10 +129,6 @@ export default class Ban extends Command {
 			}
 		}
 
-		if (!flags.silent) {
-			return send(Responses.MEMBER_REMOVE_SUCCESSFUL({
-				filteredUsers, users: users.array()
-			}, false));
-		}
+		return context;
 	}
 }
