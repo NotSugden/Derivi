@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
 import { promises as fs } from 'fs';
 import { join } from 'path';
+import { registerFont } from 'canvas';
 import {
 	Constants,
 	Extendable,
@@ -14,6 +15,10 @@ import {
 import Guild from './structures/discord.js/Guild';
 import User from './structures/discord.js/User';
 import Client from './util/Client';
+
+registerFont(join(__dirname, 'assets', 'fonts', 'BebasNeue-Bold.ttf'), {
+	family: 'bebas-neue'
+});
 const extended: (keyof Extendable)[] = [
 	'Message', 'Guild', 'GuildMember', 'User',
 	'DMChannel', 'TextChannel'
