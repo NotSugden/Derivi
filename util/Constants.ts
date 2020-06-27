@@ -127,6 +127,8 @@ export const Errors = {
 };
 
 export const CommandErrors = {
+	ERROR_MUST_DM: 'This command threw an error that must be dmed to you, please enable DMs from derivi.',
+	GUILD_NOT_CONFIGURED: 'This guild is not configured to use this command.',
 	// eslint-disable-next-line max-len
 	NEED_MFA: 'You need to enable Two Factor Authentication to use this command, you can find out how to do this at <https://support.discord.com/hc/en-us/articles/219576828-Setting-up-Two-Factor-Authentication>',
 	NOT_LOGGED_IN: (loginURL: string) => `You need to be logged in at <${loginURL}> to use this command.`,

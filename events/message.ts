@@ -157,6 +157,10 @@ export default (async message => {
 			return msg;
 		}) as CommandData['send'];
 
+		if (command.category === 'Moderation' && !config) {
+			throw new CommandError('GUILD_NOT_CONFIGURED');
+		}
+
 		let hasPermissions: boolean | string;
 		if (typeof permissions === 'function') {
 			hasPermissions = await permissions(message.member, message.channel as TextChannel);
@@ -169,7 +173,7 @@ export default (async message => {
 			);
 		}
     
-		if (command.category === 'Moderation' && config?.mfaModeration) {
+		if (command.category === 'Moderation' && config!.mfaModeration) {
 			const [data] = await client.database.query(
 				'SELECT access_token, token_type, expires_at FROM users WHERE id = ?',
 				message.author.id
@@ -197,7 +201,8 @@ export default (async message => {
 	} catch (error) {
 		if (error instanceof CommandError) {
 			return error.dmError ?
-				message.author.send(error.message) :
+				message.author.send(error.message)
+					.catch(() => message.channel.send(CommandErrors.ERROR_MUST_DM)) :
 				message.channel.send(error.message);
 		}
 		await message.channel.send([
