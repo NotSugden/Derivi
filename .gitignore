@@ -6,3 +6,8 @@ compiled
 # Config files
 
 config.json
+
+# Custom scripts
+
+EvalUtil.ts
+EvalUtil.js
