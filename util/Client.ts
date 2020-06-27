@@ -16,7 +16,7 @@ import CommandManager from './CommandManager';
 import { Defaults, Errors } from './Constants';
 import DatabaseManager from './DatabaseManager';
 import EmojiStore from './EmojiStore';
-import { Invite, PartialMessage } from './Types';
+import { Invite, PartialMessage, Role } from './Types';
 import { Message } from './Types';
 import WebsiteManager from './WebsiteManager';
 import Mute from '../structures/Mute';
@@ -41,6 +41,7 @@ export interface Events extends ClientEvents {
 	messageReactionAdd: [MessageReaction & { message: Message }, User];
 	messageReactionRemove: [MessageReaction & { message: Message }, User];
 	messageUpdate: [Message | PartialMessage, Message | PartialMessage];
+	roleCreate: [Role];
 }
 
 export default class Client extends DJSClient {
