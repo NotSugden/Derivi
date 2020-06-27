@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-var-requires */
 /* eslint-disable import/order */
-import { WebhookClient } from 'discord.js';
+import { WebhookClient, MessageOptions } from 'discord.js';
 import Command, { CommandData } from '../structures/Command';
 import CommandArguments from '../structures/CommandArguments';
 import CommandManager from '../util/CommandManager';
@@ -41,22 +41,20 @@ export default class Eval extends Command {
 		);
 		const reverse = (string: string) => string.split('').reverse().join('');
 		const finish = async (result: unknown) => {
-			let inspected = (typeof result === 'string' ? result : util.inspect(result))
-				.replace(
-					new RegExp(`${this.client.token}|${reverse(this.client.token)}`, 'gi'),
-					'[TOKEN]'
-				).replace(
-					new RegExp(
-						[...this.client.config.guilds.values()]
-							.reduce((acc, next) => {
-								acc.push(...next.webhooks.values());
-								return acc;
-							}, [] as WebhookClient[])
-							.map(hook => `${hook.token}|${reverse(hook.token)}`).join('|'),
-						'gi'
-					),
-					'[WEBHOOK TOKEN]'
-				);
+			let inspected = (typeof result === 'string' ? result : util.inspect(result)).replace(
+				new RegExp(`${this.client.token}|${reverse(this.client.token)}`, 'gi'),
+				'[TOKEN]'
+			);
+			const webhooks = [...this.client.config.guilds.values()].reduce((acc, next) => {
+				acc.push(...next.webhooks.values());
+				return acc;
+			}, [] as WebhookClient[]);
+			if (webhooks.length) {
+				inspected = inspected.replace(new RegExp(
+					webhooks.map(hook => `${hook.token}|${reverse(hook.token)}`).join('|'),
+					'gi'
+				), '[WEBHOOK TOKEN]');
+			}
 			if (this.client.config.encryptionPassword) {
 				inspected = inspected.replace(
 					new RegExp(
@@ -66,7 +64,7 @@ export default class Eval extends Command {
 					'[ENCRYPTION PASSWORD]'
 				);
 			}
-			const respond = (content: unknown, options?: import('discord.js').MessageOptions) => flags.silent ?
+			const respond = (content: unknown, options?: MessageOptions) => flags.silent ?
         message.author.send(content, options) as Promise<DMMessage> :
 				send(content, options);
 			if (inspected.length > 1250) {
