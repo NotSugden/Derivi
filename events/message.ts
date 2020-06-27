@@ -157,7 +157,7 @@ export default (async message => {
 			return msg;
 		}) as CommandData['send'];
 
-		if (command.category === 'Moderation' && !config) {
+		if (command.name !== 'attach' && command.category === 'Moderation' && !config) {
 			throw new CommandError('GUILD_NOT_CONFIGURED');
 		}
 
@@ -173,7 +173,7 @@ export default (async message => {
 			);
 		}
     
-		if (command.category === 'Moderation' && config!.mfaModeration) {
+		if (command.name !== 'attach' && command.category === 'Moderation' && config!.mfaModeration) {
 			const [data] = await client.database.query(
 				'SELECT access_token, token_type, expires_at FROM users WHERE id = ?',
 				message.author.id
