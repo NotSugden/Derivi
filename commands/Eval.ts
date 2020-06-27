@@ -13,6 +13,14 @@ const util: typeof import('util') = require('util');
 const djs: typeof import('discord.js') = require('discord.js');
 const fetch: typeof import('node-fetch').default = require('node-fetch');
 
+let EvalUtil;
+
+try {
+	// this can be a custom file, exported should be a class with static utility functions
+	const mod = require('../EvalUtil.js');
+	EvalUtil = mod.default || mod;
+} catch { } // eslint-disable-line no-empty
+
 export default class Eval extends Command {
 	constructor(manager: CommandManager) {
 		super(manager, {
