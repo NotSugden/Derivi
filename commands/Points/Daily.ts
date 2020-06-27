@@ -1,10 +1,10 @@
 import Command, { CommandData } from '../../structures/Command';
 import CommandArguments from '../../structures/CommandArguments';
-import Message from '../../structures/discord.js/Message';
 import CommandError from '../../util/CommandError';
 import CommandManager from '../../util/CommandManager';
 import { Responses } from '../../util/Constants';
 import moment = require('moment');
+import { GuildMessage } from '../../util/Types';
 
 export default class Daily extends Command {
 	constructor(manager: CommandManager) {
@@ -17,7 +17,7 @@ export default class Daily extends Command {
 		}, __filename);
 	}
 
-	public async run(message: Message, args: CommandArguments, { send }: CommandData) {
+	public async run(message: GuildMessage<true>, args: CommandArguments, { send }: CommandData) {
 		if (this.client.lockedPoints.has(message.author.id)) {
 			throw new CommandError('LOCKED_POINTS');
 		}

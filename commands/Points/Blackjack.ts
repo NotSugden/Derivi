@@ -1,10 +1,10 @@
 import Command, { CommandData } from '../../structures/Command';
 import CommandArguments from '../../structures/CommandArguments';
 import Points from '../../structures/Points';
-import Message from '../../structures/discord.js/Message';
 import CommandError from '../../util/CommandError';
 import CommandManager from '../../util/CommandManager';
 import { Responses, MatchState } from '../../util/Constants';
+import { GuildMessage } from '../../util/Types';
 export interface Card {
 	weight: number;
 	suit: 'Spades' | 'Hearts' | 'Diamonds' | 'Clubs';
@@ -39,7 +39,7 @@ const shuffleDeck = () => {
 
 const getWeight = (deck: Card[]) => deck.reduce((acc, card) => acc + card.weight, 0);
 
-const play = async (message: Message, points: Points, bet: { bet: number }): Promise<MatchState> => {
+const play = async (message: GuildMessage<true>, points: Points, bet: { bet: number }): Promise<MatchState> => {
 
 	const dealerCards: Card[] = [];
 	const userCards: Card[] = [];
@@ -94,7 +94,7 @@ const play = async (message: Message, points: Points, bet: { bet: number }): Pro
 				resolve('draw');
 			}
 		});
-		collector.on('collect', async (msg: Message) => {
+		collector.on('collect', async (msg: GuildMessage<true>) => {
 			const content = msg.content.toLowerCase();
 			if (content === 'rules') {
 				msg.channel.send(Responses.BLACKJACK_RULES(msg.client))
@@ -156,7 +156,7 @@ export default class Blackjack extends Command {
 		}, __filename);
 	}
 
-	public async run(message: Message, args: CommandArguments, { send }: CommandData) {
+	public async run(message: GuildMessage<true>, args: CommandArguments, { send }: CommandData) {
 		if (message.editedTimestamp) return;
 		if (!args[0]) {
 			return send(Responses.BLACKJACK_RULES(this.client));

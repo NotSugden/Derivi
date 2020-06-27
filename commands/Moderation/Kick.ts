@@ -1,10 +1,10 @@
 import { Permissions } from 'discord.js';
 import Command, { CommandData } from '../../structures/Command';
 import CommandArguments from '../../structures/CommandArguments';
-import Message from '../../structures/discord.js/Message';
 import CommandError from '../../util/CommandError';
 import CommandManager from '../../util/CommandManager';
 import { Responses } from '../../util/Constants';
+import { GuildMessage } from '../../util/Types';
 import Util from '../../util/Util';
 
 export default class Kick extends Command {
@@ -38,7 +38,7 @@ export default class Kick extends Command {
 		}, __filename);
 	}
 
-	public async run(message: Message, args: CommandArguments, { send }: CommandData) {
+	public async run(message: GuildMessage<true>, args: CommandArguments, { send }: CommandData) {
 		await message.delete();
 		const { members, users, reason, flags: { silent } } = await Util.reason(message, {
 			fetchMembers: true, withFlags: [{
@@ -65,7 +65,7 @@ export default class Kick extends Command {
 			extras.Note = `${left.size} Other users were attempted to be kicked, however they had already left`;
 		}
 
-		let context: Message | undefined;
+		let context: GuildMessage<true> | undefined;
 
 		if (!silent) {
 			context = await send(Responses.MEMBER_REMOVE_SUCCESSFUL({

@@ -1,9 +1,9 @@
 import Command, { CommandData } from '../../structures/Command';
 import CommandArguments from '../../structures/CommandArguments';
-import Message from '../../structures/discord.js/Message';
 import CommandError from '../../util/CommandError';
 import CommandManager from '../../util/CommandManager';
 import { Responses } from '../../util/Constants';
+import { GuildMessage } from '../../util/Types';
 
 export default class Shop extends Command {
 	constructor(manager: CommandManager) {
@@ -18,7 +18,7 @@ export default class Shop extends Command {
 		}, __filename);
 	}
 
-	public async run(message: Message, args: CommandArguments, { send }: CommandData) {
+	public async run(message: GuildMessage<true>, args: CommandArguments, { send }: CommandData) {
 		const config = message.guild && this.client.config.guilds.get(message.guild.id);
   
 		if (!config) return;
@@ -31,7 +31,7 @@ export default class Shop extends Command {
 
 		const NAMES = config.shopItems.map(item => {
 			if (item.action === 'give_role') {
-				const role = message.guild!.roles.cache.get(item.role_id)!;
+				const role = message.guild.roles.cache.get(item.role_id)!;
 				return {
 					action: 'give_role',
 					cost: item.cost,
@@ -50,7 +50,7 @@ export default class Shop extends Command {
 		}
 
 		if (item.action === 'give_role') {
-			if (message.member!.roles.cache.has(item.roleID)) {
+			if (message.member.roles.cache.has(item.roleID)) {
 				throw new CommandError('ALREADY_PURCHASED');
 			}
 		}
@@ -66,7 +66,7 @@ export default class Shop extends Command {
 		}
 
 		if (item.action === 'give_role') {
-			await message.member!.roles.add(item.roleID);
+			await message.member.roles.add(item.roleID);
 		}
 
 		return send(Responses.SUCCESSFUL_PURCHASE(item.name));

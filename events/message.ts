@@ -55,7 +55,7 @@ export default (async message => {
 		}
 
 		if (config) {
-			const partnerChannel = config!.partnerships.channels.get(message.channel.id);
+			const partnerChannel = config.partnerships.channels.get(message.channel.id);
 			if (partnerChannel) {
 				if (message.invites.length > 1) {
 					await message.delete();

@@ -1,10 +1,10 @@
 import { Snowflake } from 'discord.js';
 import Guild from './discord.js/Guild';
-import Message from './discord.js/Message';
 import TextChannel from './discord.js/TextChannel';
 import User from './discord.js/User';
 import Client from '../util/Client';
 import { Responses } from '../util/Constants';
+import { GuildMessage } from '../util/Types';
 
 export default class Star {
 	public client!: Client;
@@ -43,7 +43,7 @@ export default class Star {
 	public async starboardMessage() {
 		return (this.client.channels.resolve(
 			this.client.config.guilds.get(this.guildID)!.starboard!.channelID
-		) as TextChannel).messages.fetch(this.starboardID) as Promise<Message>;
+		) as TextChannel).messages.fetch(this.starboardID) as Promise<GuildMessage<true>>;
 	}
 
 	public async addStar(user: User) {
@@ -60,7 +60,7 @@ export default class Star {
 
 	public message() {
 		return (this.client.channels.resolve(this.channelID) as TextChannel)
-			.messages.fetch(this.messageID) as Promise<Message>;
+			.messages.fetch(this.messageID) as Promise<GuildMessage>;
 	}
 	
 	get guild() {

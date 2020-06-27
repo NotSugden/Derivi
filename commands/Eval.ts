@@ -4,10 +4,10 @@
 import { WebhookClient } from 'discord.js';
 import Command, { CommandData } from '../structures/Command';
 import CommandArguments from '../structures/CommandArguments';
-import Message from '../structures/discord.js/Message';
 import CommandManager from '../util/CommandManager';
 import { URLs } from '../util/Constants';
 import Util from '../util/Util';
+import { GuildMessage, Message, DMMessage } from '../util/Types';
 
 const util: typeof import('util') = require('util');
 const djs: typeof import('discord.js') = require('discord.js');
@@ -27,7 +27,7 @@ export default class Eval extends Command {
 		}, __filename);
 	}
 
-	public async run(message: Message, args: CommandArguments, {
+	public async run(message: GuildMessage<true>, args: CommandArguments, {
 		send
 	}: CommandData): Promise<Message | void> {
 		const { string: code, flags } = Util.extractFlags(
@@ -67,7 +67,7 @@ export default class Eval extends Command {
 				);
 			}
 			const respond = (content: unknown, options?: import('discord.js').MessageOptions) => flags.silent ?
-        message.author.send(content, options) as Promise<Message> :
+        message.author.send(content, options) as Promise<DMMessage> :
 				send(content, options);
 			if (inspected.length > 1250) {
 				const json = await fetch(URLs.HASTEBIN('documents'), {

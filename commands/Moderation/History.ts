@@ -2,11 +2,11 @@ import ms from '@naval-base/ms';
 import Command, { CommandData } from '../../structures/Command';
 import CommandArguments from '../../structures/CommandArguments';
 import Guild from '../../structures/discord.js/Guild';
-import Message from '../../structures/discord.js/Message';
 import TextChannel from '../../structures/discord.js/TextChannel';
 import CommandError from '../../util/CommandError';
 import CommandManager from '../../util/CommandManager';
 import { Responses } from '../../util/Constants';
+import { GuildMessage } from '../../util/Types';
 import Util from '../../util/Util';
 
 const parseMS = (string: string) => {
@@ -41,7 +41,7 @@ export default class History extends Command {
 		}, __filename);
 	}
 
-	public async run(message: Message, args: CommandArguments, { send }: CommandData) {
+	public async run(message: GuildMessage<true>, args: CommandArguments, { send }: CommandData) {
 		const { users, reason: content } = await Util.reason(message);
 		const time = content ? parseMS(content) : -1;
 

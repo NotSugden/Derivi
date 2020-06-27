@@ -2,10 +2,10 @@ import ms from '@naval-base/ms';
 import { Permissions, PermissionOverwriteOption } from 'discord.js';
 import Command, { CommandData } from '../../structures/Command';
 import CommandArguments from '../../structures/CommandArguments';
-import Message from '../../structures/discord.js/Message';
 import CommandError from '../../util/CommandError';
 import CommandManager from '../../util/CommandManager';
 import { Responses, Defaults } from '../../util/Constants';
+import { GuildMessage } from '../../util/Types';
 import Util from '../../util/Util';
 
 const parseMS = <T extends { reason: string }>(data: T): T & { time: number } => {
@@ -52,7 +52,7 @@ export default class Mute extends Command {
 		}, __filename);
 	}
 
-	public async run(message: Message, args: CommandArguments, { send }: CommandData) {
+	public async run(message: GuildMessage<true>, args: CommandArguments, { send }: CommandData) {
 		await message.delete();
 		const { members, users, reason, time, flags: { silent } } = parseMS(await Util.reason(message, {
 			fetchMembers: true, withFlags: [{
@@ -82,7 +82,7 @@ export default class Mute extends Command {
 			} attempted to be muted, however they have left.`;
 		}
 
-		const alreadyMuted = members.filter(member => this.client.mutes.has(`${message.guild!.id}:${member.id}`));
+		const alreadyMuted = members.filter(member => this.client.mutes.has(`${message.guild.id}:${member.id}`));
 		if (alreadyMuted.size) {
 			if (alreadyMuted.size === members.size) {
 				throw new CommandError('ALL_MUTED');
@@ -101,7 +101,7 @@ export default class Mute extends Command {
 
 		const filtered = members.filter(member => !alreadyMuted.keyArray().includes(member.id));
 
-		let context: Message | undefined;
+		let context: GuildMessage<true> | undefined;
 
 		if (!silent) context = await send(Responses.MUTE_SUCCESS(filtered.array(), reason));
 
@@ -149,7 +149,7 @@ export default class Mute extends Command {
 		for (const member of filtered.values()) {
 			await member.roles.add(role);
 			const mute = await this.client.database.newMute(message.guild!, member.user, start, end);
-			this.client.mutes.set(`${message.guild!.id}:${member.id}`, mute);
+			this.client.mutes.set(`${message.guild.id}:${member.id}`, mute);
 		}
 
 		return context;

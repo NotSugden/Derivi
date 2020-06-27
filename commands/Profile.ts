@@ -1,8 +1,8 @@
 import { createCanvas, loadImage, CanvasRenderingContext2D } from 'canvas';
 import Command, { CommandData } from '../structures/Command';
 import CommandArguments from '../structures/CommandArguments';
-import Message from '../structures/discord.js/Message';
 import CommandManager from '../util/CommandManager';
+import { GuildMessage } from '../util/Types';
 import Util from '../util/Util';
 
 const drawText = (context: CanvasRenderingContext2D, text: string, font: string, {
@@ -26,7 +26,7 @@ export default class Profile extends Command {
 		}, __filename);
 	}
 
-	public async run(message: Message, args: CommandArguments, { send }: CommandData) {
+	public async run(message: GuildMessage<true>, args: CommandArguments, { send }: CommandData) {
 		const user = await Util.users(message, 1) || message.author;
 
 		const profile = await this.client.database.profile(user);

@@ -4,10 +4,10 @@ import {
 } from 'discord.js';
 import CommandArguments from './CommandArguments';
 import GuildMember from './discord.js/GuildMember';
-import Message from './discord.js/Message';
 import TextChannel from './discord.js/TextChannel';
 import Client from '../util/Client';
 import CommandManager from '../util/CommandManager';
+import { GuildMessage, Message } from '../util/Types';
 
 export default class Command {
 	public aliases: string[];
@@ -53,7 +53,7 @@ export default class Command {
 		return this.manager.load(this);
 	}
 
-	public run(message: Message, args: CommandArguments, {
+	public run(message: GuildMessage<true>, args: CommandArguments, {
 		send,
 		edited = false
 	}: CommandData): Promise<Message | void> {
@@ -66,11 +66,11 @@ export interface CommandData<> {
 	edited?: boolean;
 	send(
 		options: MessageAdditions | MessageEditOptions | MessageOptions
-	): Promise<Message>;
+	): Promise<GuildMessage<true>>;
 	send(
 		content: StringResolvable,
 		options?: MessageAdditions | MessageOptions | MessageEditOptions
-	): Promise<Message>;
+	): Promise<GuildMessage<true>>;
 }
 
 export interface CommandOptions {

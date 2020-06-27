@@ -3,6 +3,7 @@ import Guild from './discord.js/Guild';
 import TextChannel from './discord.js/TextChannel';
 import Client from '../util/Client';
 import { ModerationActionTypes } from '../util/Constants';
+import { GuildMessage } from '../util/Types';
 import Util from '../util/Util';
 
 export default class Case {
@@ -40,7 +41,7 @@ export default class Case {
 		 */
 		return (this.client.channels.resolve(
 			this.client.config.guilds.get(this.guildID)!.casesChannelID
-		) as TextChannel).messages.fetch(this.logMessageID);
+		) as TextChannel).messages.fetch(this.logMessageID) as Promise<GuildMessage<true>>;
 	}
   
 	get guild() {

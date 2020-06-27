@@ -3,10 +3,10 @@ import { extname } from 'path';
 import Command, { CommandData } from '../../structures/Command';
 import CommandArguments from '../../structures/CommandArguments';
 import Guild from '../../structures/discord.js/Guild';
-import Message from '../../structures/discord.js/Message';
 import TextChannel from '../../structures/discord.js/TextChannel';
 import CommandError from '../../util/CommandError';
 import CommandManager from '../../util/CommandManager';
+import { GuildMessage } from '../../util/Types';
 import Util from '../../util/Util';
 
 const VALID_EXTENSIONS = ['png', 'jpg', 'jpeg', 'gif'];
@@ -40,7 +40,7 @@ export default class Attach extends Command {
 		}, __filename);
 	}
 
-	public async run(message: Message, args: CommandArguments, { send }: CommandData) {
+	public async run(message: GuildMessage<true>, args: CommandArguments, { send }: CommandData) {
 		if (!this.client.config.attachmentLogging) {
 			return send('Attachment Logging needs to be enabled to use this command');
 		}

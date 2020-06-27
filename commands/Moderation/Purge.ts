@@ -1,9 +1,9 @@
 import { Permissions, SnowflakeUtil } from 'discord.js';
 import Command from '../../structures/Command';
 import CommandArguments from '../../structures/CommandArguments';
-import Message from '../../structures/discord.js/Message';
 import CommandError from '../../util/CommandError';
 import CommandManager from '../../util/CommandManager';
+import { GuildMessage } from '../../util/Types';
 import Util from '../../util/Util';
 
 const SNOWFLAKE_REGEX = /([0-9]{17,20})/;
@@ -48,7 +48,7 @@ export default class Purge extends Command {
 		}, __filename);
 	}
 
-	public async run(message: Message, args: CommandArguments) {
+	public async run(message: GuildMessage<true>, args: CommandArguments) {
 		await message.delete();
 		const limit = parseInt(args[0]!);
     

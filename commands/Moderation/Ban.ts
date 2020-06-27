@@ -1,10 +1,10 @@
 import { Permissions, BanOptions } from 'discord.js';
 import Command, { CommandData } from '../../structures/Command';
 import CommandArguments from '../../structures/CommandArguments';
-import Message from '../../structures/discord.js/Message';
 import CommandError from '../../util/CommandError';
 import CommandManager from '../../util/CommandManager';
 import { Responses } from '../../util/Constants';
+import { GuildMessage } from '../../util/Types';
 import Util from '../../util/Util';
 
 export default class Ban extends Command {
@@ -36,7 +36,7 @@ export default class Ban extends Command {
 		}, __filename);
 	}
 
-	public async run(message: Message, args: CommandArguments, { send }: CommandData) {
+	public async run(message: GuildMessage<true>, args: CommandArguments, { send }: CommandData) {
 		await message.delete();
 		const { users, reason, flags, members } = await Util.reason(message, {
 			fetchMembers: true, withFlags: [{
@@ -97,7 +97,7 @@ export default class Ban extends Command {
 
 		const filteredUsers = users.array().filter(user => !alreadyBanned.some(data => data.user.id === user.id));
 
-		let context: Message | undefined;
+		let context: GuildMessage<true> | undefined;
 
 		if (!flags.silent) {
 			context = await send(Responses.MEMBER_REMOVE_SUCCESSFUL({

@@ -2,11 +2,11 @@ import { Permissions, MessageEmbed, Util as DJSUtil, Snowflake } from 'discord.j
 import Command, { CommandData } from '../../structures/Command';
 import CommandArguments from '../../structures/CommandArguments';
 import Guild from '../../structures/discord.js/Guild';
-import Message from '../../structures/discord.js/Message';
 import TextChannel from '../../structures/discord.js/TextChannel';
 import CommandError from '../../util/CommandError';
 import CommandManager from '../../util/CommandManager';
 import { Responses } from '../../util/Constants';
+import { GuildMessage } from '../../util/Types';
 import Util from '../../util/Util';
 
 const OPTIONS = ['edit', 'delete'];
@@ -40,7 +40,7 @@ export default class Case extends Command {
 		}, __filename);
 	}
 
-	public async run(message: Message, args: CommandArguments, { send }: CommandData) {
+	public async run(message: GuildMessage<true>, args: CommandArguments, { send }: CommandData) {
 		const mode = args[0];
 		if (!OPTIONS.includes(mode)) {
 			throw new CommandError('INVALID_OPTION', OPTIONS);
@@ -63,7 +63,7 @@ export default class Case extends Command {
 		}
 
 		if (
-			!message.member!.hasPermission(Permissions.FLAGS.ADMINISTRATOR) && 
+			!message.member.hasPermission(Permissions.FLAGS.ADMINISTRATOR) && 
       caseData.moderatorID !== message.author.id
 		) {
 			throw new CommandError('NOT_PERMITTED_CASE_MODIFY', mode);
@@ -83,14 +83,14 @@ export default class Case extends Command {
 				'UPDATE cases SET id = id - 1 WHERE id > ? AND guild_id = ?',
 				caseID, guild.id
 			);
-			if (!cases.length) return response.edit(Responses.DELETE_CASE(caseID, true)) as Promise<Message>;
+			if (!cases.length) return response.edit(Responses.DELETE_CASE(caseID, true)) as Promise<GuildMessage<true>>;
 			for (const data of cases) {
 				const msg = await channel.messages.fetch(data.message_id);
 				await msg.edit(`Case ${data.id - 1}`, new MessageEmbed(msg.embeds[0]));
 				await DJSUtil.delayFor(2500);
 			}
 
-			return response.edit(Responses.DELETE_CASE(caseID, true)) as Promise<Message>; 
+			return response.edit(Responses.DELETE_CASE(caseID, true)) as Promise<GuildMessage<true>>; 
 		} else if (mode === 'edit') {
 			const newData = Util.getOptions(args.regular.slice(1).join(' '), EDIT_OPTIONS);
 			if (!Object.keys(newData).length) {

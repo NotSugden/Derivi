@@ -1,8 +1,8 @@
 import Command, { CommandData } from '../../structures/Command';
 import CommandArguments from '../../structures/CommandArguments';
-import Message from '../../structures/discord.js/Message';
 import CommandManager from '../../util/CommandManager';
 import { Responses } from '../../util/Constants';
+import { GuildMessage } from '../../util/Types';
 
 export default class Top extends Command {
 	constructor(manager: CommandManager) {
@@ -15,7 +15,7 @@ export default class Top extends Command {
 		}, __filename);
 	}
 
-	public async run(message: Message, args: CommandArguments, { send }: CommandData) {
+	public async run(message: GuildMessage<true>, args: CommandArguments, { send }: CommandData) {
 		const top10 = await this.client.database.levels(10);
 
 		for (const levels of top10) {
