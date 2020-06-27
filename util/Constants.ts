@@ -20,6 +20,13 @@ import TextChannel from '../structures/discord.js/TextChannel';
 import User from '../structures/discord.js/User';
 /* eslint-disable sort-keys */
 
+const hyperlink = (name: string, url: string) => `[${name}](${url})`;
+
+const hyperlinkEmojis = (content: string) => content.replace(
+	/<(a)?:?(\w{2,32}):(\d{17,19})>/g, (str, animated: 'a' | undefined, name: string, id: string) => 
+		hyperlink(name, `https://cdn.discordapp.com/emojis/${id}.${animated === 'a' ? 'gif' : 'png'}`)
+);
+
 const neverReturn = () => {
 	throw null;
 };
@@ -87,7 +94,6 @@ export const ModerationActionTypes = {
 	SOFT_BAN: Constants.Colors.PURPLE
 };
 
-const hyperlink = (name: string, url: string) => `[${name}](${url})`;
 
 const messageURL = (guildID: Snowflake, channelID: Snowflake, messageID: Snowflake) =>
 	`https://discord.com/channels/${guildID}/${channelID}/${messageID}`;
@@ -363,9 +369,9 @@ export const Responses = {
 				}__ a ${hyperlink('message', message.url)} with a possible restricted term`
 			).addFields({
 				name: 'Message Content',
-				value: message.content.length > 1000 ?
+				value: hyperlinkEmojis(message.content.length > 1000 ?
 					`${message.content.slice(0, 1000)}...` :
-					message.content
+					message.content)
 			});
 	},
 	HISTORY: (cases: Case[]) => {
@@ -570,7 +576,7 @@ export const EventResponses = {
 	MESSAGE_DELETE: (message: Message | PartialMessage, options: { files?: string[]; previous?: Message }) => {
 		let content = message.partial ?
 			'Message content was not cached' :
-			message.content || 'No content';
+			hyperlinkEmojis(message.content) || 'No content';
 		if (content.length > 1000) content = `${content.slice(0, 1000)}...`;
 		const embed = new MessageEmbed()
 			.setAuthor(`Message Deleted in #${
@@ -612,8 +618,8 @@ export const EventResponses = {
 	MESSAGE_UPDATE: (oldMessage: Message | PartialMessage, newMessage: Message) => {
 		let oldContent = oldMessage.partial ?
 			'Old content wasn\'t cached' :
-			(oldMessage.content || 'No content');
-		let newContent = newMessage.content || 'No content';
+			hyperlinkEmojis(oldMessage.content) || 'No content';
+		let newContent = hyperlinkEmojis(newMessage.content) || 'No content';
 		if (oldContent.length > 1000) oldContent = `${oldContent.slice(0, 1000)}...`;
 		if (newContent.length > 1000) newContent = `${newContent.slice(0, 1000)}...`;
 		return new MessageEmbed()
