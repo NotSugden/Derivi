@@ -38,7 +38,7 @@ export default class Eval extends Command {
 	public async run(message: GuildMessage<true>, args: CommandArguments, {
 		send
 	}: CommandData): Promise<Message | void> {
-		const { string: code, flags } = Util.extractFlags(
+		const { string: _code, flags } = Util.extractFlags(
 			args.regular.join(' '), [{
 				name: 'silent',
 				type: 'boolean'
@@ -47,6 +47,7 @@ export default class Eval extends Command {
 				type: 'boolean'
 			}]
 		);
+		const code = _code.match(/```(?:(?<lang>\S+)\n)?\s?(?<code>[^]+?)\s?```/)?.groups?.code ?? _code;
 		const reverse = (string: string) => string.split('').reverse().join('');
 		const finish = async (result: unknown) => {
 			let inspected = (typeof result === 'string' ? result : util.inspect(result)).replace(
