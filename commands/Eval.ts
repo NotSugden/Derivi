@@ -20,7 +20,7 @@ export default class Eval extends Command {
 			category: 'Dev',
 			cooldown: 0,
 			name: 'eval',
-			permissions: member => member.id === '381694604187009025',
+			permissions: member => member.client.config.ownerIDs.includes(member.id),
 			usages: [{
 				type: 'code'
 			}]

@@ -54,6 +54,7 @@ export default class Client extends DJSClient {
     emojis: EmojiStore;
 		database: mysql.ConnectionConfig;
 		filesDir: string;
+		ownerIDs: Snowflake[];
 		prefix: string[];
     reactionRoles: Map<Snowflake, Map<string, Snowflake>>;
     guilds: Map<Snowflake, GuildConfig>;
@@ -77,6 +78,8 @@ export default class Client extends DJSClient {
     
 		Object.defineProperty(this, 'config', { value: {} });
 
+		// this isn't validated due to the user possibly not being cached
+		this.config.ownerIDs = config.owners;
 		this.config.loginURL = config.login_url;
 		this.config.mfaModeration = config.mfa_moderation ?? false;
 		this.config.allowedLevelingChannels = config.allowed_level_channels,
@@ -331,6 +334,7 @@ export interface ClientConfig {
   }[];
 	database: mysql.ConnectionConfig;
 	files_dir?: string;
+	owners: Snowflake[];
 	prefix: string[];
 	reaction_roles: {
 		message: Snowflake;
@@ -357,7 +361,7 @@ export type GuildConfig = {
     Snowflake,
     Snowflake
   ];
-  id: Snowflake;
+	id: Snowflake;
   partnerships: {
     rewardsChannelID: Snowflake;
     channels: Map<string, {
