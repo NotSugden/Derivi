@@ -157,7 +157,6 @@ export default (async message => {
 			return msg;
 		}) as CommandData['send'];
 
-
 		let hasPermissions: boolean | string;
 		if (typeof permissions === 'function') {
 			hasPermissions = await permissions(message.member, message.channel as TextChannel);
@@ -170,7 +169,7 @@ export default (async message => {
 			);
 		}
     
-		if (command.category === 'Moderation' && client.config.mfaModeration) {
+		if (command.category === 'Moderation' && config?.mfaModeration) {
 			const [data] = await client.database.query(
 				'SELECT access_token, token_type, expires_at FROM users WHERE id = ?',
 				message.author.id

@@ -59,7 +59,6 @@ export default class Client extends DJSClient {
     reactionRoles: Map<Snowflake, Map<string, Snowflake>>;
     guilds: Map<Snowflake, GuildConfig>;
     loginURL?: string;
-    mfaModeration: boolean;
 	};
 	public database: DatabaseManager;
 	public lockedPoints = new Set<Snowflake>();
@@ -81,7 +80,6 @@ export default class Client extends DJSClient {
 		// this isn't validated due to the user possibly not being cached
 		this.config.ownerIDs = config.owners;
 		this.config.loginURL = config.login_url;
-		this.config.mfaModeration = config.mfa_moderation ?? false;
 		this.config.allowedLevelingChannels = config.allowed_level_channels,
 		this.config.attachmentLogging = config.attachment_logging as boolean,
 		this.config.attachmentsURL = config.attachment_files_url,
@@ -104,10 +102,11 @@ export default class Client extends DJSClient {
 			const guildConfig: GuildConfig = {
 				accessLevelRoles: rawConfig.access_level_roles,
 				casesChannelID: rawConfig.punishment_channel,
-				filePermissionsRole: rawConfig.file_permissions_role || null,
+				filePermissionsRole: rawConfig.file_permissions_role ?? null,
 				generalChannelID: rawConfig.general_channel,
 				id: rawConfig.id,
 				levelRoles: rawConfig.level_roles || null,
+				mfaModeration: rawConfig.mfa_moderation ?? false,
 				partnerships: {
 					channels: new Map(rawConfig.partnership_channels.map(data => [
 						data.id, {
@@ -121,7 +120,7 @@ export default class Client extends DJSClient {
 				reportsChannelID: rawConfig.reports_channel,
 				reportsRegex: rawConfig.report_regex.map(string => new RegExp(string, 'i')),
 				rulesChannelID: rawConfig.rules_channel,
-				rulesMessageID: rawConfig.rules_message || null,
+				rulesMessageID: rawConfig.rules_message ?? null,
 				shopItems: rawConfig.shop_items,
 				staffCommandsChannelID: rawConfig.staff_commands_channel,
 				staffServerCategoryID: rawConfig.staff_server_category,
@@ -133,7 +132,7 @@ export default class Client extends DJSClient {
 				webhooks: new Map(rawConfig.webhooks.map(hook => [
 					hook.name, new WebhookClient(hook.id, hook.token, options)
 				])),
-				welcomeRoleID: rawConfig.welcome_role || null
+				welcomeRoleID: rawConfig.welcome_role ?? null
 			};
 			
 			this.config.guilds.set(rawConfig.id, guildConfig);
@@ -351,7 +350,6 @@ export interface ClientConfig {
 	};
   guilds: RawGuildConfig[];
   login_url?: string;
-  mfa_moderation?: boolean;
 }
 
 export type GuildConfig = {
@@ -391,7 +389,8 @@ export type GuildConfig = {
     channelID: Snowflake;
     minimum: number;
     reactionOnly: boolean;
-  } | null;
+	} | null;
+	mfaModeration: boolean;
 }
 
 export type RawGuildConfig = {
@@ -405,7 +404,8 @@ export type RawGuildConfig = {
   staff_server_category: Snowflake;
   id: Snowflake;
   welcome_role?: Snowflake;
-  file_permissions_role?: Snowflake;
+	file_permissions_role?: Snowflake;
+	mfa_moderation?: boolean;
   partner_rewards_channel: Snowflake;
   partnership_channels: {
     id: Snowflake;
