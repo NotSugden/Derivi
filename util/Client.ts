@@ -44,6 +44,42 @@ export interface Events extends ClientEvents {
 	roleCreate: [Role];
 }
 
+export const resolveGuildConfig = (client: Client, cfg: RawGuildConfig): GuildConfig => ({
+	accessLevelRoles: cfg.access_level_roles,
+	casesChannelID: cfg.punishment_channel,
+	filePermissionsRole: cfg.file_permissions_role ?? null,
+	generalChannelID: cfg.general_channel,
+	id: cfg.id,
+	levelRoles: cfg.level_roles || null,
+	mfaModeration: cfg.mfa_moderation ?? false,
+	partnerships: {
+		channels: new Map(cfg.partnership_channels.map(data => [
+			data.id, {
+				id: data.id,
+				maximum: data.maximum ?? Infinity,
+				minimum: data.minimum,
+				points: data.points
+			}
+		])), rewardsChannelID: cfg.partner_rewards_channel
+	},
+	reportsChannelID: cfg.reports_channel,
+	reportsRegex: cfg.report_regex.map(string => new RegExp(string, 'i')),
+	rulesChannelID: cfg.rules_channel,
+	rulesMessageID: cfg.rules_message ?? null,
+	shopItems: cfg.shop_items,
+	staffCommandsChannelID: cfg.staff_commands_channel,
+	staffServerCategoryID: cfg.staff_server_category,
+	starboard: cfg.starboard?.enabled ? {
+		channelID: cfg.starboard.channel_id,
+		minimum: cfg.starboard.minimum,
+		reactionOnly: cfg.starboard.reaction_only
+	} : null,
+	webhooks: new Map(cfg.webhooks.map(hook => [
+		hook.name, new WebhookClient(hook.id, hook.token, client.options)
+	])),
+	welcomeRoleID: cfg.welcome_role ?? null
+});
+
 export default class Client extends DJSClient {
 	public commands: CommandManager;
 	public readonly config!: {
@@ -99,41 +135,7 @@ export default class Client extends DJSClient {
 		}
 		this.config.guilds = new Map();
 		for (const rawConfig of config.guilds) {
-			const guildConfig: GuildConfig = {
-				accessLevelRoles: rawConfig.access_level_roles,
-				casesChannelID: rawConfig.punishment_channel,
-				filePermissionsRole: rawConfig.file_permissions_role ?? null,
-				generalChannelID: rawConfig.general_channel,
-				id: rawConfig.id,
-				levelRoles: rawConfig.level_roles || null,
-				mfaModeration: rawConfig.mfa_moderation ?? false,
-				partnerships: {
-					channels: new Map(rawConfig.partnership_channels.map(data => [
-						data.id, {
-							id: data.id,
-							maximum: data.maximum ?? Infinity,
-							minimum: data.minimum,
-							points: data.points
-						}
-					])), rewardsChannelID: rawConfig.partner_rewards_channel
-				},
-				reportsChannelID: rawConfig.reports_channel,
-				reportsRegex: rawConfig.report_regex.map(string => new RegExp(string, 'i')),
-				rulesChannelID: rawConfig.rules_channel,
-				rulesMessageID: rawConfig.rules_message ?? null,
-				shopItems: rawConfig.shop_items,
-				staffCommandsChannelID: rawConfig.staff_commands_channel,
-				staffServerCategoryID: rawConfig.staff_server_category,
-				starboard: rawConfig.starboard?.enabled ? {
-					channelID: rawConfig.starboard.channel_id,
-					minimum: rawConfig.starboard.minimum,
-					reactionOnly: rawConfig.starboard.reaction_only
-				} : null,
-				webhooks: new Map(rawConfig.webhooks.map(hook => [
-					hook.name, new WebhookClient(hook.id, hook.token, options)
-				])),
-				welcomeRoleID: rawConfig.welcome_role ?? null
-			};
+			const guildConfig = resolveGuildConfig(this, rawConfig);
 			
 			this.config.guilds.set(rawConfig.id, guildConfig);
 		}

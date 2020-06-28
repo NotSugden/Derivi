@@ -6,6 +6,7 @@ import fetch from 'node-fetch';
 import Client from './Client';
 import CommandError from './CommandError';
 import { ModerationActionTypes, Responses, FLAGS_REGEX, OPTIONS_REGEX } from './Constants';
+import { GuildMessage, DMMessage } from './Types';
 import OAuthUser from '../structures/OAuthUser';
 import Guild from '../structures/discord.js/Guild';
 import GuildMember from '../structures/discord.js/GuildMember';
@@ -240,7 +241,7 @@ export default class Util {
 						}, {
 							errors: ['time'],
 							max: 1,
-							time: 6e4
+							time: 18e4
 						})).first()!;
             
 						const urls = [];
@@ -308,6 +309,20 @@ export default class Util {
 		if (data.error) throw data;
 
 		return new OAuthUser(client, data);
+	}
+
+	static async awaitResponse<C extends Message['channel']>(
+		channel: C, user: User, allowedResponses: string[] | '*', time = 18e4
+	) {
+		const response = (await channel.awaitMessages(message => {
+			if (message.author.id !== user.id) return false;
+			if (allowedResponses === '*') return true;
+			return allowedResponses.includes(message.content.toLowerCase());
+		}, {
+			max: 1,
+			time
+		})).first() as C extends GuildMessage<true>['channel'] ? GuildMessage<true> : DMMessage;
+		return response ? response : null;
 	}
 }
 
