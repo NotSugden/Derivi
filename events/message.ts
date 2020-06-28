@@ -176,7 +176,7 @@ export default (async message => {
 			);
 		}
     
-		if (command.name !== 'attach' && command.category === 'Moderation' && config!.mfaModeration) {
+		if (command.name !== 'attach' && command.category === 'Moderation' && config?.mfaModeration) {
 			const [data] = await client.database.query(
 				'SELECT access_token, token_type, expires_at FROM users WHERE id = ?',
 				message.author.id
