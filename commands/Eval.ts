@@ -45,6 +45,9 @@ export default class Eval extends Command {
 			}, {
 				name: 'async',
 				type: 'boolean'
+			}, {
+				name: 'hastebin',
+				type: 'boolean'
 			}]
 		);
 		const code = _code.match(/```(?:(?<lang>\S+)\n)?\s?(?<code>[^]+?)\s?```/)?.groups?.code ?? _code;
@@ -76,7 +79,7 @@ export default class Eval extends Command {
 			const respond = (content: unknown, options?: MessageOptions) => flags.silent ?
         message.author.send(content, options) as Promise<DMMessage> :
 				send(content, options);
-			if (inspected.length > 1250) {
+			if (inspected.length > 1250 || flags.hastebin) {
 				const json = await fetch(URLs.HASTEBIN('documents'), {
 					body: inspected,
 					headers: {
@@ -85,10 +88,10 @@ export default class Eval extends Command {
 					method: 'POST'
 
 				}).then(response => response.json());
+				if (!json.key) return send('Output was too long for hastebin');
+				const url = URLs.HASTEBIN(json.key);
 				return respond(
-					json.key ?
-						`Output was too long, posted to ${URLs.HASTEBIN(json.key)}` :
-						'Output was too long for hastebin.'
+					flags.hastebin ? url : `Output was too long, posted to ${url}`
 				);
 			}
 			return respond(inspected, {
