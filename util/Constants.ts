@@ -142,7 +142,7 @@ export const CommandErrors = {
 		if (reason === 'invalid') return `${start} is invalid.`;
 		if (reason === 'future') return `${start} is too far in the future!`;
 		if (reason === 'past') return `${start} is too far in the past!`;
-		neverReturn();
+		return neverReturn();
 	},
 	ALL_MUTED: 'All of the mentioned members are muted.',
 	ALREADY_REMOVED_USERS: (multiple: boolean, kick = true) =>
@@ -214,9 +214,33 @@ export const CommandErrors = {
 		}.`
 };
 
-export type MatchState = 'won' | 'lost' | 'draw' | 'idle'
+export type MatchState = 'won' | 'lost' | 'draw' | 'idle';
+
+function punishmentSuccessDM(guild: Guild, action: 'SOFT_BAN', reason: string): string;
+function punishmentSuccessDM(guild: Guild, action: 'KICK', reason: string): string;
+function punishmentSuccessDM(guild: Guild, action: 'BAN', reason: string): string;
+function punishmentSuccessDM(guild: Guild, action: 'WARN', reason: string): string;
+function punishmentSuccessDM(guild: Guild, action: 'MUTE', reason: string, time: string): string;
+function punishmentSuccessDM(
+	guild: Guild,
+	action: keyof typeof ModerationActionTypes,
+	reason: string,
+	arg1?: string
+): string {
+	if (action === 'MUTE') {
+		return `You've been muted for ${arg1} in ${guild.name}, reason: ${reason}.`;
+	} else if (action === 'WARN') {
+		return `You've been warned in ${guild.name} for ${reason}.`;
+	} else if (action === 'BAN') {
+		return `You've been banned in ${guild.name} for ${reason}.`;
+	} else if (action === 'KICK' || action === 'SOFT_BAN') {
+		return `You've been kicked in ${guild.name} for ${reason}.`;
+	}
+	return neverReturn();
+}
 
 export const Responses = {
+	DM_PUNISHMENT_ACTION: punishmentSuccessDM,
 	PROFILE: (profile: Profile) => [
     profile.user!.tag,
     `Description: ${profile.description}`,

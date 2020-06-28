@@ -85,6 +85,9 @@ export default class Kick extends Command {
 		});
 
 		for (const member of members.values()) {
+			try {
+				await member.send(Responses.DM_PUNISHMENT_ACTION(message.guild, 'KICK', reason));
+			} catch { } // eslint-disable-line no-empty
 			await member.kick(Responses.AUDIT_LOG_MEMBER_REMOVE(message.author, caseID));
 		}
 

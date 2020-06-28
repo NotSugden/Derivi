@@ -123,6 +123,14 @@ export default class Ban extends Command {
 				reason: banOptions.reason,
 				user
 			});
+			try {
+				await user.send(Responses.DM_PUNISHMENT_ACTION(
+					message.guild,
+					// TS is freaking out about 'BAN' being incompatible with 'WARN'...?
+					(flags.soft ? 'SOFT_BAN' : 'BAN') as 'WARN',
+					reason
+				));
+			} catch { } // eslint-disable-line no-empty
 			await guild.members.ban(user, banOptions);
 			if (flags.soft) {
 				await guild.members.unban(user.id);

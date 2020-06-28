@@ -97,7 +97,7 @@ export default class Mute extends Command {
 		const start = new Date();
 		const end = new Date(start.getTime() + time);
 
-		extras['Mute Length'] = ms(end.getTime() - start.getTime(), true);
+		const muteLength = extras['Mute Length'] = ms(end.getTime() - start.getTime(), true);
 
 		const filtered = members.filter(member => !alreadyMuted.keyArray().includes(member.id));
 
@@ -150,6 +150,9 @@ export default class Mute extends Command {
 			await member.roles.add(role);
 			const mute = await this.client.database.newMute(message.guild!, member.user, start, end);
 			this.client.mutes.set(`${message.guild.id}:${member.id}`, mute);
+			try {
+				await member.send(Responses.DM_PUNISHMENT_ACTION(message.guild, 'MUTE', reason, muteLength));
+			} catch {} // eslint-disable-line no-empty
 		}
 
 		return context;
