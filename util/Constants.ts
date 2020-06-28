@@ -127,6 +127,8 @@ export const Errors = {
 };
 
 export const CommandErrors = {
+	RESOLVE_ID_USER_ROLE: (argumentIndex: number) =>
+		`The ID in argument ${argumentIndex} couldn't be resolved to a user or a role.`,
 	ERROR_MUST_DM: 'This command threw an error that must be dmed to you, please enable DMs from derivi.',
 	GUILD_NOT_CONFIGURED: 'This guild is not configured to use this command.',
 	// eslint-disable-next-line max-len
@@ -135,10 +137,11 @@ export const CommandErrors = {
 	PURGE_NO_MESSAGES: 'There were no messages to delete',
 	CONFLICTING_FLAGS: (flags: string[]) => 
 		`The flags ${flags.map(f => `\`${f}\``).join(', ')} cannot be used together`,
-	INVALID_SNOWFLAKE: (reason: 'invalid' | 'future' | 'past') => {
-		if (reason === 'invalid') return 'The ID provided is invalid.';
-		if (reason === 'future') return 'The ID provided is too far in the future!';
-		if (reason === 'past') return 'The ID provided is too far in the past!';
+	INVALID_SNOWFLAKE: (reason: 'invalid' | 'future' | 'past', argumentIndex?: number) => {
+		const start = `The ${typeof argumentIndex === 'number' ? `ID in argument ${argumentIndex}` : 'ID provided'}`;
+		if (reason === 'invalid') return `${start} is invalid.`;
+		if (reason === 'future') return `${start} is too far in the future!`;
+		if (reason === 'past') return `${start} is too far in the past!`;
 		neverReturn();
 	},
 	ALL_MUTED: 'All of the mentioned members are muted.',

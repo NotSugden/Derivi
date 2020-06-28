@@ -1,4 +1,4 @@
-import { Permissions, SnowflakeUtil } from 'discord.js';
+import { Permissions, SnowflakeUtil, Snowflake } from 'discord.js';
 import Command from '../../structures/Command';
 import CommandArguments from '../../structures/CommandArguments';
 import CommandError from '../../util/CommandError';
@@ -8,17 +8,17 @@ import Util from '../../util/Util';
 
 const SNOWFLAKE_REGEX = /([0-9]{17,20})/;
 
-const validateSnowflake = (id: string, past?: number) => {
+const validateSnowflake = (id: string, { past, argumentIndex }: { past?: number; argumentIndex?: number } = {}) => {
 	if (!SNOWFLAKE_REGEX.test(id)) {
 		throw new CommandError('INVALID_SNOWFLAKE', 'invalid');
 	}
 
 	const snowflake = SnowflakeUtil.deconstruct(id);
 	if (typeof past === 'number' && snowflake.timestamp < past) {
-		throw new CommandError('INVALID_SNOWFLAKE', 'past');
+		throw new CommandError('INVALID_SNOWFLAKE', 'past', argumentIndex);
 	}
 	if (snowflake.timestamp > Date.now()) {
-		throw new CommandError('INVALID_SNOWFLAKE', 'future');
+		throw new CommandError('INVALID_SNOWFLAKE', 'future', argumentIndex);
 	}
 };
 
@@ -50,13 +50,46 @@ export default class Purge extends Command {
 
 	public async run(message: GuildMessage<true>, args: CommandArguments) {
 		await message.delete();
-		const limit = parseInt(args[0]!);
-    
-		if (isNaN(limit) || limit < 2 || limit > 100) {
-			throw new CommandError('INVALID_NUMBER', { max: 100, min: 2 });
+		let limit = parseInt(args[0]!);
+
+		const simpleFilter = {} as {
+			bots?: boolean;
+			roles?: Snowflake[];
+			users?: Snowflake[];
+		};
+
+		if (/^!?bots$/.test(args[0])) simpleFilter.bots = args[0].charAt(0) !== '!';
+		const idMatches = [...args.regular.join(' ').matchAll(/<@(!?|&)([0-9]{17,19})>/g)]
+			.map(arr => arr[2]);
+		if (idMatches.length === args.length) {
+			for (let i = 0; i < idMatches.length;i++) {
+				const id = idMatches[i];
+				validateSnowflake(id, { argumentIndex: i });
+				const user = this.client.users.resolve(id);
+				if (user) {
+					if (!simpleFilter.users) simpleFilter.users = [];
+					simpleFilter.users.push(id);
+				} else {
+					const role = message.guild.roles.resolve(id);
+					if (!role) {
+						throw new CommandError('RESOLVE_ID_USER_ROLE', i);
+					}
+					if (!simpleFilter.roles) simpleFilter.roles = [];
+					simpleFilter.roles.push(id);
+				}
+			}
 		}
+
+		const usingSimpleFilter = Object.keys(simpleFilter).length > 0;
+
+		if (!usingSimpleFilter && (isNaN(limit) || limit < 2 || limit > 100)) {
+			throw new CommandError('INVALID_NUMBER', { max: 100, min: 2 });
+		} else if (usingSimpleFilter) limit = 50;
     
-		const { flags } = Util.extractFlags(args.regular.slice(1).join(' '), [{
+		const { flags } = Util.extractFlags((usingSimpleFilter
+			? args.regular
+			: args.regular.slice(1)
+		).join(' '), [{
 			name: 'match',
 			type: 'string'
 		}, {
@@ -80,10 +113,10 @@ export default class Purge extends Command {
 		}]);
 
 		if (typeof flags.before === 'string') {
-			validateSnowflake(flags.before, message.channel.createdTimestamp);
+			validateSnowflake(flags.before, { past: message.channel.createdTimestamp });
 		}
 		if (typeof flags.after === 'string') {
-			validateSnowflake(flags.after, message.channel.createdTimestamp);
+			validateSnowflake(flags.after, { past: message.channel.createdTimestamp });
 		}
 
 		if (flags.before && flags.after) {
@@ -108,19 +141,29 @@ export default class Purge extends Command {
 			limit
 		});
     
-		if (typeof flags.bots === 'boolean') {
-			messages = messages.filter(msg => msg.author?.bot === flags.bots);
-		} else if (typeof flags.user === 'string') {
-			const users = flags.user.split(/ ?, ?/g)
+		if (typeof flags.bots === 'boolean' || typeof simpleFilter.bots === 'boolean') {
+			const bool = typeof flags.bots === 'boolean' ? flags.bots : simpleFilter.bots as boolean;
+			messages = messages.filter(msg => msg.author?.bot === bool);
+		} else if (typeof flags.user === 'string' || simpleFilter.users) {
+
+			const userFlagIsString = typeof flags.user === 'string';
+			
+			const users = userFlagIsString ? (flags.user as string).split(/ ?, ?/g)
 				.map(str => {
 					const [match] = str.match(SNOWFLAKE_REGEX) || [];
 					if (!match) return '';
 					return match.replace(/^ | $/, '');
-				});
+				}) : simpleFilter.users as Snowflake[];
       
-			for (const userID of users) validateSnowflake(userID);
+			if (userFlagIsString) for (const userID of users) validateSnowflake(userID);
       
 			messages = messages.filter(msg => msg.author && users.includes(msg.author.id));
+		}
+
+		if (simpleFilter.roles) {
+			messages = messages.filter(msg => msg.member !== null && simpleFilter.roles!.some(id =>
+				msg.member!.roles.cache.has(id)
+			));
 		}
     
 		if (typeof flags.match === 'string') {
