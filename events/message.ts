@@ -157,7 +157,7 @@ export default (async message => {
 			return msg;
 		}) as CommandData['send'];
 
-		if (command.name !== 'attach' && command.category === 'Moderation' && !config) {
+		if (['attach', 'history', 'warnings'].includes(command.name) && command.category === 'Moderation' && !config) {
 			throw new CommandError('GUILD_NOT_CONFIGURED');
 		}
 
