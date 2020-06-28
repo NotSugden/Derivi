@@ -61,7 +61,9 @@ export default class Purge extends Command {
 		if (/^!?bots$/.test(args[0])) simpleFilter.bots = args[0].charAt(0) !== '!';
 		const idMatches = [...args.regular.join(' ').matchAll(/<@(!?|&)([0-9]{17,19})>/g)]
 			.map(arr => arr[2]);
-		if (idMatches.length === args.length) {
+		console.log(args);
+		console.log(idMatches);
+		if (idMatches.length === args.regular.length) {
 			for (let i = 0; i < idMatches.length;i++) {
 				const id = idMatches[i];
 				validateSnowflake(id, { argumentIndex: i });
