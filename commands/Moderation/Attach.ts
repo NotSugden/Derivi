@@ -9,7 +9,7 @@ import CommandManager from '../../util/CommandManager';
 import { GuildMessage } from '../../util/Types';
 import Util from '../../util/Util';
 
-const VALID_EXTENSIONS = ['png', 'jpg', 'jpeg', 'gif'];
+const VALID_EXTENSIONS = ['png', 'jpg', 'jpeg', 'gif', 'mp4'];
 
 export default class Attach extends Command {
 	constructor(manager: CommandManager) {
@@ -33,7 +33,7 @@ export default class Attach extends Command {
 				required: true,
 				type: 'case number'
 			},{
-				extras: ['attachment/jpg', 'attachment/jpeg', 'attachment/gif'],
+				extras: VALID_EXTENSIONS.map(ext => `attachment/${ext}`),
 				required: true,
 				type: 'attachment/png'
 			}]
@@ -63,18 +63,18 @@ export default class Attach extends Command {
 
 		if (
 			!message.attachments.size ||
-			message.attachments.some(({ proxyURL }) => !VALID_EXTENSIONS.includes(
-				extname(proxyURL).slice(1).toLowerCase()
+			message.attachments.some(({ proxyURL, name }) => !VALID_EXTENSIONS.includes(
+				extname(name || proxyURL).slice(1).toLowerCase()
 			))
 		) {
 			throw new CommandError('PROVIDE_ATTACHMENT', VALID_EXTENSIONS);
 		}
 
 		const urls = [];
-		for (const attachment of message.attachments.values()) {
+		for (const { proxyURL, name, id } of message.attachments.values()) {
 			const url = await Util.downloadImage(
-				attachment.proxyURL,
-				`case-reference-${caseData.id}-${attachment.id + extname(attachment.proxyURL)}`,
+				proxyURL,
+				`case-reference-${caseData.id}-${id + extname(name || proxyURL)}`,
 				this.client.config
 			);
 			urls.push(url);
