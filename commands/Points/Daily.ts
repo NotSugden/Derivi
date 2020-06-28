@@ -1,9 +1,9 @@
+import * as moment from 'moment';
 import Command, { CommandData } from '../../structures/Command';
 import CommandArguments from '../../structures/CommandArguments';
 import CommandError from '../../util/CommandError';
 import CommandManager from '../../util/CommandManager';
 import { Responses } from '../../util/Constants';
-import moment = require('moment');
 import { GuildMessage } from '../../util/Types';
 
 export default class Daily extends Command {
