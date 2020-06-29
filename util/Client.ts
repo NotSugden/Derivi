@@ -98,7 +98,8 @@ export default class Client extends DJSClient {
 	};
 	public database: DatabaseManager;
 	public lockedPoints = new Set<Snowflake>();
-	public mutes = new Collection<Snowflake, Mute>();
+	public mutes = new Collection<string, Mute>();
+	public recentlyKicked = new Set<string>();
 	public token: string;
 	public website?: WebsiteManager;
 
