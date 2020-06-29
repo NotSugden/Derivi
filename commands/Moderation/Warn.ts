@@ -75,7 +75,7 @@ export default class Warn extends Command {
 		await Promise.all(
 			users.map(async user => {
 				try {
-					await user.send(Responses.DM_PUNISHMENT_ACTION(message.guild, 'KICK', reason));
+					await user.send(Responses.DM_PUNISHMENT_ACTION(message.guild, 'WARN', reason));
 				} catch { } // eslint-disable-line no-empty
 				return this.client.database.newWarn(
 					message.guild!, user, message.author, { caseID, reason, timestamp }
