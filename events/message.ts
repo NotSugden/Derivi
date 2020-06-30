@@ -29,6 +29,20 @@ export default (async message => {
 			!message.guild
 		) return;
 		if (config) {
+			try {
+				if (!edited) {
+					await client.database.query(
+						'INSERT INTO messages(channel_id,guild_id,id,sent_timestamp,user_id) VALUES(?,?,?,?,?)',
+						message.channel.id,
+						message.guild.id,
+						message.id, 
+						message.createdAt,
+						message.author.id
+					);
+				}
+			} catch (error) {
+				console.error(error);
+			}
 			if (message.attachments.size && config.filePermissionsRole && client.config.attachmentLogging && !edited) {
 				const urls = message.attachments.map(({ proxyURL }) => proxyURL);
 				for (let i = 0; i < urls.length; i++) {
@@ -52,9 +66,6 @@ export default (async message => {
 						.send(Responses.AUTO_REPORT_EMBED(message));
 				}
 			}
-		}
-
-		if (config) {
 			const partnerChannel = config.partnerships.channels.get(message.channel.id);
 			if (partnerChannel) {
 				if (message.invites.length > 1) {
@@ -97,40 +108,40 @@ export default (async message => {
 					throw error;
 				}
 			}
-		}
+		
+			const allowedChannels = client.config.allowedLevelingChannels;
+			if (
+				(!allowedChannels.length || allowedChannels.includes(message.channel.id)) &&
+				!XP_COOLDOWN.has(message.author.id) && !edited
+			) {
+				const { level, xp } = await client.database.levels(message.author.id);
 
-		const allowedChannels = client.config.allowedLevelingChannels;
-		if (
-			config && (!allowedChannels.length || allowedChannels.includes(message.channel.id)) &&
-			!XP_COOLDOWN.has(message.author.id) && !edited
-		) {
-			const { level, xp } = await client.database.levels(message.author.id);
-
-			const newData = {
-				xp: xp + random(12, 37)
-			} as { xp: number; level?: number };
-			if (newData.xp > Util.levelCalc(level)) {
-				const { levelRoles } = config;
-				newData.level = level + 1;
-				const index = levelRoles?.findIndex(data => data.level === newData.level);
-				if (typeof index === 'number' && index !== -1) {
-					if (index > 0 && message.member.roles.cache.has(levelRoles![index - 1].id)) {
-						const roles = message.member.roles.cache.keyArray();
-						roles.splice(roles.indexOf(levelRoles![index - 1].id), 1, levelRoles![index].id);
-						await message.member.roles.set(roles);
-					} else {
-						await message.member.roles.add(levelRoles![index].id);
+				const newData = {
+					xp: xp + random(12, 37)
+				} as { xp: number; level?: number };
+				if (newData.xp > Util.levelCalc(level)) {
+					const { levelRoles } = config;
+					newData.level = level + 1;
+					const index = levelRoles?.findIndex(data => data.level === newData.level);
+					if (typeof index === 'number' && index !== -1) {
+						if (index > 0 && message.member.roles.cache.has(levelRoles![index - 1].id)) {
+							const roles = message.member.roles.cache.keyArray();
+							roles.splice(roles.indexOf(levelRoles![index - 1].id), 1, levelRoles![index].id);
+							await message.member.roles.set(roles);
+						} else {
+							await message.member.roles.add(levelRoles![index].id);
+						}
 					}
 				}
-			}
 
-			await client.database.setLevels(message.author.id, newData);
+				await client.database.setLevels(message.author.id, newData);
 
-			XP_COOLDOWN.add(message.author.id);
-			setTimeout(() => XP_COOLDOWN.delete(message.author.id), 6e4);
+				XP_COOLDOWN.add(message.author.id);
+				setTimeout(() => XP_COOLDOWN.delete(message.author.id), 6e4);
 
-			if (typeof newData.level === 'number') {
-				await message.channel.send(Responses.LEVEL_UP(message.author, newData.level)); 
+				if (typeof newData.level === 'number') {
+					await message.channel.send(Responses.LEVEL_UP(message.author, newData.level)); 
+				}
 			}
 		}
 

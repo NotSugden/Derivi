@@ -1,7 +1,10 @@
 import { promises as fs } from 'fs';
+import { SnowflakeUtil, Snowflake } from 'discord.js';
 import * as moment from 'moment';
+import { escape } from 'mysql';
 import Message from '../structures/discord.js/Message';
 import TextChannel from '../structures/discord.js/TextChannel';
+import User from '../structures/discord.js/User';
 import { Events } from '../util/Client';
 import { EventResponses } from '../util/Constants';
 
@@ -17,6 +20,27 @@ export default (async messages => {
   
 	const config = guild && client!.config.guilds.get(guild.id);
 	if (!config) return;
+
+	try {
+		const ids = [];
+		for (const message of messages.values()) {
+			ids.push(`id = ${escape(message.id)}`);
+			if (message.author) continue;
+			const [data] = await client!.database.query<{ user_id: Snowflake }>(
+				'SELECT user_id FROM messages WHERE id = ?',
+				message.id
+			);
+			if (!data) continue;
+			try {
+				message.author = await client!.users.fetch(data.user_id) as User;
+			} catch { } // eslint-disable-line no-empty
+		}
+		await client!.database.query(
+			`DELETE FROM messages WHERE ${ids.join(' OR ')}`
+		);
+	} catch (error) {
+		console.error(error);
+	}
 	
 	const webhook = config.webhooks.get('audit-logs');
 	if (!webhook) return;
@@ -46,7 +70,9 @@ export default (async messages => {
 				tag: user.tag
 			}))
 		},
-		sentAt: moment.utc(message.createdAt).format('DD/MM/YYYY HH:mm A')
+		sentAt: moment.utc(
+			new Date(message.createdTimestamp || SnowflakeUtil.deconstruct(message.id).timestamp)
+		).format('DD/MM/YYYY HH:mm A')
 	}));
 	if (client!.config.attachmentLogging && config.filePermissionsRole) {
 		const directory = await fs.readdir(client!.config.filesDir);
