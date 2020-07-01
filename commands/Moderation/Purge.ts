@@ -42,6 +42,7 @@ export default class Purge extends Command {
 				return false;
 			},
 			usages: [{
+				extras: ['...user', '...role'],
 				required: true,
 				type: 'limit'
 			}]

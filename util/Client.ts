@@ -97,6 +97,7 @@ export default class Client extends DJSClient {
     loginURL?: string;
 	};
 	public database: DatabaseManager;
+	public giveaways = new Map<Snowflake, NodeJS.Timeout>();
 	public lockedPoints = new Set<Snowflake>();
 	public mutes = new Collection<string, Mute>();
 	public recentlyKicked = new Set<string>();
@@ -172,6 +173,13 @@ export default class Client extends DJSClient {
 					const mutes = await this.database.mute(true);
 					for (const mute of mutes) {
 						this.mutes.set(mute.userID, mute);
+					}
+					const giveaways = await this.database.giveaway(true);
+					for (const giveaway of giveaways) {
+						const timeout = setTimeout(
+							() => giveaway.end(), giveaway.endAt.getTime() - Date.now()
+						);
+						this.giveaways.set(giveaway.messageID, timeout);
 					}
 					resolve(this);
 				} catch (error) {

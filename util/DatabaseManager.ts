@@ -2,8 +2,10 @@ import { Snowflake, SnowflakeUtil } from 'discord.js';
 import * as mysql from 'mysql';
 import Client from './Client';
 import { Errors, ModerationActionTypes } from './Constants';
+import { GuildMessage } from './Types';
 import Util from './Util';
 import Case, { RawCase } from '../structures/Case';
+import Giveaway, { RawGiveaway } from '../structures/Giveaway';
 import Levels, { RawLevels } from '../structures/Levels';
 import Mute, { RawMute } from '../structures/Mute';
 import Points, { RawPoints } from '../structures/Points';
@@ -591,6 +593,65 @@ export default class DatabaseManager {
 		);
 		
 		return;
+	}
+
+	public async giveaway(id: Snowflake): Promise<Giveaway | null>;
+	public async giveaway(id: Snowflake, all: true): Promise<Giveaway[]>;
+	public async giveaway(all: true): Promise<Giveaway[]>;
+	public async giveaway(id: Snowflake | true, all?: true) {
+		if (id === true) {
+			const giveaways = await this.query<RawGiveaway>('SELECT * FROM giveaways WHERE end > CURRENT_TIMESTAMP()');
+			return giveaways.map(data => new Giveaway(this.client, data));
+		}
+		if (this.client.channels.cache.has(id)) {
+			const giveaways = await this.query<RawGiveaway>(
+				`SELECT * FROM giveaways ORDER BY desc WHERE channel_id = ?${all ? '' : 'LIMIT 1'}`,
+				id
+			);
+			if (!giveaways.length) throw new Error(Errors.NO_GIVEAWAYS_IN_CHANNEL(id));
+			if (all) return giveaways.map(data => new Giveaway(this.client, data));
+			return new Giveaway(this.client, giveaways[0]);
+		} else {
+			const [data] = await this.query<RawGiveaway>(
+				'SELECT * FROM giveaways WHERE message_id = ? LIMIT 1',
+				id
+			);
+			if (!data) return null;
+			return new Giveaway(this.client, data);
+		}
+	}
+
+	public async setGiveawayWinners(id: Snowflake, winners: Snowflake[]) {
+		await this.query(
+			'UPDATE giveaways SET winners = ? WHERE message_id = ?',
+			JSON.stringify(winners),
+			id
+		);
+	}
+
+	public async newGiveaway(data: {
+		createdBy: User;
+		endAt: Date;
+		message: GuildMessage<true>;
+		messageRequirement?: number;
+		prize: string;
+	}) {
+		const rawData = {
+			channel_id: data.message.channel.id,
+			created_by: this.client.users.resolveID(data.createdBy),
+			end: new Date(data.endAt),
+			message_id: data.message.id,
+			message_requirement: data.messageRequirement ?? null,
+			prize: Util.encrypt(data.prize, this.client.config.encryptionPassword).toString('base64'),
+			start: new Date(),
+			winners: null
+		} as RawGiveaway;
+		const keys = Object.keys(rawData) as (keyof RawGiveaway)[];
+		await this.query(
+			`INSERT INTO giveaways(${keys.join(', ')}) VALUES (${keys.map(() => '?').join(', ')})`,
+			...keys.map(key => rawData[key])
+		);
+		return new Giveaway(this.client, rawData);
 	}
 }
 

@@ -6,7 +6,7 @@ import {
 } from 'discord.js';
 import * as moment from 'moment';
 import Client, { ShopItem } from './Client';
-import { Invite, PartialMessage } from './Types';
+import { Invite, PartialMessage, GuildMessage } from './Types';
 import Util from './Util';
 import { Card } from '../commands/Points/Blackjack';
 import Case from '../structures/Case';
@@ -123,10 +123,21 @@ export const Errors = {
 	RESOLVE_COMMAND: 'The command passed couldn\'t be resolved',
 
 	COMMAND_LOAD_FAILED: (name: string) => `Failed to load command ${name}`,
-	INVALID_TYPE: (parameter: string, type: string) => `Provided '${parameter}' should be a '${type}'`
+	INVALID_TYPE: (parameter: string, type: string) => `Provided '${parameter}' should be a '${type}'`,
+
+	NO_GIVEAWAYS_IN_CHANNEL: (id: Snowflake) => `There are no giveaways in channel ${id}.`
 };
 
 export const CommandErrors = {
+	INVALID_STRING_LENGTH: (name: string, { big = false, length }: { big?: boolean; length: number }) =>
+		`The provided ${name} is too ${big ? 'big' : 'small'}, it must be a ${
+			big ? 'maximum' : 'minimum'
+		} of ${length} characters.`,
+	NO_GIVEAWAY_PRIZE: 'You have not entered a prize for this giveaway.',
+	NO_GIVEAWAY_WINNERS: (prize: string, requirement = false) => [
+		'The giveaway for', ...prize.split('\n').map(line => `> ${line}`),
+		`had no winners${requirement ? ' due to noone meeting the requirement' : ''}.`
+	],
 	RESOLVE_ID_USER_ROLE: (argumentIndex: number) =>
 		`The ID in argument ${argumentIndex} couldn't be resolved to a user or a role.`,
 	ERROR_MUST_DM: 'This command threw an error that must be dmed to you, please enable DMs from derivi.',
@@ -239,7 +250,37 @@ function punishmentSuccessDM(
 	return neverReturn();
 }
 
+const splitChars = (string: string, char = '\u200b') => string.split('').join(char);
+
 export const Responses = {
+	GIVEAWAY: (prize: string, data: { messageRequirement?: number; end: Date }) => {
+		const description = [
+			`${splitChars('React with')} 🎁 ${splitChars('to enter the giveaway')}`, '',
+			`⏳ **${splitChars('Time')}** ${splitChars('Remaining')} **${
+				splitChars(moment(Date.now()).to(data.end, true))
+			}**`
+		];
+		if (typeof data.messageRequirement === 'number') {
+			description.push(
+				'',
+				'✅ Requirement:',
+				`Must send ${data.messageRequirement} messages.`
+			);
+		}
+		return new MessageEmbed()
+			.setTitle(splitChars(prize))
+			.setColor(0x94d7e0)
+			.setDescription(description)
+			.setFooter('Ends At')
+			.setTimestamp(data.end);
+	},
+	WON_GIVEAWAY: (winner: User, prize: string, message: GuildMessage<true>) => ({
+		allowedMentions: { users: [winner.id] },
+		content: [
+			`Congratulations ${winner} you've won the giveaway for:`,
+			...prize.split('\n').map(line => `> ${line}`), message.url
+		]
+	}),
 	DM_PUNISHMENT_ACTION: punishmentSuccessDM,
 	PROFILE: (profile: Profile) => [
     profile.user!.tag,
