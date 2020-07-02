@@ -145,13 +145,13 @@ export default class BotConfig extends Command {
 			const resolveRole = (msg: GuildMessage<true>) => {
 				return msg.mentions.roles.first()
 					|| msg.guild.roles.cache.get(msg.content)
-					|| msg.guild.roles.cache.find(role => role.name === msg.content.toLowerCase());
+					|| msg.guild.roles.cache.find(role => role.name.toLowerCase() === msg.content.toLowerCase());
 			};
 
 			const resolveChannel = (msg: GuildMessage<true>) => {
 				return msg.mentions.channels.first()
 					|| msg.guild.channels.cache.get(msg.content)
-					|| msg.guild.channels.cache.find(ch => ch.name === msg.content.toLowerCase());
+					|| msg.guild.channels.cache.find(ch => ch.name.toLowerCase() === msg.content.toLowerCase());
 			};
 
 			for (let i = 0;i < CONFIG_ITEMS.length;i++) {
@@ -236,7 +236,7 @@ export default class BotConfig extends Command {
 					const roles = _roles.map(idOrName => {
 						const [id] = idOrName.match(MessageMentions.ROLES_PATTERN) || [];
 						return message.guild.roles.cache.get(id || idOrName) || message.guild.roles.cache.find(
-							role => role.name === idOrName.toLowerCase()
+							role => role.name.toLowerCase() === idOrName.toLowerCase()
 						);
 					});
 					if (roles.some(role => typeof role === 'undefined')) {
