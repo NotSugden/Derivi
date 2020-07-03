@@ -5,6 +5,16 @@ import { GuildMessage } from '../util/Types';
 
 export default (async (reaction, user) => {
 	const { client, guild } = reaction.message;
+
+	if (reaction.message.author.id === client.user!.id) {
+		const giveaway = await client.database.giveaway(reaction.message.id);
+		if (giveaway) {
+			await reaction.message.edit(Responses.GIVEAWAY(giveaway.prize, {
+				end: giveaway.endAt,
+				messageRequirement: giveaway.messageRequirement 
+			}));
+		}
+	}
   
 	const config = guild && client.config.guilds.get(guild.id);
 	if (!guild || !config) return;
@@ -31,7 +41,7 @@ export default (async (reaction, user) => {
 				users
 			});
 		} else if (existing) {
-			existing.addStar(user);
+			await existing.addStar(user);
 		}
 		return;
 	}

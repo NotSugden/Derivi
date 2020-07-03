@@ -257,7 +257,7 @@ function punishmentSuccessDM(
 const splitChars = (string: string, char = '\u200b') => string.split('').join(char);
 
 export const Responses = {
-	GIVEAWAY: (prize: string, data: { messageRequirement?: number; end: Date }) => {
+	GIVEAWAY: (prize: string, data: { messageRequirement?: number | null; end: Date }) => {
 		const description = [
 			`${splitChars('React with')} 🎁 ${splitChars('to enter the giveaway')}`, '',
 			`⏳ **${splitChars('Time')}** ${splitChars('Remaining')} **${
