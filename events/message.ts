@@ -5,11 +5,13 @@ import { MessageOptions, MessageEditOptions, StringResolvable, MessageAdditions,
 import fetch from 'node-fetch';
 import { CommandData } from '../structures/Command';
 import CommandArguments from '../structures/CommandArguments';
+import Levels from '../structures/Levels';
 import Message from '../structures/discord.js/Message';
 import TextChannel from '../structures/discord.js/TextChannel';
 import { Events } from '../util/Client';
 import CommandError from '../util/CommandError';
 import { CommandErrors, Responses } from '../util/Constants';
+import { QueryTypes } from '../util/DatabaseManager';
 import Util from '../util/Util';
 
 const XP_COOLDOWN = new Set<Snowflake>();
@@ -31,14 +33,13 @@ export default (async message => {
 		if (config) {
 			try {
 				if (!edited) {
-					await client.database.query(
-						'INSERT INTO messages(channel_id,guild_id,id,sent_timestamp,user_id) VALUES(?,?,?,?,?)',
-						message.channel.id,
-						message.guild.id,
-						message.id, 
-						message.createdAt,
-						message.author.id
-					);
+					await client.database.query(QueryTypes.INSERT, 'messages', {
+						channel_id: message.channel.id,
+						guild_id: message.guild.id,
+						id: message.id, 
+						sent_timestamp: message.createdAt,
+						user_id: message.author.id
+					});
 				}
 			} catch (error) {
 				console.error(error);
@@ -95,7 +96,7 @@ export default (async message => {
 						));
 
 					const points = await client.database.points(message.author);
-					await points.set({ points: points.amount + partnerChannel.points });
+					await points.set({ amount: points.amount + partnerChannel.points });
 
 					return;
 				} catch (error) {
@@ -114,14 +115,14 @@ export default (async message => {
 				(!allowedChannels.length || allowedChannels.includes(message.channel.id)) &&
 				!XP_COOLDOWN.has(message.author.id) && !edited
 			) {
-				const { level, xp } = await client.database.levels(message.author.id);
+				const levels = await client.database.levels(message.author.id);
 
-				const newData = {
-					xp: xp + random(12, 37)
-				} as { xp: number; level?: number };
-				if (newData.xp > Util.levelCalc(level)) {
+				const newData: { xp: number; level?: number } = {
+					xp: levels.xp + random(12, 37)
+				};
+				if (newData.xp > Levels.levelCalc(levels.level)) {
 					const { levelRoles } = config;
-					newData.level = level + 1;
+					newData.level = levels.level + 1;
 					const index = levelRoles?.findIndex(data => data.level === newData.level);
 					if (typeof index === 'number' && index !== -1) {
 						if (index > 0 && message.member.roles.cache.has(levelRoles![index - 1].id)) {
@@ -134,7 +135,7 @@ export default (async message => {
 					}
 				}
 
-				await client.database.setLevels(message.author.id, newData);
+				await levels.set(newData);
 
 				XP_COOLDOWN.add(message.author.id);
 				setTimeout(() => XP_COOLDOWN.delete(message.author.id), 6e4);

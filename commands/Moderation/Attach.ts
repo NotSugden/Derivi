@@ -9,7 +9,7 @@ import CommandManager from '../../util/CommandManager';
 import { GuildMessage } from '../../util/Types';
 import Util from '../../util/Util';
 
-const VALID_EXTENSIONS = ['png', 'jpg', 'jpeg', 'gif', 'mp4'];
+export const VALID_EXTENSIONS = ['png', 'jpg', 'jpeg', 'gif', 'mp4'];
 
 export default class Attach extends Command {
 	constructor(manager: CommandManager) {

@@ -3,14 +3,14 @@ import User from './discord.js/User';
 import Client from '../util/Client';
 
 export default class OAuthUser {
-	public client!: Client;
+	public readonly client!: Client;
 	public id: string;
 	public username: string;
 	public avatar: string;
 	public discriminator: string;
 	public publicFlags: UserFlags;
 	public flags: UserFlags;
-	public email!: string | null;
+	public readonly email!: string | null;
 	public verified: boolean | null;
 	public locale: string;
 	public mfaEnabled: boolean;
@@ -27,8 +27,10 @@ export default class OAuthUser {
 		this.mfaEnabled = data.mfa_enabled;
 
 		// this is so the email is not enumerable, to prevent accidental leak via eval and such
-		Object.defineProperty(this, 'email', { value: data.email ?? null });
-		Object.defineProperty(this, 'client', { value: client });
+		Object.defineProperties(this, {
+			client: { value: client },
+			email: { value: data.email ?? null }
+		});
 	}
 
 	get createdAt() {

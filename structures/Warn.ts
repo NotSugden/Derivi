@@ -5,10 +5,10 @@ import Client from '../util/Client';
 import Util from '../util/Util';
 
 export default class Warn {
-	public caseID: number;
-	public client!: Client;
+	public caseID!: number;
+	public readonly client!: Client;
 	public moderatorID: Snowflake;
-	public reason: string;
+	public reason!: string;
 	public timestamp: Date;
 	public userID: Snowflake;
 	public guildID: Snowflake;
@@ -18,15 +18,23 @@ export default class Warn {
 		Object.defineProperty(this, 'client', { value: client });
 
 		this.id = data.id;
-		this.caseID = data.case_id;
 		this.moderatorID = data.moderator_id;
-		this.reason = Util.decrypt(data.reason, client.config.encryptionPassword).toString();
 		this.timestamp = new Date(data.timestamp);
 		this.userID = data.user_id;
 		this.guildID = data.guild_id;
+		this.patch(data);
 	}
 
-	public case() {
+	public patch(data: Partial<RawWarn>) {
+		if (typeof data.case_id === 'number') {
+			this.caseID = data.case_id;
+		}
+		if (typeof data.reason === 'string') {
+			this.reason = Util.decrypt(data.reason, this.client.config.encryptionPassword).toString();
+		}
+	}
+
+	public fetchCase() {
 		// The case shouldn't be null here as it should be linked to a valid case
 		return this.client.database.case(this.guild, this.caseID) as Promise<Case>;
 	}

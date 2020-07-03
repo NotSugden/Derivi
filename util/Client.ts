@@ -11,15 +11,13 @@ import {
 	ClientEvents,
 	MessageReaction
 } from 'discord.js';
-import * as mysql from 'mysql';
 import CommandManager from './CommandManager';
 import { Defaults, Errors } from './Constants';
-import DatabaseManager from './DatabaseManager';
+import DatabaseManager, { DatabaseOptions } from './DatabaseManager';
 import EmojiStore from './EmojiStore';
 import { Invite, PartialMessage, Role } from './Types';
 import { Message } from './Types';
 import WebsiteManager from './WebsiteManager';
-import Mute from '../structures/Mute';
 import Guild from '../structures/discord.js/Guild';
 import GuildMember from '../structures/discord.js/GuildMember';
 import TextChannel from '../structures/discord.js/TextChannel';
@@ -88,7 +86,7 @@ export default class Client extends DJSClient {
 		attachmentsURL?: string;
     readonly encryptionPassword: string;
     emojis: EmojiStore;
-		database: mysql.ConnectionConfig;
+		database: DatabaseOptions;
 		filesDir: string;
 		ownerIDs: Snowflake[];
 		prefix: string[];
@@ -97,9 +95,7 @@ export default class Client extends DJSClient {
     loginURL?: string;
 	};
 	public database: DatabaseManager;
-	public giveaways = new Map<Snowflake, NodeJS.Timeout>();
 	public lockedPoints = new Set<Snowflake>();
-	public mutes = new Collection<string, Mute>();
 	public recentlyKicked = new Set<string>();
 	public token: string;
 	public website?: WebsiteManager;
@@ -109,8 +105,7 @@ export default class Client extends DJSClient {
 		DJSUtil.mergeDefault(Defaults.CLIENT_CONFIG, config);
 
 		this.commands = new CommandManager(this, config.commands_dir as string);
-		this.database = new DatabaseManager(this, config.database);
-
+		
 		this.token = config.token;
     
 		Object.defineProperty(this, 'config', { value: {} });
@@ -149,6 +144,8 @@ export default class Client extends DJSClient {
 		if (config.website?.enabled) {
 			this.website = new WebsiteManager(this, config.website);
 		}
+
+		this.database = new DatabaseManager(this, config.database);
 	}
 
 	public on<K extends keyof Events>(event: K, listener: (...args: Events[K]) => void): this {
@@ -170,17 +167,8 @@ export default class Client extends DJSClient {
 					await DJSUtil.delayFor(2500);
 					await this._validateConfig();
 					if (this.website && !this.website.process) await this.website.spawn();
-					const mutes = await this.database.mute(true);
-					for (const mute of mutes) {
-						this.mutes.set(mute.userID, mute);
-					}
-					const giveaways = await this.database.giveaway(true);
-					for (const giveaway of giveaways) {
-						const timeout = setTimeout(
-							() => giveaway.end(), giveaway.endAt.getTime() - Date.now()
-						);
-						this.giveaways.set(giveaway.messageID, timeout);
-					}
+					await this.database.mute(true);
+					await this.database.giveaway(true);
 					resolve(this);
 				} catch (error) {
 					this.disconnect()
@@ -342,7 +330,7 @@ export interface ClientConfig {
     name: string;
     id: Snowflake;
   }[];
-	database: mysql.ConnectionConfig;
+	database: DatabaseOptions;
 	files_dir?: string;
 	owners: Snowflake[];
 	prefix: string[];

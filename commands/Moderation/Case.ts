@@ -75,10 +75,10 @@ export default class Case extends Command {
 			await caseMessage.delete();
 			const response = await send(Responses.DELETE_CASE(caseID));
 			await this.client.database.deleteCase(guild, caseID);
-			const cases = await this.client.database.query(
+			const cases = await this.client.database.query<{ message_id: Snowflake; id: number }>(
 				'SELECT message_id, id FROM cases WHERE id > ? AND guild_id = ?',
 				caseID, guild.id
-			) as { message_id: Snowflake; id: number }[];
+			);
 			await this.client.database.query(
 				'UPDATE cases SET id = id - 1 WHERE id > ? AND guild_id = ?',
 				caseID, guild.id
@@ -97,7 +97,7 @@ export default class Case extends Command {
 				throw new CommandError('NO_OPTIONS', EDIT_OPTIONS);
 			}
       
-			const caseMessage = await caseData.logMessage();
+			const caseMessage = await caseData.fetchLogMessage();
       
 			const newEmbed = new MessageEmbed(caseMessage.embeds[0]);
       
@@ -111,13 +111,10 @@ export default class Case extends Command {
 			}
       
 			await caseMessage.edit(newEmbed);
-      
-			await this.client.database.query(
-				'UPDATE cases SET reason = ?', // well at the moment only the reason can be edited so...
-				newData.reason
-			);
-      
-      
+
+			await this.client.database.editCase(guild, caseData.id, {
+				reason: newData.reason as string
+			});
       
 			return send(Responses.SUCCESSFULLY_EDITED_CASE(caseID));
 		}

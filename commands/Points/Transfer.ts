@@ -34,10 +34,9 @@ export default class Transfer extends Command {
 			throw new CommandError('INVALID_NUMBER', { min: 1 });
 		}
 
-		const [
-			authorPoints,
-			userPoints
-		] = await this.client.database.points([message.author, user]);
+		const points = await this.client.database.points([message.author, user]);
+		const authorPoints = points.get(message.author.id)!;
+		const userPoints = points.get(user.id)!;
 
 		if (authorPoints.vault < transferAmount) {
 			throw new CommandError('NOT_ENOUGH_POINTS', transferAmount, false);

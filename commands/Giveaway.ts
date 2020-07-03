@@ -72,15 +72,13 @@ export default class Giveaway extends Command {
 				}
 			)) as GuildMessage<true>;
 			await giveawayMessage.react('🎁');
-			const giveaway = await this.client.database.newGiveaway({
+			await this.client.database.createGiveaway({
 				createdBy: message.author,
 				endAt: endDate,
 				message: giveawayMessage,
 				messageRequirement: flags.messageRequirement as number | undefined,
 				prize: prize
 			});
-			const timeout = setTimeout(() => giveaway.end(), length);
-			this.client.giveaways.set(giveaway.messageID, timeout);
 		}
 	}
 }

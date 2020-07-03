@@ -7,6 +7,7 @@ import Client from './Client';
 import CommandError from './CommandError';
 import { ModerationActionTypes, Responses, FLAGS_REGEX, OPTIONS_REGEX } from './Constants';
 import { GuildMessage, DMMessage } from './Types';
+import { VALID_EXTENSIONS } from '../commands/Moderation/Attach';
 import OAuthUser from '../structures/OAuthUser';
 import Guild from '../structures/discord.js/Guild';
 import GuildMember from '../structures/discord.js/GuildMember';
@@ -215,12 +216,12 @@ export default class Util {
 		const channel = client.channels.resolve(
 			config.casesChannelID
 		) as TextChannel;
-		const message = await channel!.send('Initializing new case...') as Message;
-		const caseData = await client.database.newCase({
+		const message = await channel!.send('Initializing new case...') as GuildMessage<true>;
+		const caseData = await client.database.createCase({
 			action: options.action,
 			extras: options.extras,
 			guild: options.guild,
-			message,
+			message: message,
 			moderator: options.moderator,
 			reason: options.reason,
 			screenshots: options.screenshots,
@@ -228,7 +229,6 @@ export default class Util {
 		});
 		await message.edit(`Case ${caseData.id}`, embed);
 		if (client.config.attachmentLogging) {
-			const VALID_EXTENSIONS = ['png', 'jpg', 'jpeg', 'gif'];
 			options.moderator.send(`Please reply to this message with a screenshot to attach to case ${caseData.id}!`)
 				.then(async ({ channel }) => {
 					try {
@@ -290,14 +290,6 @@ export default class Util {
 		const position = member.roles.highest.comparePositionTo(by.roles.highest);
 		if (position < 0) return true;
 		return false;
-	}
-
-	static levelCalc(level: number) {
-		return (
-			(5 / 6) *
-			(level + 1) *
-			(2 * (level + 1) * (level + 1) + 27 * (level + 1) + 91)
-		);
 	}
   
 	static async fetchOauthUser(client: Client, accessToken: string, tokenType = 'Bearer') {

@@ -9,10 +9,14 @@
 	"login_url": "https://someurl.com/login",
 	"attachment_logging": false,
 	"database": {
-		"host": "localhost",
-		"user": "root",
-		"password": "A secure password",
-		"database": "main"
+		"cacheSweepInterval": 300,
+		"connection": {
+			"host": "localhost",
+			"user": "root",
+			"password": "A secure password",
+			"database": "main"
+		},
+		"maxCacheSize": 100
 	},
 	"encryption_password": "A secure password",
 	"prefix": [

@@ -65,7 +65,7 @@ export default class Warn extends Command {
 			action: 'WARN',
 			context,
 			extras: {},
-			guild: message.guild!,
+			guild: message.guild,
 			moderator: message.author,
 			reason,
 			screenshots: [],
@@ -77,9 +77,14 @@ export default class Warn extends Command {
 				try {
 					await user.send(Responses.DM_PUNISHMENT_ACTION(message.guild, 'WARN', reason));
 				} catch { } // eslint-disable-line no-empty
-				return this.client.database.newWarn(
-					message.guild!, user, message.author, { caseID, reason, timestamp }
-				);
+				return this.client.database.createWarn({
+					case: caseID,
+					guild: message.guild,
+					moderator: message.author,
+					reason,
+					timestamp,
+					user
+				});
 			})
 		);
 

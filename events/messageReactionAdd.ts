@@ -1,6 +1,7 @@
 import TextChannel from '../structures/discord.js/TextChannel';
 import { Events } from '../util/Client';
 import { Responses } from '../util/Constants';
+import { GuildMessage } from '../util/Types';
 
 export default (async (reaction, user) => {
 	const { client, guild } = reaction.message;
@@ -22,10 +23,11 @@ export default (async (reaction, user) => {
 			).send(
 				Responses.STARBOARD_EMBED(users.length, reaction.message)
 			);
-			await client.database.newStar(guild, {
-				channelID: reaction.message.channel.id,
-				messageID: reaction.message.id,
-				starboardID: starboardMessage.id,
+			await client.database.createStar({
+				channel: reaction.message.channel.id,
+				guild: guild.id,
+				message: reaction.message as GuildMessage,
+				starboardMessage: starboardMessage.id,
 				users
 			});
 		} else if (existing) {

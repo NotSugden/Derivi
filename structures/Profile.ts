@@ -1,29 +1,36 @@
 import { Snowflake } from 'discord.js';
 import Client from '../util/Client';
+import DatabaseManager from '../util/DatabaseManager';
 import Util from '../util/Util';
 
 export default class Profile {
-	public client!: Client;
+	public readonly client!: Client;
 	public userID: Snowflake;
-	public description: string;
-	public rep: number;
+	public description!: string;
+	public rep!: number;
 
 	constructor(client: Client, data: RawProfile) {
 		Object.defineProperty(this, 'client', { value: client });
 
 		this.userID = data.user_id;
-		this.description = Util.decrypt(data.description, client.config.encryptionPassword).toString();
-		this.rep = data.reputation;
+		this.patch(data);
+	}
+
+	public patch(data: Partial<RawProfile>) {
+		if (typeof data.description === 'string') {
+			this.description = Util.decrypt(data.description, this.client.config.encryptionPassword).toString();
+		}
+		if (typeof data.reputation === 'number') {
+			this.rep = data.reputation;
+		}
 	}
 
 	get user() {
 		return this.client.users.resolve(this.userID);
 	}
 
-	public update(data: Partial<Omit<RawProfile, 'user_id'>>) {
-		if (data.description) this.description = data.description;
-		if (data.reputation) this.rep = data.reputation;
-		return this.client.database.updateProfile(this.userID, data);
+	public update(data: Parameters<DatabaseManager['editProfile']>[1]) {
+		return this.client.database.editProfile(this.userID, data);
 	}
 }
 

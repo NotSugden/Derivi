@@ -61,7 +61,7 @@ export default class Shop extends Command {
 				throw new CommandError('NOT_ENOUGH_POINTS', item.cost);
 			}
 			await points.set({
-				points: points.amount - item.cost
+				amount: points.amount - item.cost
 			});
 		}
 

@@ -77,7 +77,7 @@ export default class Kick extends Command {
 			action: 'KICK',
 			context,
 			extras,
-			guild: message.guild!,
+			guild: message.guild,
 			moderator: message.author,
 			reason,
 			screenshots: [],

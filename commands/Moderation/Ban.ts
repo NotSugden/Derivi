@@ -10,7 +10,7 @@ import Util from '../../util/Util';
 export default class Ban extends Command {
 	constructor(manager: CommandManager) {
 		super(manager, {
-			aliases: ['🔨', '🍌', '<:ASC_yeet:539506595239952409>'],
+			aliases: ['🔨', '🍌'],
 			category: 'Moderation',
 			cooldown: 5,
 			name: 'ban',
@@ -50,9 +50,6 @@ export default class Ban extends Command {
 				type: 'boolean'
 			}]
 		});
-			
-		// have to non-null assert it
-		const guild = message.guild!;
 
 		if (!reason) throw new CommandError('PROVIDE_REASON');
 		if (!users.size) throw new CommandError('MENTION_USERS');
@@ -83,8 +80,8 @@ export default class Ban extends Command {
 		}
 
 		const alreadyBanned = users
-			.filter(user => guild.bans.has(user.id))
-			.map(user => guild.bans.get(user.id)!);
+			.filter(user => message.guild.bans.has(user.id))
+			.map(user => message.guild.bans.get(user.id)!);
 		if (alreadyBanned.length) {
 			if (alreadyBanned.length === users.size) {
 				throw new CommandError('ALREADY_REMOVED_USERS', users.size > 1, false);
@@ -109,7 +106,7 @@ export default class Ban extends Command {
 			action: flags.soft ? 'SOFT_BAN' : 'BAN',
 			context,
 			extras,
-			guild: message.guild!,
+			guild: message.guild,
 			moderator: message.author,
 			reason,
 			screenshots: [],
@@ -119,7 +116,7 @@ export default class Ban extends Command {
 		banOptions.reason = Responses.AUDIT_LOG_MEMBER_REMOVE(message.author, caseID, false);
 
 		for (const user of filteredUsers) {
-			guild.bans.set(user.id, {
+			message.guild.bans.set(user.id, {
 				reason: banOptions.reason,
 				user
 			});
@@ -131,9 +128,9 @@ export default class Ban extends Command {
 					reason
 				));
 			} catch { } // eslint-disable-line no-empty
-			await guild.members.ban(user, banOptions);
+			await message.guild.members.ban(user, banOptions);
 			if (flags.soft) {
-				await guild.members.unban(user.id);
+				await message.guild.members.unban(user.id);
 			}
 		}
 

@@ -82,7 +82,9 @@ export default class Mute extends Command {
 			} attempted to be muted, however they have left.`;
 		}
 
-		const alreadyMuted = members.filter(member => this.client.mutes.has(`${message.guild.id}:${member.id}`));
+		const alreadyMuted = members.filter(
+			member => this.client.database.cache.mutes.has(`${message.guild.id}:${member.id}`)
+		);
 		if (alreadyMuted.size) {
 			if (alreadyMuted.size === members.size) {
 				throw new CommandError('ALL_MUTED');
@@ -109,7 +111,7 @@ export default class Mute extends Command {
 			action: 'MUTE',
 			context,
 			extras,
-			guild: message.guild!,
+			guild: message.guild,
 			moderator: message.author,
 			reason,
 			screenshots: [],
@@ -148,8 +150,12 @@ export default class Mute extends Command {
 
 		for (const member of filtered.values()) {
 			await member.roles.add(role);
-			const mute = await this.client.database.newMute(message.guild!, member.user, start, end);
-			this.client.mutes.set(`${message.guild.id}:${member.id}`, mute);
+			await this.client.database.createMute({
+				endDate: end,
+				guild: message.guild,
+				start,
+				user: member.user
+			});
 			try {
 				await member.send(Responses.DM_PUNISHMENT_ACTION(message.guild, 'MUTE', reason, muteLength));
 			} catch {} // eslint-disable-line no-empty

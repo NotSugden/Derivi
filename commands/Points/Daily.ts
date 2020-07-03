@@ -27,8 +27,8 @@ export default class Daily extends Command {
 		}
 
 		await points.set({
-			daily: new Date(),
-			points: points.amount + 25
+			amount: points.amount + 25,
+			daily: new Date()
 		});
 
 		return send(Responses.COLLECTED_DAILY(25));

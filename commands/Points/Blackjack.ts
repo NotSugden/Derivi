@@ -184,11 +184,11 @@ export default class Blackjack extends Command {
 
 		if (matchResult === 'won') {
 			await points.set({
-				points: points.amount + bet.bet
+				amount: points.amount + bet.bet
 			});
 		} else {
 			await points.set({
-				points: points.amount - bet.bet
+				amount: points.amount - bet.bet
 			});
 		}
 

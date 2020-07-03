@@ -52,7 +52,7 @@ export default class Vault extends Command {
 			}
 
 			await points.set({
-				points: points.amount - amount,
+				amount: points.amount - amount,
 				vault: points.vault + amount
 			});
 
@@ -68,7 +68,7 @@ export default class Vault extends Command {
 			}
 
 			await points.set({
-				points: points.amount + amount,
+				amount: points.amount + amount,
 				vault: points.vault - amount
 			});
 

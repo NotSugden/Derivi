@@ -1,35 +1,13 @@
 import { Snowflake } from 'discord.js';
 import Guild from './discord.js/Guild';
+import User from './discord.js/User';
 import Client from '../util/Client';
-
-const unmute = (data: Mute) => async () => {
-	const guild = data.guild;
-	// Dynamic muted role
-	const role = guild.roles.cache.find(role => role.name === 'Muted');
-	if (role) {
-		try {
-			const member = await guild.members.fetch(data.userID);
-			if (member.roles.cache.has(role.id)) {
-				await member.roles.remove(role);
-			}
-		} catch { } // eslint-disable-line no-empty
-	} else {
-		data.client.emit(
-			'warn',
-			'Attempted to unmute a member, but the muted role was not present in the default guild'
-		);
-	}
-	data.delete()
-		.catch(error => {
-			console.error('Error deleting a mute:', error);
-		});
-};
+import { Defaults } from '../util/Constants';
 
 export default class Mute {
-	public client!: Client;
+	public readonly client!: Client;
 	public endTimestamp: number;
 	public startedTimestamp: number;
-	public timeout!: NodeJS.Timeout;
 	public userID: Snowflake;
 	public guildID: Snowflake;
 
@@ -40,30 +18,18 @@ export default class Mute {
 		this.startedTimestamp = new Date(data.start).getTime();
 		this.userID = data.user_id;
 		this.guildID = data.guild_id;
-
-		if (this.endTimestamp > Date.now()) {
-			this.client.mutes.set(`${this.guildID}:${this.userID}`, this);
-			this.timeout = client.setTimeout(
-				unmute(this),
-				this.endTimestamp - Date.now()
-			);
-		} else {
-			const fn = unmute(this);
-			fn();
-		}
 	}
 
-	public delete() {
-		this.client.mutes.delete(`${this.guildID}:${this.userID}`);
-		return this.client.database.deleteMute(this.guild, this.userID);
-	}
-
-	get guild() {
-		return this.client.guilds.resolve(this.guildID) as Guild;
+	public fetchUser(cache = true) {
+		return this.client.users.fetch(this.userID, cache) as Promise<User>;
 	}
 
 	get endAt() {
 		return new Date(this.endTimestamp);
+	}
+
+	get guild() {
+		return this.client.guilds.resolve(this.guildID) as Guild;
 	}
 
 	get startedAt() {
@@ -72,6 +38,20 @@ export default class Mute {
 
 	get user() {
 		return this.client.users.resolve(this.userID);
+	}
+
+	public delete() {
+		return this.client.database.deleteMute(this.guild, this.userID);
+	}
+
+	public async unmute() {
+		const role = this.guild.roles.cache.find(role => role.name === 'Muted') || await this.guild.roles.create({
+			data: Defaults.MUTE_ROLE_DATA
+		});
+		const member = await this.guild.members.fetch(this.userID);
+		if (member.roles.cache.has(role.id)) {
+			await member.roles.remove(role);
+		}
 	}
 }
 

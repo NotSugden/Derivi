@@ -7,7 +7,6 @@ import {
 import * as moment from 'moment';
 import Client, { ShopItem } from './Client';
 import { Invite, PartialMessage, GuildMessage } from './Types';
-import Util from './Util';
 import { Card } from '../commands/Points/Blackjack';
 import Case from '../structures/Case';
 import Levels from '../structures/Levels';
@@ -103,6 +102,10 @@ export const Defaults = {
 		commands_dir: join(__dirname, '..', 'commands'),
 		files_dir: join(__dirname, '..', 'saved_files')
 	},
+	DATABASE_CONFIG: {
+		cacheSweepInterval: 300,
+		maxCacheSize: 100
+	},
 	// this is a getter for now, incase djs modifies the object
 	get MUTE_ROLE_DATA() {
 		return {
@@ -125,7 +128,8 @@ export const Errors = {
 	COMMAND_LOAD_FAILED: (name: string) => `Failed to load command ${name}`,
 	INVALID_TYPE: (parameter: string, type: string) => `Provided '${parameter}' should be a '${type}'`,
 
-	NO_GIVEAWAYS_IN_CHANNEL: (id: Snowflake) => `There are no giveaways in channel ${id}.`
+	NO_GIVEAWAYS_IN_CHANNEL: (id: Snowflake) => `There are no giveaways in channel ${id}.`,
+	WINNERS_NOT_CHOSEN: 'This giveaway hasn\'t had its winners picked yet.'
 };
 
 export const CommandErrors = {
@@ -414,7 +418,7 @@ export const Responses = {
 			//`${RIGHT_ARROW} Rank **${rank}**`,
 			`${RIGHT_ARROW} Level **${level}**`,
 			`${LEFT_BORDER}${MIDDLE_BORDER.toString().repeat(6)}${RIGHT_BORDER}`,
-			`XP: **${xp}**/**${Util.levelCalc(level).toFixed(0)}**`
+			`XP: **${xp}**/**${Levels.levelCalc(level).toFixed(0)}**`
 		];
 	},
 	LEVEL_UP: (user: User, newLevel: number) => ({

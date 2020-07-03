@@ -11,16 +11,18 @@ export default (async member => {
 
 	const key = `${guild.id}:${user.id}`;
   
-	const isMuted = client.mutes.has(key);
+	const isMuted = client.database.cache.mutes.has(key);
 	const recentlyKicked = client.recentlyKicked.has(key);
 	const mutedRole = guild.roles.cache.find(role => role.name === 'Muted')!;
 	if (isMuted || recentlyKicked) {
 		await member.roles.add(mutedRole);
 		if (recentlyKicked && !isMuted) {
-			await client.database.newMute(
-				guild, member.user,
-				new Date(), new Date(Date.now() + 27e5)
-			);
+			await client.database.createMute({
+				endDate: new Date(Date.now() + 27e5),
+				guild,
+				start: new Date(),
+				user: member.user
+			});
 		}
 	}
 	const hookOrChannel = config.webhooks.get('welcome-messages') ||

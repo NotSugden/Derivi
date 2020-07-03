@@ -56,7 +56,7 @@ export default class History extends Command {
 		// until i think of a better way
 		const data = await this.client.database.case(this.client.guilds.resolve(config.id) as Guild, {
 			after: time === -1 ? new Date(0) : new Date(Date.now() - time)
-		}).then(cases => Responses.HISTORY(cases
+		}).then(cases => Responses.HISTORY(cases.array()
 			.filter(caseData => caseData.userIDs.some(userID => users.has(userID))))
 		);
 		

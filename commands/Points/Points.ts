@@ -48,26 +48,26 @@ export default class Points extends Command {
 				);
 			}
 
-			const mode = flags.mode === 'vault' ? 'vault' : 'points';
+			const mode = flags.mode === 'vault' ? 'vault' : 'amount';
 
 			// lazy casting here but it should be fine
 			if (typeof flags.give === 'number') {
 				if (flags.give < 1) {
 					throw new CommandError('INVALID_NUMBER', { min: 1 });
 				}
-				await points.set({ [mode]: points.amount + flags.give } as { points: number });
+				await points.set({ [mode]: points.amount + flags.give });
 				return send(Responses.POINTS_MODIFY(user, flags.give, 'add'));
 			} else if (typeof flags.remove === 'number') {
 				if (flags.remove < 1) {
 					throw new CommandError('INVALID_NUMBER', { min: 1 });
 				}
-				await points.set({ [mode]: points.amount - flags.remove } as { points: number });
+				await points.set({ [mode]: points.amount - flags.remove });
 				return send(Responses.POINTS_MODIFY(user, flags.remove, 'remove'));
 			} else if (typeof flags.set === 'number') {
 				if (flags.set < 1) {
 					throw new CommandError('INVALID_NUMBER', { min: 1 });
 				}
-				await points.set({ [mode]: flags.set } as { points: number});
+				await points.set({ [mode]: flags.set });
 				return send(Responses.POINTS_MODIFY(user, flags.set, 'set'));
 			}
 		}
