@@ -312,7 +312,7 @@ export default class DatabaseManager {
 		guild: Guild,
 		id: number,
 		data: CaseEditData
-	){
+	) {
 		const values: SQLValues = {};
 		if (typeof data.action === 'string') {
 			values.action = data.action;
@@ -342,6 +342,8 @@ export default class DatabaseManager {
 			values.user_ids = typeof data.users === 'string'
 				? data.users : JSON.stringify(data.users.map(id => this.client.users.resolveID(id)!));
 		}
+		const existing = this.cache.cases.get(`${guild.id}:${id}`);
+		if (existing) existing.patch(values as unknown as RawCase);
 		await this.query(
 			'UPDATE cases SET :data WHERE guild_id = :guildID AND id = :id', {
 				data: values,
@@ -628,10 +630,12 @@ export default class DatabaseManager {
 				: JSON.stringify(data.users.map(id => this.client.users.resolveID(id)!));
 			values.stars = data.users.length;
 		}
+		const messageID = typeof message === 'string' ? message : message.id;
+		const existing = this.cache.stars.get(messageID);
+		if (existing) existing.patch(values);
 		await this.query('UPDATE starboard SET :data WHERE message_id = :messageID', {
 			data: values,
-			messageID: typeof message === 'string'
-				? message : message.id
+			messageID
 		});
 	}
 
@@ -771,7 +775,8 @@ export default class DatabaseManager {
 		if (typeof data.reputation === 'number') {
 			values.reputation = data.reputation;
 		}
-		
+		const existing = this.cache.profiles.get(userID);
+		if (existing) existing.patch(data);
 		await this.query(
 			'UPDATE profiles SET :data WHERE user_id = :userID',
 			{ data: values, userID }
@@ -796,8 +801,8 @@ export default class DatabaseManager {
 		}
 		if (this.client.channels.cache.has(id)) {
 			const giveaways = await this.query<RawGiveaway>(
-				`SELECT * FROM giveaways ORDER BY start desc WHERE channel_id = :channelID${all ? '' : ' LIMIT 1'}`,
-				id
+				`SELECT * FROM giveaways WHERE channel_id = :channelID ORDER BY start desc${all ? '' : ' LIMIT 1'}`,
+				{ channelID: id }
 			);
 			if (!giveaways.length) throw new Error(Errors.NO_GIVEAWAYS_IN_CHANNEL(id));
 			if (all) {
@@ -846,10 +851,12 @@ export default class DatabaseManager {
 				? data.winners
 				: JSON.stringify(data.winners.map(user => this.client.users.resolveID(user)!));
 		}
+		const messageID = typeof id === 'string' ? id : id.id;
+		const existing = this.cache.giveaways.get(messageID);
+		if (existing) existing.patch(values);
 		await this.query('UPDATE giveaways SET :data WHERE message_id = :messageID', {
 			data: values,
-			messageID: typeof id === 'string'
-				? id : id.id
+			messageID
 		});
 	}
 
