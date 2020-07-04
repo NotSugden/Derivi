@@ -5,7 +5,7 @@ import Guild from '../../structures/discord.js/Guild';
 import TextChannel from '../../structures/discord.js/TextChannel';
 import CommandError from '../../util/CommandError';
 import CommandManager from '../../util/CommandManager';
-import { Responses } from '../../util/Constants';
+import { Responses, ModerationActionTypes } from '../../util/Constants';
 import { GuildMessage } from '../../util/Types';
 import Util from '../../util/Util';
 
@@ -79,8 +79,12 @@ export default class Case extends Command {
 			await caseMessage.delete();
 			const response = await send(Responses.DELETE_CASE(caseID));
 			await this.client.database.deleteCase(guild, caseID);
-			const cases = await this.client.database.query<{ message_id: Snowflake; id: number }>(
-				'SELECT message_id, id FROM cases WHERE id > ? AND guild_id = ?',
+			const cases = await this.client.database.query<{
+				action: keyof typeof ModerationActionTypes;
+				id: number;
+				message_id: Snowflake;
+			}>(
+				'SELECT message_id, id, action FROM cases WHERE id > ? AND guild_id = ?',
 				caseID, guild.id
 			);
 			await this.client.database.query(
@@ -89,13 +93,17 @@ export default class Case extends Command {
 			);
 			if (!cases.length) return response.edit(Responses.DELETE_CASE(caseID, true)) as Promise<GuildMessage<true>>;
 			for (const data of cases) {
+				const newID = data.id - 1;
+				if (data.action === 'WARN') {
+					await this.client.database.editWarn(data.id, { caseID: newID }, guild)
+				}
 				const msg = await channel.messages.fetch(data.message_id);
-				await msg.edit(`Case ${data.id - 1}`, new MessageEmbed(msg.embeds[0]));
+				await msg.edit(`Case ${newID}`, new MessageEmbed(msg.embeds[0]));
 				await DJSUtil.delayFor(2500);
 			}
 
 			return response.edit(Responses.DELETE_CASE(caseID, true)) as Promise<GuildMessage<true>>; 
-		} else if (mode === CaseModes.DELETE) {
+		} else if (mode === CaseModes.EDIT) {
 			const newData = Util.getOptions(
 				args.regular.slice(1).join(' '),
 				Object.keys(EDIT_OPTIONS) as (keyof typeof EDIT_OPTIONS)[]

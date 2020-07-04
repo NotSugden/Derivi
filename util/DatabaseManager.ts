@@ -248,7 +248,22 @@ export default class DatabaseManager {
 	}
 
 	public async deleteCase(guild: Guild, id: number) {
-		this.cache.cases.delete(`${guild.id}:${id}`);
+		const key = `${guild.id}:${id}`;
+		const existing = this.cache.cases.get(key);
+		if (existing) {
+			if (existing.action === 'WARN') {
+				await this.deleteWarn(id, guild);
+			}
+			this.cache.cases.delete(key);
+		} else {
+			const [{ action }] = await this.query<{ action: keyof typeof ModerationActionTypes }>(
+				'SELECT action FROM cases WHERE guild_id = :guildID AND id = :id',
+				{ guildID: guild.id, id }
+			);
+			if (action === 'WARN') {
+				await this.deleteWarn(id, guild);
+			}
+		}
 		const { affectedRows } = await this.query(
 			'DELETE FROM cases WHERE id = :id AND guild_id = :guildID',
 			{ guildID: guild.id, id }
@@ -314,6 +329,7 @@ export default class DatabaseManager {
 		data: CaseEditData
 	) {
 		const values: SQLValues = {};
+		const hasReason = typeof data.reason === 'string';
 		if (typeof data.action === 'string') {
 			values.action = data.action;
 		}
@@ -329,8 +345,8 @@ export default class DatabaseManager {
 			values.moderator_id = typeof data.moderator === 'string'
 				? data.moderator : data.moderator.id;
 		}
-		if (typeof data.reason === 'string') {
-			values.reason = this.encrypt(data.reason);
+		if (hasReason) {
+			values.reason = this.encrypt(data.reason!);
 		}
 		if (typeof data.screenshots !== 'undefined') {
 			values.screenshots = typeof data.screenshots === 'string'
@@ -341,7 +357,20 @@ export default class DatabaseManager {
 				? data.users : JSON.stringify(data.users.map(id => this.client.users.resolveID(id)!));
 		}
 		const existing = this.cache.cases.get(`${guild.id}:${id}`);
-		if (existing) existing.patch(values as unknown as RawCase);
+		if (existing) {
+			if (existing.action === 'WARN' && hasReason) {
+				await this.editWarn(id, { reason: data.reason! }, guild);
+			}
+			existing.patch(values as unknown as RawCase);
+		} else if (hasReason) {
+			const [{ action }] = await this.query<{ action: keyof typeof ModerationActionTypes }>(
+				'SELECT action FROM cases WHERE guild_id = :guildID AND id = :id',
+				{ guildID: guild.id, id }
+			);
+			if (action === 'WARN') {
+				await this.editWarn(id, { reason: data.reason! }, guild);
+			}
+		}
 		await this.query(
 			'UPDATE cases SET :data WHERE guild_id = :guildID AND id = :id', {
 				data: values,
@@ -551,7 +580,7 @@ export default class DatabaseManager {
 				userID
 			}
 		);
-		return affectedRows === 1;
+		return affectedRows;
 	}
 
 	public async partnerships(options: TimeQueryOptions): Promise<Collection<Snowflake, Partnership[]>>;
@@ -871,9 +900,59 @@ export default class DatabaseManager {
 		return constructed;
 	}
 
+	public async editWarn(id: number, data: WarnEditOptions, guild: Guild): Promise<void>;
+	public async editWarn(id: Snowflake, data: WarnEditOptions): Promise<void>;
+	public async editWarn(id: number | Snowflake, data: WarnEditOptions, guild?: Guild) {
+		const values: SQLValues = {};
+		if (typeof data.caseID === 'number') {
+			values.case_id = data.caseID;
+		}
+		if (typeof data.reason === 'string') {
+			values.reason = this.encrypt(data.reason);
+		}
+		const isNumber = typeof id === 'number';
+		const cache = this.cache.warnings;
+		if (isNumber) {
+			for (const warn of cache.values()) {
+				if (warn.caseID === id && warn.guildID === guild!.id) warn.patch(values);
+			}
+		} else {
+			const warn = cache.get(id as string);
+			if (warn) warn.patch(values);
+		}
+		let sql = `UPDATE warnings SET :data WHERE ${mysql.escapeId(isNumber ? 'case_id' : 'id')} = :id`;
+		if (isNumber) {
+			sql += ` AND guild_id = ${mysql.escape(guild!.id)}`;
+		}
+		await this.query(sql, { data: values, id });
+	}
+
+	private async deleteWarn(id: number, guild: Guild): Promise<number>
+	private async deleteWarn(id: Snowflake): Promise<number>;
+	private async deleteWarn(id: number | Snowflake, guild?: Guild) {
+		const isNumber = typeof id === 'number';
+		let sql = `DELETE FROM warnings WHERE ${mysql.escapeId(isNumber ? 'case_id' : 'id')} = :id`;
+		if (isNumber) {
+			sql += ` AND guild_id = ${mysql.escape(guild!.id)}`;
+		}
+		const { affectedRows } = await this.client.database.query(sql, { id });
+		const cache = this.cache.warnings;
+		if (isNumber) {
+			for (const warn of cache.values()) {
+				if (warn.caseID === id && warn.guildID === guild!.id) cache.delete(warn.id);
+			}
+		} else cache.delete(id as string);
+		return affectedRows;
+	}
+
 	private encrypt(string: string) {
 		return Util.encrypt(string, this.client.config.encryptionPassword).toString('base64');
 	}
+}
+
+interface WarnEditOptions {
+	caseID?: number;
+	reason?: string;
 }
 
 export interface DatabaseOptions {
