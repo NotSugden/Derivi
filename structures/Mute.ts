@@ -48,10 +48,13 @@ export default class Mute {
 		const role = this.guild.roles.cache.find(role => role.name === 'Muted') || await this.guild.roles.create({
 			data: Defaults.MUTE_ROLE_DATA
 		});
-		const member = await this.guild.members.fetch(this.userID);
-		if (member.roles.cache.has(role.id)) {
-			await member.roles.remove(role);
-		}
+		try {
+			const member = await this.guild.members.fetch(this.userID);
+			if (member.roles.cache.has(role.id)) {
+				await member.roles.remove(role);
+			}
+		} catch { } // eslint-disable-line no-empty
+		return this.delete();
 	}
 }
 
