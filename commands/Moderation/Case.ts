@@ -95,7 +95,7 @@ export default class Case extends Command {
 			for (const data of cases) {
 				const newID = data.id - 1;
 				if (data.action === 'WARN') {
-					await this.client.database.editWarn(data.id, { caseID: newID }, guild)
+					await this.client.database.editWarn(data.id, { caseID: newID }, guild);
 				}
 				const msg = await channel.messages.fetch(data.message_id);
 				await msg.edit(`Case ${newID}`, new MessageEmbed(msg.embeds[0]));
