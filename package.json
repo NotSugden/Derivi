@@ -22,11 +22,11 @@
 		"@types/node": "^13.7.7",
 		"@types/node-fetch": "^2.5.5",
 		"@types/ws": "^7.2.2",
+		"canvas": "^2.6.1",
 		"discord.js": "github:discordjs/discord.js",
 		"eslint-plugin-import": "^2.20.1",
 		"moment": "^2.24.0",
-		"mysql": "git+https://github.com/nwoltman/node-mysql.git#caching-sha2-password",
-		"sqlite": "^4.0.7"
+		"mysql": "git+https://github.com/nwoltman/node-mysql.git#caching-sha2-password"
 	},
 	"devDependencies": {
 		"@typescript-eslint/eslint-plugin": "^2.23.0",
