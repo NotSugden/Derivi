@@ -9,8 +9,14 @@ import { Responses } from '../../util/Constants';
 import { GuildMessage } from '../../util/Types';
 import Util from '../../util/Util';
 
-const OPTIONS = ['edit', 'delete'];
-const EDIT_OPTIONS = ['reason'];
+enum CaseModes {
+	EDIT = 'edit',
+	DELETE = 'delete'
+}
+
+const EDIT_OPTIONS = {
+	reason: 'string'
+};
 
 export default class Case extends Command {
 	constructor(manager: CommandManager) {
@@ -42,9 +48,6 @@ export default class Case extends Command {
 
 	public async run(message: GuildMessage<true>, args: CommandArguments, { send }: CommandData) {
 		const mode = args[0];
-		if (!OPTIONS.includes(mode)) {
-			throw new CommandError('INVALID_OPTION', OPTIONS);
-		}
 
 		const caseID = parseInt(args[1]);
 		if (isNaN(caseID)) {
@@ -69,7 +72,8 @@ export default class Case extends Command {
 			throw new CommandError('NOT_PERMITTED_CASE_MODIFY', mode);
 		}
     
-		if (mode === 'delete') {
+		if (mode === CaseModes.DELETE) {
+			this.client.database.cache.cases.clear();
 			const channel = this.client.channels.resolve(config.casesChannelID) as TextChannel;
 			const caseMessage = await channel.messages.fetch(caseData.logMessageID);
 			await caseMessage.delete();
@@ -80,8 +84,8 @@ export default class Case extends Command {
 				caseID, guild.id
 			);
 			await this.client.database.query(
-				'UPDATE cases SET id = id - 1 WHERE id > ? AND guild_id = ?',
-				caseID, guild.id
+				'UPDATE cases SET id = id - 1 WHERE id > :caseID AND guild_id = :guildID',
+				{ caseID, guildID: guild.id }
 			);
 			if (!cases.length) return response.edit(Responses.DELETE_CASE(caseID, true)) as Promise<GuildMessage<true>>;
 			for (const data of cases) {
@@ -91,10 +95,13 @@ export default class Case extends Command {
 			}
 
 			return response.edit(Responses.DELETE_CASE(caseID, true)) as Promise<GuildMessage<true>>; 
-		} else if (mode === 'edit') {
-			const newData = Util.getOptions(args.regular.slice(1).join(' '), EDIT_OPTIONS);
+		} else if (mode === CaseModes.DELETE) {
+			const newData = Util.getOptions(
+				args.regular.slice(1).join(' '),
+				Object.keys(EDIT_OPTIONS) as (keyof typeof EDIT_OPTIONS)[]
+			);
 			if (!Object.keys(newData).length) {
-				throw new CommandError('NO_OPTIONS', EDIT_OPTIONS);
+				throw new CommandError('NO_OPTIONS', Object.keys(EDIT_OPTIONS));
 			}
       
 			const caseMessage = await caseData.fetchLogMessage();
@@ -118,5 +125,6 @@ export default class Case extends Command {
       
 			return send(Responses.SUCCESSFULLY_EDITED_CASE(caseID));
 		}
+		throw new CommandError('INVALID_MODE', Object.keys(CaseModes));
 	}
 }

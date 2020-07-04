@@ -32,7 +32,7 @@ export default class Case {
 	public patch(data: Partial<Omit<RawCase, 'extras' | 'screenshots' | 'user_ids'>> & {
 		extras?: { [key: string]: string } | string;
 		screenshots?: string[] | string;
-		user_ids: Snowflake[] | string;
+		user_ids?: Snowflake[] | string;
 	}) {
 		if (typeof data.action === 'string') {
 			this.action = data.action;
