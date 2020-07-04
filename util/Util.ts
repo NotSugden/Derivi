@@ -302,7 +302,7 @@ export default class Util {
 		);
 		const data = await response.json();
 		if (response.status !== 200) {
-			if (response.status < 500) {
+			if (response.status === 401 || response.status === 403) {
 				await client.database.query(
 					'DELETE FROM users WHERE access_token = :accessToken',
 					{ accessToken }
