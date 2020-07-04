@@ -1,7 +1,7 @@
 import * as crypto from 'crypto';
 import { promises as fs } from 'fs';
 import * as path from 'path';
-import { Collection, Snowflake, MessageEmbed } from 'discord.js';
+import { Collection, Snowflake, MessageEmbed, DiscordAPIError } from 'discord.js';
 import fetch from 'node-fetch';
 import Client from './Client';
 import CommandError from './CommandError';
@@ -293,13 +293,23 @@ export default class Util {
 	}
   
 	static async fetchOauthUser(client: Client, accessToken: string, tokenType = 'Bearer') {
-		const data = await fetch('https://discord.com/api/users/@me', {
-			headers: {
-				Authorization: `${tokenType} ${accessToken}`
+		const response = await fetch(
+			`${client.options.http!.api}/v${client.options.http!.version}/users/@me`, {
+				headers: {
+					Authorization: `${tokenType} ${accessToken}`
+				}
 			}
-		}).then(response => response.json());
-		if (data.error) throw data;
-
+		);
+		const data = await response.json();
+		if (response.status !== 200) {
+			if (response.status < 500) {
+				await client.database.query(
+					'DELETE FROM users WHERE access_token = :accessToken',
+					{ accessToken }
+				);
+			}
+			throw new DiscordAPIError('/users/@me', data, 'GET', response.status);
+		}
 		return new OAuthUser(client, data);
 	}
 
