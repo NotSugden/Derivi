@@ -36,8 +36,8 @@ export interface Events extends ClientEvents {
 	messageReactionRemoveAll: [Message | PartialMessage];
 	messageReactionRemoveEmoji: [MessageReaction & { message: Message }];
 	messageDeleteBulk: [Collection<Snowflake, Message | PartialMessage>];
-	messageReactionAdd: [MessageReaction & { message: Message }, User];
-	messageReactionRemove: [MessageReaction & { message: Message }, User];
+	messageReactionAdd: [MessageReaction & { message: Message | PartialMessage }, User];
+	messageReactionRemove: [MessageReaction & { message: Message | PartialMessage }, User];
 	messageUpdate: [Message | PartialMessage, Message | PartialMessage];
 	roleCreate: [Role];
 }

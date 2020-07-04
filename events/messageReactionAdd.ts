@@ -6,10 +6,10 @@ import { GuildMessage } from '../util/Types';
 export default (async (reaction, user) => {
 	const { client, guild } = reaction.message;
 
-	if (reaction.message.author.id === client.user!.id) {
+	if (reaction.message.author?.id === client.user!.id) {
 		const giveaway = await client.database.giveaway(reaction.message.id);
-		if (giveaway) {
-			await reaction.message.edit(Responses.GIVEAWAY(giveaway.prize, {
+		if (giveaway && !giveaway.ended) {
+			await reaction.message.edit(Responses.GIVEAWAY_START(giveaway.prize, {
 				end: giveaway.endAt,
 				messageRequirement: giveaway.messageRequirement 
 			}));

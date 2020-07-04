@@ -93,6 +93,7 @@ export const ModerationActionTypes = {
 	SOFT_BAN: Constants.Colors.PURPLE
 };
 
+export const SNOWFLAKE_REGEX = /([0-9]{17,20})/;
 
 const messageURL = (guildID: Snowflake, channelID: Snowflake, messageID: Snowflake) =>
 	`https://discord.com/channels/${guildID}/${channelID}/${messageID}`;
@@ -133,6 +134,15 @@ export const Errors = {
 };
 
 export const CommandErrors = {
+	INVALID_CHANNEL: 'The channel provided could not be found.',
+	INVALID_MODE: (modes: string[]) =>
+		`You've not provided a valid mode for this command, valid modes are ${
+			modes.map(mode => `\`${mode}\``).join(', ')
+		}.`,
+	GIVEAWAY_FINISHED: 'That giveaway has finished.',
+	INVALID_MESSAGE_ID: (to: string) => `The message ID provided couldn't be resolved to a valid ${to}.`,
+	GIVEAWAY_NOT_FINISHED: 'That giveaway has not finished yet.',
+	NO_GIVEAWAYS_IN_CHANNEL: 'There are no giveaways in this channel.',
 	INVALID_STRING_LENGTH: (name: string, { big = false, length }: { big?: boolean; length: number }) =>
 		`The provided ${name} is too ${big ? 'big' : 'small'}, it must be a ${
 			big ? 'maximum' : 'minimum'
@@ -256,27 +266,51 @@ function punishmentSuccessDM(
 
 const splitChars = (string: string, char = '\u200b') => string.split('').join(char);
 
+const GIVEAWAY_KEYWORDS = /nitro|code|steam|paypal|(£\$)[0-9]*/gi;
+
 export const Responses = {
-	GIVEAWAY: (prize: string, data: { messageRequirement?: number | null; end: Date }) => {
+	REQUIREMENT_ADDED: 'Added a requirement to the giveaway',
+	GIVEAWAY_END: (prize: string, end: Date, winners?: User[]) => {
+		const description = winners
+			? `Winner${winners.length > 1 ? 's' : ''}: ${winners.map(winner => winner.toString()).join('\n')}`
+			: 'No winners';
+		return { content: `**${splitChars('GIVEAWAY ENDED')}**`, embed: new MessageEmbed()
+			.setTitle(prize.replace(GIVEAWAY_KEYWORDS, str => splitChars(str)))
+			.setColor(11506322)
+			.setDescription(description)
+			.setFooter('Ended At')
+			.setTimestamp(end) };
+	},
+	GIVEAWAY_START: (prize: string, data: {
+		messageRequirement?: number | null;
+		end: Date;
+		requirement?: string | null;
+	}) => {
 		const description = [
 			`${splitChars('React with')} 🎁 ${splitChars('to enter the giveaway')}`, '',
 			`⏳ **${splitChars('Time')}** ${splitChars('Remaining')} **${
 				splitChars(moment(Date.now()).to(data.end, true))
 			}**`
 		];
-		if (typeof data.messageRequirement === 'number') {
-			description.push(
-				'',
-				'✅ Requirement:',
-				`Must send ${data.messageRequirement} messages.`
-			);
+		const hasMessageRequirement = typeof data.messageRequirement === 'number';
+		const hasRequirement = typeof data.requirement === 'string';
+		if (hasMessageRequirement || hasRequirement) {
+			const str = '✅ Requirement:';
+			description.push('', str);
+			if (hasMessageRequirement) {
+				description.push(`**${splitChars(`Must send ${data.messageRequirement} messages.`)}**`);
+			}
+			if (hasRequirement) description.push(`**${splitChars(data.requirement!)}**`);
+			const index = description.indexOf(str);
+			description.splice(index, 2, `${str} ${description[index+1]}`);
 		}
-		return new MessageEmbed()
-			.setTitle(splitChars(prize))
-			.setColor(0x94d7e0)
+
+		return { content: `**${splitChars('GIVEAWAY STARTED')}**`, embed: new MessageEmbed()
+			.setTitle(prize.replace(GIVEAWAY_KEYWORDS, str => splitChars(str)))
+			.setColor(11506322)
 			.setDescription(description)
 			.setFooter('Ends At')
-			.setTimestamp(data.end);
+			.setTimestamp(data.end) };
 	},
 	WON_GIVEAWAY: (winner: User, prize: string, message: GuildMessage<true>) => ({
 		allowedMentions: { users: [winner.id] },

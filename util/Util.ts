@@ -1,6 +1,7 @@
 import * as crypto from 'crypto';
 import { promises as fs } from 'fs';
 import * as path from 'path';
+import ms from '@naval-base/ms';
 import { Collection, Snowflake, MessageEmbed, DiscordAPIError } from 'discord.js';
 import fetch from 'node-fetch';
 import Client from './Client';
@@ -325,6 +326,24 @@ export default class Util {
 			time
 		})).first() as C extends GuildMessage<true>['channel'] ? GuildMessage<true> : DMMessage;
 		return response ? response : null;
+	}
+
+	static parseMS<T extends { reason: string } | string>(
+		data: T
+	): T extends string ? number : T & { time: number } {
+		const string = (typeof data === 'string'
+			? data
+			: (data as { reason: string }).reason).split(' ');
+		let time: number;
+		try {
+			time = ms(string.shift() || '');
+		} catch {
+			time = -1;
+		}
+		return (typeof data === 'string'
+			? time
+			: Object.assign(data, { reason: string.join(' '), time })
+		) as T extends string ? number : T & { time: number };
 	}
 }
 

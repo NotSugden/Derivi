@@ -9,9 +9,20 @@ export default (async message => {
 	const { client, guild } = message;
   
 	const config = guild && client.config.guilds.get(guild.id);
-	if (
-		!config || message.author?.bot
-	) return;
+	const isBot = message.author?.bot;
+	if (!config) return;
+	if (isBot) {
+		await client.database.query(
+			'DELETE FROM giveaways WHERE message_id = :messageID',
+			{ messageID: message.id }
+		);
+		const cache = client.database.cache.giveaways;
+		if (cache.has(message.id)) {
+			cache.clearTimeout(message.id);
+			cache.delete(message.id);
+		}
+		return;
+	}
 
 	if (!message.author) {
 		const [data] = await client.database.query<{ user_id: Snowflake }>(

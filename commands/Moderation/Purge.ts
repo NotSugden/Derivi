@@ -3,10 +3,9 @@ import Command from '../../structures/Command';
 import CommandArguments from '../../structures/CommandArguments';
 import CommandError from '../../util/CommandError';
 import CommandManager from '../../util/CommandManager';
+import { SNOWFLAKE_REGEX } from '../../util/Constants';
 import { GuildMessage } from '../../util/Types';
 import Util from '../../util/Util';
-
-const SNOWFLAKE_REGEX = /([0-9]{17,20})/;
 
 const validateSnowflake = (id: string, { past, argumentIndex }: { past?: number; argumentIndex?: number } = {}) => {
 	if (!SNOWFLAKE_REGEX.test(id)) {

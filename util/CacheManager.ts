@@ -1,4 +1,4 @@
-import { Collection as DCollection, Snowflake } from 'discord.js';
+import { Snowflake } from 'discord.js';
 import Client from './Client';
 import DatabaseManager from './DatabaseManager';
 import LimitedCollection from './LimitedCollection';
@@ -12,7 +12,7 @@ import Profile from '../structures/Profile';
 import Star from '../structures/Star';
 import Warn from '../structures/Warn';
 
-type Collection<V, K = Snowflake> = DCollection<K, V>;
+type Collection<V, K = Snowflake> = LimitedCollection<K, V>;
 
 export default class CacheManager {
 	public readonly client!: Client;

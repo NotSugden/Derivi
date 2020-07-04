@@ -330,9 +330,7 @@ export default class DatabaseManager {
 				? data.moderator : data.moderator.id;
 		}
 		if (typeof data.reason === 'string') {
-			values.reason = Util.encrypt(
-				data.reason, this.client.config.encryptionPassword
-			).toString('base64');
+			values.reason = this.encrypt(data.reason);
 		}
 		if (typeof data.screenshots !== 'undefined') {
 			values.screenshots = typeof data.screenshots === 'string'
@@ -362,7 +360,7 @@ export default class DatabaseManager {
 			message_id: typeof data.message === 'string'
 				? data.message : data.message.id,
 			moderator_id: this.client.users.resolveID(data.moderator),
-			reason: Util.encrypt(data.reason, this.client.config.encryptionPassword).toString('base64'),
+			reason: this.encrypt(data.reason),
 			screenshots: Array.isArray(data.screenshots)
 				? JSON.stringify(data.screenshots)
 				: data.screenshots || '[]',
@@ -457,7 +455,7 @@ export default class DatabaseManager {
 			guild_id: this.client.guilds.resolveID(data.guild)!,
 			id: SnowflakeUtil.generate(),
 			moderator_id: this.client.users.resolveID(data.moderator)!,
-			reason: Util.encrypt(data.reason, this.client.config.encryptionPassword).toString('base64'),
+			reason: this.encrypt(data.reason),
 			timestamp: data.timestamp ?? new Date(),
 			user_id: this.client.users.resolveID(data.user)!
 		};
@@ -746,7 +744,7 @@ export default class DatabaseManager {
 		);
 		if (!data) {
 			await this.query(QueryTypes.INSERT, 'profiles', {
-				description: Util.encrypt('No description', this.client.config.encryptionPassword).toString('base64'),
+				description: this.encrypt('No description'),
 				user_id: userID
 			});
 			return this.profile(userID);
@@ -759,18 +757,13 @@ export default class DatabaseManager {
 	
 	public async editProfile(user: User | Snowflake, data: Partial<Omit<RawProfile, 'user_id'>>) {
 		if (data.description) {
-			data.description = Util.encrypt(
-				data.description, this.client.config.encryptionPassword
-			).toString('base64');
+			data.description = this.encrypt(data.description);
 		}
 		const userID = this.client.users.resolveID(user)!;
 
 		const values: SQLValues = {};
 		if (typeof data.description === 'string') {
-			values.description = Util.encrypt(
-				'No description',
-				this.client.config.encryptionPassword
-			).toString('base64');
+			values.description = this.encrypt('No description');
 		}
 		if (typeof data.reputation === 'number') {
 			values.reputation = data.reputation;
@@ -842,14 +835,15 @@ export default class DatabaseManager {
 			values.message_requirement = data.messageRequirement;
 		}
 		if (typeof data.prize === 'string') {
-			values.prize = Util.encrypt(
-				data.prize, this.client.config.encryptionPassword
-			).toString('base64');
+			values.prize = this.encrypt(data.prize);
 		}
 		if (typeof data.winners !== 'undefined') {
 			values.winners = typeof data.winners === 'string'
 				? data.winners
 				: JSON.stringify(data.winners.map(user => this.client.users.resolveID(user)!));
+		}
+		if (typeof data.requirement === 'string') {
+			values.requirement = this.encrypt(data.requirement);
 		}
 		const messageID = typeof id === 'string' ? id : id.id;
 		const existing = this.cache.giveaways.get(messageID);
@@ -867,7 +861,7 @@ export default class DatabaseManager {
 			end: new Date(data.endAt),
 			message_id: data.message.id,
 			message_requirement: data.messageRequirement ?? null,
-			prize: Util.encrypt(data.prize, this.client.config.encryptionPassword).toString('base64'),
+			prize: this.encrypt(data.prize),
 			start: new Date(),
 			winners: null
 		};
@@ -875,6 +869,10 @@ export default class DatabaseManager {
 		const constructed = new Giveaway(this.client, values as unknown as RawGiveaway);
 		this.cache.giveaways.set(constructed.messageID, constructed);
 		return constructed;
+	}
+
+	private encrypt(string: string) {
+		return Util.encrypt(string, this.client.config.encryptionPassword).toString('base64');
 	}
 }
 
@@ -913,6 +911,7 @@ interface GiveawayCreateData {
 interface GiveawayEditData {
 	messageRequirement?: number;
 	prize?: string;
+	requirement?: string;
 	winners?: (User | Snowflake)[] | string;
 }
 

@@ -8,18 +8,6 @@ import { Responses, Defaults } from '../../util/Constants';
 import { GuildMessage } from '../../util/Types';
 import Util from '../../util/Util';
 
-const parseMS = <T extends { reason: string }>(data: T): T & { time: number } => {
-	const reason = data.reason.split(' ');
-	const time = (() => {
-		try {
-			return ms(reason.shift() || '');
-		} catch {
-			return -1;
-		}
-	})();
-	return Object.assign(data, { reason: reason.join(' '), time });
-};
-
 export default class Mute extends Command {
 	constructor(manager: CommandManager) {
 		super(manager, {
@@ -54,7 +42,7 @@ export default class Mute extends Command {
 
 	public async run(message: GuildMessage<true>, args: CommandArguments, { send }: CommandData) {
 		await message.delete();
-		const { members, users, reason, time, flags: { silent } } = parseMS(await Util.reason(message, {
+		const { members, users, reason, time, flags: { silent } } = Util.parseMS(await Util.reason(message, {
 			fetchMembers: true, withFlags: [{
 				name: 'silent',
 				type: 'boolean'

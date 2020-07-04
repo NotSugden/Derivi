@@ -1,17 +1,18 @@
-import ms from '@naval-base/ms';
 import { Permissions } from 'discord.js';
-import Command from '../structures/Command';
+import Command, { CommandData } from '../structures/Command';
 import CommandArguments from '../structures/CommandArguments';
+import TextChannel from '../structures/discord.js/TextChannel';
 import CommandError from '../util/CommandError';
 import CommandManager from '../util/CommandManager';
-import { Responses } from '../util/Constants';
+import { Responses, SNOWFLAKE_REGEX } from '../util/Constants';
 import { GuildMessage } from '../util/Types';
 import Util from '../util/Util';
 
-enum GiveawayModes {
+export enum GiveawayModes {
 	START = 'start',
 	REROLL = 'reroll',
-	END = 'end'
+	END = 'end',
+	REQUIREMENT = 'requirement'
 }
 
 export default class Giveaway extends Command {
@@ -41,21 +42,24 @@ export default class Giveaway extends Command {
 		}, __filename);
 	}
 
-	public async run(message: GuildMessage<true>, args: CommandArguments) {
+	public async run(message: GuildMessage<true>, args: CommandArguments, { send }: CommandData) {
 		if (args[0] === GiveawayModes.START) {
-			let length: number;
-			try {
-				length = ms(args[1] || '');
-			} catch {
-				length = -1;
-			}
+			const [id] = args.regular[1].match(SNOWFLAKE_REGEX) || [];
+			const length = Util.parseMS(args.regular[id ? 2 : 1]);
 			if (length === -1 || length < 120e3) {
 				throw new CommandError('INVALID_TIME');
 			}
-			const { string: prize, flags } = Util.extractFlags(args.regular.slice(2).join(' '), [{
+			const { string: prize, flags } = Util.extractFlags(args.regular.slice(id ? 3 : 2).join(' '), [{
 				name: 'messageRequirement',
 				type: 'number'
+			}, {
+				name: 'requirement',
+				type: 'string'
 			}]);
+			const channel = id ? message.guild.channels.cache.get(id) : message.channel;
+			if (!(channel instanceof TextChannel)) {
+				throw new CommandError('INVALID_CHANNEL');
+			}
 			if (!prize.length) {
 				throw new CommandError('NO_GIVEAWAY_PRIZE');
 			}
@@ -65,10 +69,11 @@ export default class Giveaway extends Command {
 				});
 			}
 			const endDate = new Date(Date.now() + length);
-			const giveawayMessage = await message.channel.send(Responses.GIVEAWAY(
+			const giveawayMessage = await channel.send(Responses.GIVEAWAY_START(
 				prize, {
 					end: endDate,
-					messageRequirement: flags.messageRequirement as number | undefined
+					messageRequirement: flags.messageRequirement as number | undefined,
+					requirement: flags.requirement as string | undefined
 				}
 			)) as GuildMessage<true>;
 			await giveawayMessage.react('🎁');
@@ -79,6 +84,51 @@ export default class Giveaway extends Command {
 				messageRequirement: flags.messageRequirement as number | undefined,
 				prize: prize
 			});
+			return;
 		}
+		const fetchGiveaway = async (id: string, condition: boolean) => {
+			const giveaway = await this.client.database.giveaway(id);
+			if (!giveaway) {
+				if (condition) {
+					throw new CommandError('INVALID_MESSAGE_ID', 'Giveaway');
+				}
+				throw new CommandError('NO_GIVEAWAYS_IN_CHANNEL');
+			}
+			return giveaway;
+		};
+		const reroll = args[0] === GiveawayModes.REROLL;
+		if (reroll || args[0] === GiveawayModes.END) {
+			const giveaway = await fetchGiveaway(args[1] || message.channel.id, typeof args[1] === 'string');
+			const ended = giveaway.ended;
+			if ((!ended && reroll) || (ended && !reroll)) {
+				throw new CommandError(reroll ? 'GIVEAWAY_NOT_FINISHED' : 'GIVEAWAY_FINISHED');
+			}
+			return giveaway.end();
+		}
+		if (args[0] === GiveawayModes.REQUIREMENT) {
+			const argIsID = args[2] === 'messages';
+			const giveaway = await fetchGiveaway(argIsID ? args[1] : message.channel.id, argIsID);
+			if (argIsID || args[1] === 'messages') {
+				const amount = parseInt(argIsID ? args[3] : args[2]);
+				if (isNaN(amount) || amount < 1) {
+					throw new CommandError('INVALID_NUMBER', { min: 1 });
+				}
+				await this.client.database.editGiveaway(giveaway.messageID, {
+					messageRequirement: amount
+				});
+			} else {
+				await this.client.database.editGiveaway(giveaway.messageID, {
+					requirement: args.regular.slice(1).join(' ')
+				});
+			}
+			const msg = await giveaway.fetchMessage();
+			await msg.edit(Responses.GIVEAWAY_START(giveaway.prize, {
+				end: giveaway.endAt,
+				messageRequirement: giveaway.messageRequirement,
+				requirement: giveaway.requirement
+			}));
+			return send(Responses.REQUIREMENT_ADDED);
+		}
+		throw new CommandError('INVALID_MODE', Object.values(GiveawayModes));
 	}
 }

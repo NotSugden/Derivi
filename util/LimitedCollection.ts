@@ -14,6 +14,15 @@ export default class LimitedCollection<K, V> extends Collection<K, V> {
 		});
 	}
 
+	public clearTimeout(key: K) {
+		if (!this.timeouts) return null;
+		const index = this.timeouts.findIndex(({ key: k }) => k === key);
+		if (index === -1) return false;
+		clearTimeout(this.timeouts[index].timeout);
+		this.timeouts.splice(index, 1);
+		return true;
+	}
+
 	public set(key: K, value: V) {
 		if (this.has(key)) return super.set(key, value);
 		if (this.size === this.maxSize) this.delete(this.firstKey()!);

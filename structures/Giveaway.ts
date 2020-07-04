@@ -14,6 +14,7 @@ export default class Giveaway {
 	public messageID: Snowflake;
 	public messageRequirement!: number | null;
 	public prize!: string;
+	public requirement!: string | null;
 	public startTimestamp: number;
 	public winnerIDs!: Snowflake[] | null;
 
@@ -43,6 +44,10 @@ export default class Giveaway {
 		else if (typeof data.message_requirement === 'number') {
 			this.messageRequirement = data.message_requirement;
 		}
+		if (data.requirement === null) this.requirement = null;
+		else if (typeof data.requirement === 'string') {
+			this.requirement = Util.decrypt(data.requirement, this.client.config.encryptionPassword).toString();
+		}
 	}
 
 	get channel() {
@@ -57,20 +62,24 @@ export default class Giveaway {
 			const config = this.client.config.guilds.get(message.guild.id)!;
 			for (const user of entries.values()) {
 				const [{ count }] = await this.client.database.query<{ count: number }>(
-					'SELECT COUNT(*) AS count FROM messages WHERE sent_timestamp > ? AND channel_id = ?',
-					new Date(this.startAt), config.generalChannelID
+					'SELECT COUNT(*) AS count FROM messages WHERE sent_timestamp > :sent AND channel_id = :channelID',
+					{ channelID: config.generalChannelID, sent: new Date(this.startAt) }
 				);
 				if (count < this.messageRequirement) entries.delete(user.id);
 			}
 		}
 		if (entries.size === 0) {
+			await message.edit(Responses.GIVEAWAY_END(this.prize, this.endAt));
+			await this.setWinners([]);
 			return message.channel.send(CommandErrors.NO_GIVEAWAY_WINNERS(
 				this.prize, this.messageRequirement !== null
-			));
+			)) as Promise<GuildMessage<true>>;
 		}
 		const winner = entries.random() as User;
 		await this.setWinners([winner.id]);
-		return message.channel.send(Responses.WON_GIVEAWAY(winner, this.prize, message));
+		this.client.database.cache.giveaways.clearTimeout(this.messageID);
+		await message.edit(Responses.GIVEAWAY_END(this.prize, this.endAt, [winner]));
+		return message.channel.send(Responses.WON_GIVEAWAY(winner, this.prize, message)) as Promise<GuildMessage<true>>;
 	}
 
 	get endAt() {
@@ -78,7 +87,7 @@ export default class Giveaway {
 	}
 
 	get ended() {
-		return this.endAt.getTime() > Date.now();
+		return this.endAt.getTime() > Date.now() && this.winnerIDs !== null;
 	}
 
 	public fetchWinners(cache = true) {
@@ -116,4 +125,5 @@ export interface RawGiveaway {
 	end: Date;
 	winners: string | null;
 	message_requirement: number | null;
+	requirement: string | null;
 }
