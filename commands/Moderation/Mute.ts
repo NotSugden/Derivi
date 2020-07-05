@@ -43,7 +43,7 @@ export default class Mute extends Command {
 	public async run(message: GuildMessage<true>, args: CommandArguments, { send }: CommandData) {
 		await message.delete();
 		const { members, users, reason, time, flags: { silent } } = Util.parseMS(await Util.reason(message, {
-			fetchMembers: true, withFlags: [{
+			argsOverload: args.regular, fetchMembers: true, withFlags: [{
 				name: 'silent',
 				type: 'boolean'
 			}]

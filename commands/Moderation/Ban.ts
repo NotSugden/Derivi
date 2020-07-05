@@ -10,7 +10,13 @@ import Util from '../../util/Util';
 export default class Ban extends Command {
 	constructor(manager: CommandManager) {
 		super(manager, {
-			aliases: ['🔨', '🍌'],
+			aliases: ['🔨', '🍌',{
+				append: ['--soft=true'],
+				name: 'softban'
+			}, {
+				append: ['--days=7'],
+				name: 'ban7'
+			}],
 			category: 'Moderation',
 			cooldown: 5,
 			name: 'ban',
@@ -39,7 +45,7 @@ export default class Ban extends Command {
 	public async run(message: GuildMessage<true>, args: CommandArguments, { send }: CommandData) {
 		await message.delete();
 		const { users, reason, flags, members } = await Util.reason(message, {
-			fetchMembers: true, withFlags: [{
+			argsOverload: args.regular, fetchMembers: true, withFlags: [{
 				name: 'days',
 				type: 'number'
 			}, {

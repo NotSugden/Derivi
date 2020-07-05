@@ -149,8 +149,18 @@ export default (async message => {
 		if (!client.config.prefix.some(pfx => message.content.startsWith(pfx))) return;
 		const [plainCommand] = message.content.slice(1).split(' ');
 		const args = new CommandArguments(message);
-		const command = client.commands.resolve(plainCommand);
+		const { alias, command } = client.commands.resolve(plainCommand, true);
 		if (!command) return;
+		if (typeof alias === 'object') {
+			if (alias.prepend) {
+				args.unshift(...alias.prepend);
+				args.regular.unshift(...alias.prepend);
+			}
+			if (alias.append) {
+				args.push(...alias.append);
+				args.regular.push(...alias.append);
+			}
+		}
 		const { permissions } = command;
 
 		const send = (async (

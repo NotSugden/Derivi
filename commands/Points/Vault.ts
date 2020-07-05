@@ -13,7 +13,7 @@ const OPTIONS = [
 export default class Vault extends Command {
 	constructor(manager: CommandManager) {
 		super(manager, {
-			aliases: ['bank'],
+			aliases: ['bank', 'v'],
 			category: 'Points',
 			cooldown: 5,
 			name: 'vault',

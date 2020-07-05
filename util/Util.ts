@@ -126,24 +126,37 @@ export default class Util {
 		return limit === 1 ? null : users;
 	}
 
-	static async reason(message: Message, options?: { fetchMembers?: false; withFlags?: false }): Promise<ReasonData>;
-	static async reason(message: Message, options: { fetchMembers?: false; withFlags: Flag[] }): Promise<ReasonData & {
+	static async reason(message: Message, options?: {
+		argsOverload?: string[];
+		fetchMembers?: false;
+		withFlags?: false;
+	}): Promise<ReasonData>;
+	static async reason(message: Message, options: {
+		argsOverload?: string[];
+		fetchMembers?: false;
+		withFlags: Flag[];
+	}): Promise<ReasonData & { flags: FlagData }>;
+	static async reason(message: Message, options: {
+		argsOverload?: string[];
+		fetchMembers: true;
+		withFlags?: false;
+	}): Promise<ReasonData & { members: Collection<Snowflake, GuildMember> }>;
+	static async reason(message: Message, options: {
+		argsOverload?: string[];
+		fetchMembers: true;
+		withFlags: Flag[];
+	}): Promise<ReasonData & {
 		flags: FlagData;
-	}>;
-	static async reason(message: Message, options: { fetchMembers: true; withFlags?: false }): Promise<ReasonData & {
 		members: Collection<Snowflake, GuildMember>;
 	}>;
-	static async reason(message: Message, options: { fetchMembers: true; withFlags: Flag[] }): Promise<ReasonData & {
-		flags: FlagData;
-		members: Collection<Snowflake, GuildMember>;
-	}>;
-	static async reason(message: Message, { fetchMembers = false, withFlags = false }: {
+	static async reason(message: Message, { argsOverload, fetchMembers = false, withFlags = false }: {
+		argsOverload?: string[];
 		fetchMembers?: boolean;
 		withFlags?: false | Flag[];
 	} = {}) {
 		const { client } = message;
 		const users = new Collection<Snowflake, User>();
-		const [, ...content] = message.content.split(' ');
+		const [...content] = argsOverload ? argsOverload : message.content.split(' ').slice(1);
 		for (const word of [...content]) {
 			const [id] = word.match(/\d{17,19}/) || [];
 			if (!id) break;

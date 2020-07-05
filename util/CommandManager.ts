@@ -3,7 +3,7 @@ import { join } from 'path';
 import { Collection } from 'discord.js';
 import Client from './Client';
 import { Errors } from './Constants';
-import Command from '../structures/Command';
+import Command, { CommandAlias } from '../structures/Command';
 
 export default class CommandManager extends Collection<string, Command> {
 	public readonly client!: Client;
@@ -26,12 +26,25 @@ export default class CommandManager extends Collection<string, Command> {
 		return this.load(command);
 	}
 
-	public resolve(command: CommandResolvable) {
+	public resolve(command: CommandResolvable, returnAlias: true): { alias: CommandAlias | undefined; command: Command }
+	public resolve(command: CommandResolvable, returnAlias?: false): Command | undefined;
+	public resolve(command: CommandResolvable, returnAlias = false) {
 		if (typeof command === 'string') {
-			const existing = this.get(command) || this.find(
-				cmd => (cmd.path === command) || (cmd.aliases.includes(command))
-			);
-			return existing;
+			let usedAlias: CommandAlias | undefined = undefined;
+			const existing = this.get(command) || this.find(cmd => {
+				if (cmd.path === command) return true;
+				if (!cmd.aliases.length) return false;
+				const _usedAlias = cmd.aliases.find(alias => {
+					if (typeof alias === 'string') return alias === command;
+					return alias.name === command;
+				});
+				if (_usedAlias) {
+					usedAlias = _usedAlias;
+					return true;
+				}
+				return false;
+			});
+			return returnAlias ? { alias: usedAlias as CommandAlias | undefined, command: existing } : existing;
 		}
 		if (command instanceof Command) {
 			return command;

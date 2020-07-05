@@ -146,7 +146,7 @@ const play = async (message: GuildMessage<true>, points: Points, bet: { bet: num
 export default class Blackjack extends Command {
 	constructor(manager: CommandManager) {
 		super(manager, {
-			aliases: [],
+			aliases: ['bj'],
 			category: 'Points',
 			cooldown: 5,
 			name: 'blackjack',

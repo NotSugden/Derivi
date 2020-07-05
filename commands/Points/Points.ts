@@ -10,7 +10,7 @@ import Util from '../../util/Util';
 export default class Points extends Command {
 	constructor(manager: CommandManager) {
 		super(manager, {
-			aliases: ['wallet'],
+			aliases: ['wallet', 'p'],
 			category: 'Points',
 			cooldown: 5,
 			name: 'points',

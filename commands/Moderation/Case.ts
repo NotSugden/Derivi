@@ -21,7 +21,9 @@ const EDIT_OPTIONS = {
 export default class Case extends Command {
 	constructor(manager: CommandManager) {
 		super(manager, {
-			aliases: [],
+			aliases: Object.values(CaseModes).flatMap(
+				mode => [`case-${mode}`, `${mode}-case`]
+			),
 			category: 'Moderation',
 			cooldown: 5,
 			name: 'case',

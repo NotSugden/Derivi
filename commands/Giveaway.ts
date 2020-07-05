@@ -18,7 +18,18 @@ export enum GiveawayModes {
 export default class Giveaway extends Command {
 	constructor(manager: CommandManager) {
 		super(manager, {
-			aliases: [],
+			aliases: [
+				...[GiveawayModes.START, GiveawayModes.REROLL, GiveawayModes.END].flatMap(mode => [{
+					name: `giveaway-${mode}`,
+					prepend: [mode]
+				}, {
+					name: `${mode}giveaway`,
+					prepend: [mode]
+				}]), {
+					name: 'giveaway-require',
+					prepend: ['requirement']
+				}
+			],
 			category: 'General',
 			cooldown: 5,
 			name: 'giveaway',

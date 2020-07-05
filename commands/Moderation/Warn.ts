@@ -41,7 +41,7 @@ export default class Warn extends Command {
 	public async run(message: GuildMessage<true>, args: CommandArguments, { send }: CommandData) {
 		await message.delete();
 		const { users, reason, members, flags: { silent } } = await Util.reason(message, {
-			fetchMembers: true, withFlags: [{
+			argsOverload: args.regular, fetchMembers: true, withFlags: [{
 				name: 'silent',
 				type: 'boolean'
 			}]

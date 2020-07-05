@@ -24,7 +24,10 @@ const validateSnowflake = (id: string, { past, argumentIndex }: { past?: number;
 export default class Purge extends Command {
 	constructor(manager: CommandManager) {
 		super(manager, {
-			aliases: [],
+			aliases: [{
+				name: 'cb',
+				prepend: ['bots']
+			}],
 			category: 'Moderation',
 			cooldown: 5,
 			name: 'purge',

@@ -9,9 +9,15 @@ import Client from '../util/Client';
 import CommandManager from '../util/CommandManager';
 import { GuildMessage, Message } from '../util/Types';
 
+export type CommandAlias = string | {
+	append?: string[];
+	name: string;
+	prepend?: string[];
+};
+
 export default class Command {
-	public aliases: string[];
-	public category: string;
+	public aliases: CommandOptions['aliases'];
+	public category: CommandOptions['category'];
 	public client!: Client;
 	public cooldown: Exclude<CommandOptions['cooldown'], undefined>;
 	public cooldowns = new Map<Snowflake, NodeJS.Timeout>();
@@ -74,7 +80,7 @@ export interface CommandData<> {
 }
 
 export interface CommandOptions {
-	aliases: string[];
+	aliases: CommandAlias[];
 	category: string;
 	cooldown?: number;
 	name: string;
