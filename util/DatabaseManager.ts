@@ -123,9 +123,11 @@ export default class DatabaseManager {
 
 		if (typeof data.amount === 'number') {
 			if (data.amount < 0) throw new RangeError(Errors.NEGATIVE_NUMBER('points'));
+			values.amount = data.amount;
 		}
 		if (typeof data.vault === 'number') {
 			if (data.vault < 0) throw new RangeError(Errors.NEGATIVE_NUMBER('vault'));
+			values.vault = data.vault;
 		}
 		if (typeof data.daily === 'boolean' || data.daily instanceof Date) {
 			const date = typeof data.daily === 'boolean'
