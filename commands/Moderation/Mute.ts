@@ -12,6 +12,16 @@ export default class Mute extends Command {
 	constructor(manager: CommandManager) {
 		super(manager, {
 			aliases: [],
+			arguments: [{
+				required: true,
+				type: 'member'
+			}, {
+				required: true,
+				type: 'time'
+			}, {
+				required: true,
+				type: 'reason'
+			}],
 			category: 'Moderation',
 			cooldown: 5,
 			name: 'mute',
@@ -26,17 +36,7 @@ export default class Mute extends Command {
 				) return true;
         
 				return false;
-			},
-			usages: [{
-				required: true,
-				type: 'member'
-			}, {
-				required: true,
-				type: 'time'
-			}, {
-				required: true,
-				type: 'reason'
-			}]
+			}
 		}, __filename);
 	}
 

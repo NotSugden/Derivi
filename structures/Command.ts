@@ -26,7 +26,7 @@ export default class Command {
 	public permissions: Exclude<CommandOptions['permissions'], undefined>;
 	public path: string;
 
-	private _usages: CommandOptions['usages'];
+	private _arguments: CommandOptions['arguments'];
 
 	constructor(manager: CommandManager, options: CommandOptions, path: string) {
 		Object.defineProperties(this, {
@@ -41,15 +41,15 @@ export default class Command {
 		this.permissions = options.permissions ?? 0;
 		this.path = path;
 
-		this._usages = options.usages;
+		this._arguments = options.arguments;
 	}
 
-	public get usages() {
-		return this._usages.map(
-			usage =>
-				(usage.required ? '[' : '<') +
-				(usage.extras ? [usage.type, ...usage.extras].join(' | ') : usage.type) +
-				(usage.required ? ']' : '>')
+	public get arguments() {
+		return this._arguments.map(
+			argument =>
+				(argument.required ? '[' : '<') +
+				(argument.extras ? [argument.type, ...argument.extras].join(' | ') : argument.type) +
+				(argument.required ? ']' : '>')
 		);
 	}
 
@@ -81,14 +81,14 @@ export interface CommandData<> {
 
 export interface CommandOptions {
 	aliases: CommandAlias[];
+	arguments: CommandArgument[];
 	category: string;
 	cooldown?: number;
 	name: string;
 	permissions?: PermissionResolvable | PermissionsFunction;
-	usages: CommandUsage[];
 }
 
-export type CommandUsage = {
+export type CommandArgument = {
 	required?: boolean;
 	type: string;
 	extras?: string[];

@@ -15,6 +15,8 @@ export enum GiveawayModes {
 	REQUIREMENT = 'requirement'
 }
 
+const keys = Object.values(GiveawayModes);
+
 export default class Giveaway extends Command {
 	constructor(manager: CommandManager) {
 		super(manager, {
@@ -30,6 +32,11 @@ export default class Giveaway extends Command {
 					prepend: ['requirement']
 				}
 			],
+			arguments: [{
+				extras: keys.slice(1).map(key => `'${key}'`),
+				required: true,
+				type: `'${keys[0]}'`
+			}],
 			category: 'General',
 			cooldown: 5,
 			name: 'giveaway',
@@ -44,12 +51,7 @@ export default class Giveaway extends Command {
 				) return true;
 
 				return false;
-			},
-			usages: [{
-				extras: ['end', 'reroll'],
-				required: true,
-				type: 'start'
-			}]
+			}
 		}, __filename);
 	}
 

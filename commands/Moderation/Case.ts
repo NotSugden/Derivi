@@ -18,12 +18,22 @@ const EDIT_OPTIONS = {
 	reason: 'string'
 };
 
+const keys = Object.values(CaseModes);
+
 export default class Case extends Command {
 	constructor(manager: CommandManager) {
 		super(manager, {
 			aliases: Object.values(CaseModes).flatMap(
 				mode => [`case-${mode}`, `${mode}-case`]
 			),
+			arguments: [{
+				required: true,
+				type: 'case number'
+			}, {
+				extras: keys.slice(1).map(mode => `'${mode}'`),
+				required: true,
+				type: `'${keys[0]}'`
+			}],
 			category: 'Moderation',
 			cooldown: 5,
 			name: 'case',
@@ -37,14 +47,7 @@ export default class Case extends Command {
 				return channel.id === channelID || (channelID ?
 					`This command can only be used in <#${channelID}>.` :
 					'The Staff commands channel has not been configured.');
-			},
-			usages: [{
-				required: true,
-				type: 'case number'
-			}, {
-				extras: ['"delete"'],
-				type: '"edit"'
-			}]
+			}
 		}, __filename);
 	}
 
@@ -135,6 +138,6 @@ export default class Case extends Command {
       
 			return send(Responses.SUCCESSFULLY_EDITED_CASE(caseID));
 		}
-		throw new CommandError('INVALID_MODE', Object.keys(CaseModes));
+		throw new CommandError('INVALID_MODE', keys);
 	}
 }

@@ -5,43 +5,54 @@ import CommandManager from '../../util/CommandManager';
 import { Responses } from '../../util/Constants';
 import { GuildMessage } from '../../util/Types';
 
-const OPTIONS = [
-	'deposit',
-	'withdraw'
-];
+enum VaultModes {
+	DEPOSIT = 'deposit',
+	WITHDRAW = 'withdraw'
+}
+
+enum VaultAliasModes {
+	dep = VaultModes.DEPOSIT,
+	d = VaultModes.DEPOSIT,
+	w = VaultModes.WITHDRAW
+}
+
+const keys = Object.values(VaultModes);
 
 export default class Vault extends Command {
 	constructor(manager: CommandManager) {
 		super(manager, {
-			aliases: ['bank', 'v'],
-			category: 'Points',
-			cooldown: 5,
-			name: 'vault',
-			usages: [{
-				extras: ['"withdraw"'],
-				type: '"deposit"'
+			aliases: ['bank', 'v', {
+				name: 'dep',
+				prepend: ['deposit']
+			}],
+			arguments: [{
+				extras: keys.slice(1).map(key => `'${key}'`),
+				type: `'${keys[0]}'`
 			}, {
 				type: 'amount'
-			}]
+			}],
+			category: 'Points',
+			cooldown: 5,
+			name: 'vault'
 		}, __filename);
 	}
 
 	public async run(message: GuildMessage<true>, args: CommandArguments, { send }: CommandData) {
 		const points = await this.client.database.points(message.author);
 
-		const option = args[0];
+		const mode = keys.includes(args[0] as VaultModes)
+			? args[0]
+			// eslint-disable-next-line max-len
+			// I think this is a bug because the enum `VaultAliasModes` compiles to a string-keyed object not a number-keyed object
+			: VaultAliasModes[args[0] as unknown as number] || args[0];
 
-		if (!option) return send(Responses.VAULT_CHECK(message.author, points.vault));
-
-		if (!OPTIONS.includes(option)) {
-			throw new CommandError('INVALID_OPTION', OPTIONS);
-		}
+		if (!mode) return send(Responses.VAULT_CHECK(message.author, points.vault));
 
 		if (this.client.lockedPoints.has(message.author.id)) {
 			throw new CommandError('LOCKED_POINTS');
 		}
 
-		if (option === 'deposit') {
+		if (mode === VaultModes.DEPOSIT) {
 			const amount = args[1] === 'all' ? points.amount : parseInt(args[1]);
 			if (points.amount === 0) {
 				throw new CommandError('NO_POINTS');
@@ -57,7 +68,7 @@ export default class Vault extends Command {
 			});
 
 			return send(Responses.DEPOSIT_SUCCESS(amount));
-		} else if (option === 'withdraw') {
+		} else if (mode === VaultModes.WITHDRAW) {
 			const amount = args[1] === 'all' ? points.vault : parseInt(args[1]);
 			if (points.vault === 0) {
 				throw new CommandError('NO_POINTS', true);
@@ -74,5 +85,6 @@ export default class Vault extends Command {
 
 			return send(Responses.WITHDRAW_SUCCESS(amount));
 		}
+		throw new CommandError('INVALID_MODE', keys);
 	}
 }

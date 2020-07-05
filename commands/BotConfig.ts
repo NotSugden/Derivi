@@ -6,6 +6,7 @@ import CommandArguments from '../structures/CommandArguments';
 import Guild from '../structures/discord.js/Guild';
 import TextChannel from '../structures/discord.js/TextChannel';
 import { RawGuildConfig, ClientConfig, resolveGuildConfig } from '../util/Client';
+import CommandError from '../util/CommandError';
 import CommandManager from '../util/CommandManager';
 import { GuildMessage } from '../util/Types';
 import Util from '../util/Util';
@@ -13,6 +14,8 @@ import Util from '../util/Util';
 enum ConfigModes {
 	SETUP = 'setup'
 }
+
+const keys = Object.values(ConfigModes);
 
 const CONFIG_ITEMS = [{
 	description: 'Requires two factor authentication be enabled to use moderation commands.',
@@ -93,13 +96,15 @@ export default class BotConfig extends Command {
 	constructor(manager: CommandManager) {
 		super(manager, {
 			aliases: [],
+			arguments: [{
+				extras: keys.slice(1).map(key => `'${key}'`),
+				required: true,
+				type: `'${keys[0]}'`
+			}],
 			category: 'Dev',
 			cooldown: 0,
 			name: 'botconfig',
-			permissions: member => member.client.config.ownerIDs.includes(member.id),
-			usages: [{
-				type: 'setup'
-			}]
+			permissions: member => member.client.config.ownerIDs.includes(member.id)
 		}, __filename);
 	}
 
@@ -263,5 +268,6 @@ export default class BotConfig extends Command {
 			} else await message.channel.bulkDelete(messages);
 			return send(`Added guild config for ${message.guild.name}`);
 		}
+		throw new CommandError('INVALID_MODE', keys);
 	}
 }

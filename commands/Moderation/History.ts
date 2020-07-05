@@ -18,6 +18,12 @@ export default class History extends Command {
 	constructor(manager: CommandManager) {
 		super(manager, {
 			aliases: ['case-history', 'cases', 'punishments'],
+			arguments: [{
+				required: true,
+				type: 'user'
+			}, {
+				type: 'time'
+			}],
 			category: 'Moderation',
 			cooldown: 5,
 			name: 'history',
@@ -31,13 +37,7 @@ export default class History extends Command {
 				return channel.id === channelID || (channelID ?
 					`This command can only be used in <#${channelID}>.` :
 					'The Staff commands channel has not been configured.');
-			},
-			usages: [{
-				required: true,
-				type: 'user'
-			}, {
-				type: 'time'
-			}]
+			}
 		}, __filename);
 	}
 

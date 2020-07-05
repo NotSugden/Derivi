@@ -15,6 +15,14 @@ export default class Attach extends Command {
 	constructor(manager: CommandManager) {
 		super(manager, {
 			aliases: [],
+			arguments: [{
+				required: true,
+				type: 'case number'
+			},{
+				extras: VALID_EXTENSIONS.map(ext => `attachment/${ext}`),
+				required: true,
+				type: 'attachment/png'
+			}],
 			category: 'Moderation',
 			cooldown: 5,
 			name: 'attach',
@@ -28,15 +36,7 @@ export default class Attach extends Command {
 				return channel.id === channelID || (channelID ?
 					`This command can only be used in <#${channelID}>.` :
 					'The Staff commands channel has not been configured.');
-			},
-			usages: [{
-				required: true,
-				type: 'case number'
-			},{
-				extras: VALID_EXTENSIONS.map(ext => `attachment/${ext}`),
-				required: true,
-				type: 'attachment/png'
-			}]
+			}
 		}, __filename);
 	}
 

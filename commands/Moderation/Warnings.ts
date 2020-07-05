@@ -11,6 +11,10 @@ export default class Warnings extends Command {
 	constructor(manager: CommandManager) {
 		super(manager, {
 			aliases: ['warns'],
+			arguments: [{
+				required: true,
+				type: 'user'
+			}],
 			category: 'Moderation',
 			cooldown: 5,
 			name: 'warnings',
@@ -25,11 +29,7 @@ export default class Warnings extends Command {
 				) return true;
         
 				return false;
-			},
-			usages: [{
-				required: true,
-				type: 'user'
-			}]
+			}
 		}, __filename);
 	}
 

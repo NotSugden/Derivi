@@ -28,6 +28,11 @@ export default class Purge extends Command {
 				name: 'cb',
 				prepend: ['bots']
 			}],
+			arguments: [{
+				extras: ['...user', '...role', '\'bots\''],
+				required: true,
+				type: 'limit'
+			}],
 			category: 'Moderation',
 			cooldown: 5,
 			name: 'purge',
@@ -42,12 +47,7 @@ export default class Purge extends Command {
 				) return true;
         
 				return false;
-			},
-			usages: [{
-				extras: ['...user', '...role'],
-				required: true,
-				type: 'limit'
-			}]
+			}
 		}, __filename);
 	}
 

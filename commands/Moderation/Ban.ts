@@ -17,6 +17,13 @@ export default class Ban extends Command {
 				append: ['--days=7'],
 				name: 'ban7'
 			}],
+			arguments: [{
+				required: true,
+				type: 'user'
+			}, {
+				required: true,
+				type: 'reason'
+			}],
 			category: 'Moderation',
 			cooldown: 5,
 			name: 'ban',
@@ -31,14 +38,7 @@ export default class Ban extends Command {
 				) return true;
         
 				return false;
-			},
-			usages: [{
-				required: true,
-				type: 'user'
-			}, {
-				required: true,
-				type: 'reason'
-			}]
+			}
 		}, __filename);
 	}
 

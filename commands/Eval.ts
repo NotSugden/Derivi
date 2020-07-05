@@ -25,13 +25,13 @@ export default class Eval extends Command {
 	constructor(manager: CommandManager) {
 		super(manager, {
 			aliases: ['ev'],
+			arguments: [{
+				type: 'code'
+			}],
 			category: 'Dev',
 			cooldown: 0,
 			name: 'eval',
-			permissions: member => member.client.config.ownerIDs.includes(member.id),
-			usages: [{
-				type: 'code'
-			}]
+			permissions: member => member.client.config.ownerIDs.includes(member.id)
 		}, __filename);
 	}
 

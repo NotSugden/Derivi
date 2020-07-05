@@ -11,6 +11,13 @@ export default class Kick extends Command {
 	constructor(manager: CommandManager) {
 		super(manager, {
 			aliases: ['👢'],
+			arguments: [{
+				required: true,
+				type: 'member'
+			}, {
+				required: true,
+				type: 'reason'
+			}],
 			category: 'Moderation',
 			cooldown: 5,
 			name: 'kick',
@@ -25,16 +32,7 @@ export default class Kick extends Command {
 				) return true;
         
 				return false;
-			},
-			usages: [{
-				required: true,
-				type: 'member'
-			}, {
-				type: '--silent=true'
-			}, {
-				required: true,
-				type: 'reason'
-			}]
+			}
 		}, __filename);
 	}
 

@@ -11,12 +11,12 @@ export default class Points extends Command {
 	constructor(manager: CommandManager) {
 		super(manager, {
 			aliases: ['wallet', 'p'],
+			arguments: [{
+				type: 'user'
+			}],
 			category: 'Points',
 			cooldown: 5,
-			name: 'points',
-			usages: [{
-				type: 'user'
-			}]
+			name: 'points'
 		}, __filename);
 	}
 

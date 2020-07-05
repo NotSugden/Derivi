@@ -147,12 +147,12 @@ export default class Blackjack extends Command {
 	constructor(manager: CommandManager) {
 		super(manager, {
 			aliases: ['bj'],
+			arguments: [{
+				type: 'bet'
+			}],
 			category: 'Points',
 			cooldown: 5,
-			name: 'blackjack',
-			usages: [{
-				type: 'bet'
-			}]
+			name: 'blackjack'
 		}, __filename);
 	}
 

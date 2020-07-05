@@ -11,6 +11,13 @@ export default class Warn extends Command {
 	constructor(manager: CommandManager) {
 		super(manager, {
 			aliases: [],
+			arguments: [{
+				required: true,
+				type: 'user'
+			}, {
+				required: true,
+				type: 'reason'
+			}],
 			category: 'Moderation',
 			cooldown: 5,
 			name: 'warn',
@@ -25,16 +32,7 @@ export default class Warn extends Command {
 				) return true;
         
 				return false;
-			},
-			usages: [{
-				required: true,
-				type: 'user'
-			}, {
-				type: '--silent=true'
-			}, {
-				required: true,
-				type: 'reason'
-			}]
+			}
 		}, __filename);
 	}
 

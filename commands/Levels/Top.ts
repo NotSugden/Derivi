@@ -17,10 +17,12 @@ export default class Top extends Command {
 					prepend: [num.toString()]
 				}))
 			]),
+			arguments: [{
+				type: 'number'
+			}],
 			category: 'Levels',
 			cooldown: 5,
-			name: 'top',
-			usages: []
+			name: 'top'
 		}, __filename);
 	}
 
