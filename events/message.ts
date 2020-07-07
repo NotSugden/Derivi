@@ -97,6 +97,11 @@ export default (async message => {
 
 					const points = await client.database.points(message.author);
 					await points.set({ amount: points.amount + partnerChannel.points });
+					await client.database.createPartnership({
+						guild: { id: invite.guild.id, invite: invite.code },
+						timestamp: new Date(),
+						user: message.author
+					});
 
 					return;
 				} catch (error) {
