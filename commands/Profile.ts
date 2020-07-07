@@ -17,11 +17,11 @@ export default class Profile extends Command {
 	constructor(manager: CommandManager) {
 		super(manager, {
 			aliases: [],
-			arguments: [{
-				type: 'user'
-			}],
 			category: 'General',
 			cooldown: 5,
+			examples: [
+				'', '{author}', '{author.id}'
+			],
 			name: 'profile'
 		}, __filename);
 	}

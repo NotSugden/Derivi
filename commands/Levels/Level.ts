@@ -9,11 +9,9 @@ export default class Level extends Command {
 	constructor(manager: CommandManager) {
 		super(manager, {
 			aliases: ['rank'],
-			arguments: [{
-				type: 'user'
-			}],
 			category: 'Levels',
 			cooldown: 5,
+			examples: ['', '{author}', '{author.id}'],
 			name: 'level'
 		}, __filename);
 	}

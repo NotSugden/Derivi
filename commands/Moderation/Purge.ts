@@ -28,13 +28,16 @@ export default class Purge extends Command {
 				name: 'cb',
 				prepend: ['bots']
 			}],
-			arguments: [{
-				extras: ['...user', '...role', '\'bots\''],
-				required: true,
-				type: 'limit'
-			}],
 			category: 'Moderation',
 			cooldown: 5,
+			examples: [
+				'{alias:1}',
+				'bots',
+				'{author}',
+				'{author} {randomuserid}',
+				'100',
+				'75 --match="n word"'
+			],
 			name: 'purge',
 			permissions: member => {
 				const config = member.client.config.guilds.get(member.guild.id);

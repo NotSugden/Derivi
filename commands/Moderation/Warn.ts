@@ -11,15 +11,13 @@ export default class Warn extends Command {
 	constructor(manager: CommandManager) {
 		super(manager, {
 			aliases: [],
-			arguments: [{
-				required: true,
-				type: 'user'
-			}, {
-				required: true,
-				type: 'reason'
-			}],
 			category: 'Moderation',
 			cooldown: 5,
+			examples: [
+				'{author} Being too cool!',
+				'{author.id} Being too fancy!',
+				'{author} {randomuserid} Trolling!'
+			],
 			name: 'warn',
 			permissions: member => {
 				const config = member.client.config.guilds.get(member.guild.id);

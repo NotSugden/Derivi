@@ -194,7 +194,7 @@ export default (async message => {
 		}
 		if (!hasPermissions || typeof hasPermissions === 'string') {
 			return send(typeof hasPermissions === 'string' ?
-				hasPermissions : CommandErrors.INSUFFICIENT_PERMISSIONS
+				hasPermissions : CommandErrors.INSUFFICIENT_PERMISSIONS()
 			);
 		}
     

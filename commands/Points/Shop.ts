@@ -9,11 +9,11 @@ export default class Shop extends Command {
 	constructor(manager: CommandManager) {
 		super(manager, {
 			aliases: ['buy'],
-			arguments: [{
-				type: 'item'
-			}],
 			category: 'Points',
 			cooldown: 5,
+			examples: [
+				'{alias:1} Cool Role'
+			],
 			name: 'shop'
 		}, __filename);
 	}

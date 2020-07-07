@@ -10,9 +10,9 @@ export default class Daily extends Command {
 	constructor(manager: CommandManager) {
 		super(manager, {
 			aliases: [],
-			arguments: [],
 			category: 'Points',
 			cooldown: 5,
+			examples: [''],
 			name: 'daily'
 		}, __filename);
 	}

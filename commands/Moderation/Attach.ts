@@ -15,16 +15,9 @@ export default class Attach extends Command {
 	constructor(manager: CommandManager) {
 		super(manager, {
 			aliases: [],
-			arguments: [{
-				required: true,
-				type: 'case number'
-			},{
-				extras: VALID_EXTENSIONS.map(ext => `attachment/${ext}`),
-				required: true,
-				type: 'attachment/png'
-			}],
 			category: 'Moderation',
 			cooldown: 5,
+			examples: ['69 <attached image>'],
 			name: 'attach',
 			permissions: (member, channel) => {
 				if (!channel.parentID) return 'You\'re not using this command in the correct category!';

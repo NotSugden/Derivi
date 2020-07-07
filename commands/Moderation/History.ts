@@ -1,4 +1,3 @@
-import ms from '@naval-base/ms';
 import Command, { CommandData } from '../../structures/Command';
 import CommandArguments from '../../structures/CommandArguments';
 import Guild from '../../structures/discord.js/Guild';
@@ -9,23 +8,18 @@ import { Responses } from '../../util/Constants';
 import { GuildMessage } from '../../util/Types';
 import Util from '../../util/Util';
 
-const parseMS = (string: string) => {
-	const time = ms(string || '');
-	return time;
-};
-
 export default class History extends Command {
 	constructor(manager: CommandManager) {
 		super(manager, {
 			aliases: ['case-history', 'cases', 'punishments'],
-			arguments: [{
-				required: true,
-				type: 'user'
-			}, {
-				type: 'time'
-			}],
 			category: 'Moderation',
 			cooldown: 5,
+			examples: [
+				'{randomuserid}',
+				'{randomuserid} 1d',
+				'{randomuserid} {randomuserid}',
+				'{randomuserid} {randomuserid} 24h'
+			],
 			name: 'history',
 			permissions: (member, channel) => {
 				if (!channel.parentID) return 'You\'re not using this command in the correct category!';
@@ -43,7 +37,7 @@ export default class History extends Command {
 
 	public async run(message: GuildMessage<true>, args: CommandArguments, { send }: CommandData) {
 		const { users, reason: content } = await Util.reason(message);
-		const time = content ? parseMS(content) : -1;
+		const time = Util.parseMS(content);
 
 		if (!users.size) throw new CommandError('MENTION_USERS');
 		if (users.size > 1) return send('Currently only 1 user is supported.');

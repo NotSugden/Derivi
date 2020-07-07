@@ -17,15 +17,15 @@ export default class Ban extends Command {
 				append: ['--days=7'],
 				name: 'ban7'
 			}],
-			arguments: [{
-				required: true,
-				type: 'user'
-			}, {
-				required: true,
-				type: 'reason'
-			}],
 			category: 'Moderation',
 			cooldown: 5,
+			examples: [
+				'{author} Being too cool!',
+				'{author.id} Being too fancy!',
+				'{author} {randomuserid} Trollers!',
+				'{alias:3} {author} Spamming',
+				'{alias:4} {author} Banned, with your messages deleted!'
+			],
 			name: 'ban',
 			permissions: member => {
 				const config = member.client.config.guilds.get(member.guild.id);

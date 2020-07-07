@@ -21,24 +21,21 @@ export default class Giveaway extends Command {
 	constructor(manager: CommandManager) {
 		super(manager, {
 			aliases: [
-				...[GiveawayModes.START, GiveawayModes.REROLL, GiveawayModes.END].flatMap(mode => [{
-					name: `giveaway-${mode}`,
+				...[GiveawayModes.START, GiveawayModes.REROLL, GiveawayModes.END].map(mode => ({
+					name: `g${mode}`,
 					prepend: [mode]
-				}, {
-					name: `${mode}giveaway`,
-					prepend: [mode]
-				}]), {
-					name: 'giveaway-require',
+				})), {
+					name: 'grequire',
 					prepend: ['requirement']
 				}
 			],
-			arguments: [{
-				extras: keys.slice(1).map(key => `'${key}'`),
-				required: true,
-				type: `'${keys[0]}'`
-			}],
 			category: 'General',
 			cooldown: 5,
+			examples: [
+				'start 5m Nitro!',
+				'{alias:1} {channel} 1h Gift Code!',
+				'{alias:4} messages 50'
+			],
 			name: 'giveaway',
 			permissions: member => {
 				const config = member.client.config.guilds.get(member.guild.id);
@@ -142,6 +139,6 @@ export default class Giveaway extends Command {
 			}));
 			return send(Responses.REQUIREMENT_ADDED);
 		}
-		throw new CommandError('INVALID_MODE', Object.values(GiveawayModes));
+		throw new CommandError('INVALID_MODE', keys);
 	}
 }

@@ -10,9 +10,12 @@ export default class Transfer extends Command {
 	constructor(manager: CommandManager) {
 		super(manager, {
 			aliases: [],
-			arguments: [],
 			category: 'Points',
 			cooldown: 5,
+			examples: [
+				'{author} 500',
+				'{author.id} 500'
+			],
 			name: 'transfer'
 		}, __filename);
 	}

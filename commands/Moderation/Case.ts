@@ -24,18 +24,20 @@ export default class Case extends Command {
 	constructor(manager: CommandManager) {
 		super(manager, {
 			aliases: Object.values(CaseModes).flatMap(
-				mode => [`case-${mode}`, `${mode}-case`]
+				mode => [{
+					name: `case-${mode}`,
+					prepend: [mode]
+				}, {
+					name: `${mode}-case`,
+					prepend: [mode]
+				}]
 			),
-			arguments: [{
-				required: true,
-				type: 'case number'
-			}, {
-				extras: keys.slice(1).map(mode => `'${mode}'`),
-				required: true,
-				type: `'${keys[0]}'`
-			}],
 			category: 'Moderation',
 			cooldown: 5,
+			examples: [
+				'delete 69',
+				'edit 420 reason="dank"'
+			],
 			name: 'case',
 			permissions: (member, channel) => {
 				if (!channel.parentID) return 'You\'re not using this command in the correct category!';

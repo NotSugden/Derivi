@@ -11,15 +11,13 @@ export default class Kick extends Command {
 	constructor(manager: CommandManager) {
 		super(manager, {
 			aliases: ['👢'],
-			arguments: [{
-				required: true,
-				type: 'member'
-			}, {
-				required: true,
-				type: 'reason'
-			}],
 			category: 'Moderation',
 			cooldown: 5,
+			examples: [
+				'{author} Being too cool!',
+				'{author.id} Being too fancy!',
+				'{author} {randommemberid} Trollers!'
+			],
 			name: 'kick',
 			permissions: member => {
 				const config = member.client.config.guilds.get(member.guild.id);
@@ -30,7 +28,7 @@ export default class Kick extends Command {
 				if (
 					hasAccess || member.hasPermission(Permissions.FLAGS.ADMINISTRATOR)
 				) return true;
-        
+
 				return false;
 			}
 		}, __filename);
@@ -56,7 +54,7 @@ export default class Kick extends Command {
 			'CANNOT_ACTION_USER', 'KICK', members.size > 1
 		);
 
-		const extras: { [key: string]: string } = { };
+		const extras: { [key: string]: string } = {};
 
 		if (members.size !== users.size) {
 			const left = users.filter(user => !members.has(user.id));

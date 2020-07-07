@@ -90,4 +90,4 @@ export default class CommandManager extends Collection<string, Command> {
 	}
 }
 
-type CommandResolvable = string | Command;
+export type CommandResolvable = string | Command;

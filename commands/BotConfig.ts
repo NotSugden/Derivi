@@ -96,13 +96,11 @@ export default class BotConfig extends Command {
 	constructor(manager: CommandManager) {
 		super(manager, {
 			aliases: [],
-			arguments: [{
-				extras: keys.slice(1).map(key => `'${key}'`),
-				required: true,
-				type: `'${keys[0]}'`
-			}],
 			category: 'Dev',
 			cooldown: 0,
+			examples: [
+				'setup'
+			],
 			name: 'botconfig',
 			permissions: member => member.client.config.ownerIDs.includes(member.id)
 		}, __filename);
@@ -159,7 +157,7 @@ export default class BotConfig extends Command {
 					|| msg.guild.channels.cache.find(ch => ch.name.toLowerCase() === msg.content.toLowerCase());
 			};
 
-			for (let i = 0;i < CONFIG_ITEMS.length;i++) {
+			for (let i = 0; i < CONFIG_ITEMS.length; i++) {
 				const data = CONFIG_ITEMS[i];
 				if (typeof data.default === 'function') {
 					const def = data.default(message.guild);
@@ -220,7 +218,7 @@ export default class BotConfig extends Command {
 					const channel = data.type === 'channel' ?
 						resolveChannel(response) :
 						this.client.channels.cache.get(response.content);
-					
+
 					if (!channel) {
 						await tryAgain('That is not a valid channel, please try again');
 						continue;

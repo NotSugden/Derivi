@@ -5,6 +5,7 @@ import {
 import CommandArguments from './CommandArguments';
 import GuildMember from './discord.js/GuildMember';
 import TextChannel from './discord.js/TextChannel';
+import User from './discord.js/User';
 import Client from '../util/Client';
 import CommandManager from '../util/CommandManager';
 import { GuildMessage, Message } from '../util/Types';
@@ -26,7 +27,7 @@ export default class Command {
 	public permissions: Exclude<CommandOptions['permissions'], undefined>;
 	public path: string;
 
-	private _arguments: CommandOptions['arguments'];
+	private _examples: CommandOptions['examples'];
 
 	constructor(manager: CommandManager, options: CommandOptions, path: string) {
 		Object.defineProperties(this, {
@@ -41,16 +42,42 @@ export default class Command {
 		this.permissions = options.permissions ?? 0;
 		this.path = path;
 
-		this._arguments = options.arguments;
+		this._examples = options.examples;
 	}
 
-	public get arguments() {
-		return this._arguments.map(
-			argument =>
-				(argument.required ? '[' : '<') +
-				(argument.extras ? [argument.type, ...argument.extras].join(' | ') : argument.type) +
-				(argument.required ? ']' : '>')
-		);
+	public formatExamples(message: GuildMessage<true>, limit: 1): string;
+	public formatExamples(message: GuildMessage<true>, limit?: number): string[];
+	public formatExamples(message: GuildMessage<true>, limit = Infinity) {
+		const array = this._examples.slice(0, limit).map(example => {
+			const [, id] = example.match(/{alias:(\d+)}/i) || [];
+			let alias = id ? this.aliases[parseInt(id)-1] : null;
+			if (alias && typeof alias === 'object') alias = alias.name;
+			const name = `${this.client.config.prefix[0]}${alias || this.name}`;
+			if (id) example = example.split(' ').slice(1).join(' ');
+			if (!example.length) return name;
+			return `${name} ${example.replace(/{author\.?([a-z]+)?}/gi, (str, prop?: keyof User) => {
+				if (!prop) return message.author.toString();
+				else if (prop === 'username') return message.author.username;
+				else if (prop === 'tag') return message.author.tag;
+				else if (prop === 'id') return message.author.id;
+				else if (prop === 'discriminator') return message.author.discriminator;
+				else return str;
+			}).replace(/{random(member|user|userID)}/gi, (str, match: 'member' | 'user' | 'userid') => {
+				if (match === 'member') return message.guild.members.cache.random()!.toString();
+				else if (match === 'user') return this.client.users.cache.random()!.toString();
+				else if (match === 'userid') return this.client.users.cache.randomKey()!;
+				else return str;
+			}).replace(/{member}/gi, () => message.member.toString()).replace(
+				/{channel\.?([a-z]+)?}/gi,
+				(str, prop?: keyof TextChannel) => {
+					if (!prop) return message.channel.toString();
+					else if (prop === 'id') return message.channel.id;
+					else if (prop === 'name') return message.channel.name;
+					else return str;
+				}
+			)}`;
+		});
+		return limit === 1 ? array[0] : array;
 	}
 
 	public reload() {
@@ -81,9 +108,9 @@ export interface CommandData<> {
 
 export interface CommandOptions {
 	aliases: CommandAlias[];
-	arguments: CommandArgument[];
 	category: string;
 	cooldown?: number;
+	examples: string[];
 	name: string;
 	permissions?: PermissionResolvable | PermissionsFunction;
 }

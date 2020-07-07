@@ -9,6 +9,7 @@ import Client, { ShopItem } from './Client';
 import { Invite, PartialMessage, GuildMessage } from './Types';
 import { Card } from '../commands/Points/Blackjack';
 import Case from '../structures/Case';
+import Command from '../structures/Command';
 import Levels from '../structures/Levels';
 import Profile from '../structures/Profile';
 import Warn from '../structures/Warn';
@@ -22,7 +23,7 @@ import User from '../structures/discord.js/User';
 const hyperlink = (name: string, url: string) => `[${name}](${url})`;
 
 const hyperlinkEmojis = (content: string) => content.replace(
-	/<(a)?:?(\w{2,32}):(\d{17,19})>/g, (str, animated: 'a' | undefined, name: string, id: string) => 
+	/<(a)?:?(\w{2,32}):(\d{17,19})>/g, (str, animated: 'a' | undefined, name: string, id: string) =>
 		hyperlink(name, `https://cdn.discordapp.com/emojis/${id}.${animated === 'a' ? 'gif' : 'png'}`)
 );
 
@@ -134,6 +135,8 @@ export const Errors = {
 };
 
 export const CommandErrors = {
+	RESPONSE_TIMEOUT: (time: string) => `Response timed out, as no answer was recieved in ${time}.`,
+	COMMAND_NOT_FOUND: 'That command couldn\'t be found.',
 	INVALID_CHANNEL: 'The channel provided could not be found.',
 	INVALID_MODE: (modes: string[]) =>
 		`You've not provided a valid mode for this command, valid modes are ${
@@ -160,7 +163,7 @@ export const CommandErrors = {
 	NEED_MFA: 'You need to enable Two Factor Authentication to use this command, you can find out how to do this at <https://support.discord.com/hc/en-us/articles/219576828-Setting-up-Two-Factor-Authentication>',
 	NOT_LOGGED_IN: (loginURL: string) => `You need to be logged in at <${loginURL}> to use this command.`,
 	PURGE_NO_MESSAGES: 'There were no messages to delete',
-	CONFLICTING_FLAGS: (flags: string[]) => 
+	CONFLICTING_FLAGS: (flags: string[]) =>
 		`The flags ${flags.map(f => `\`${f}\``).join(', ')} cannot be used together`,
 	INVALID_SNOWFLAKE: (reason: 'invalid' | 'future' | 'past', argumentIndex?: number) => {
 		const start = `The ${typeof argumentIndex === 'number' ? `ID in argument ${argumentIndex}` : 'ID provided'}`;
@@ -179,7 +182,10 @@ export const CommandErrors = {
 	CANNOT_ACTION_USER: (action: keyof typeof ModerationActionTypes, multiple = false) =>
 		`You cannot perform a ${action.toLowerCase()} on ${multiple ? 'one of the users you mentioned' : 'this user'}`,
 	INVALID_TIME: (time = '2 minutes') => `The time you provided is less than ${time}, which is the minimum.`,
-	INSUFFICIENT_PERMISSIONS: 'You have insufficient permissions to perform this action.',
+	INSUFFICIENT_PERMISSIONS: (help = false) => {
+		if (!help) return 'You have insufficient permissions to perform this action.';
+		return 'You do not have access to this command';
+	},
 	MENTION_USERS: (users = true) => `Please mention at least 1 ${users ? 'user' : 'member'}.`,
 	MENTION_USER: (user = true) => `Please mention a ${user ? 'user' : 'member'}.`,
 	PROVIDE_REASON: 'Please supply a reason for this action.',
@@ -204,11 +210,7 @@ export const CommandErrors = {
 			'does not have enough' :
 			'has too many'
 	} members for this channel.`,
-	INVALID_OPTION: (validOptions: string[], index = 1) => 
-		`Argument ${index} is not a valid option, valid options are ${
-			validOptions.map(option => `\`${option}\``).join(', ')
-		}.`,
-	INVALID_NUMBER: ({ min, max }: { min?: number; max?: number} = {}) => {
+	INVALID_NUMBER: ({ min, max }: { min?: number; max?: number } = {}) => {
 		let str = 'The number you provided is invalid';
 		if (typeof min === 'number') str += `, it must be a minimum of ${min}`;
 		if (typeof max === 'number') {
@@ -226,8 +228,8 @@ export const CommandErrors = {
 		`${yours ? 'Your' : 'Their'} points are currently locked, this is likely due to ${
 			yours ? 'you' : 'them'
 		} playing a game.`,
-	NOT_PERMITTED_CASE_MODIFY: (action: string) => 
-	// eslint-disable-next-line max-len
+	NOT_PERMITTED_CASE_MODIFY: (action: string) =>
+		// eslint-disable-next-line max-len
 		`You're not permitted to ${action} this case, you must either be the person who issued it or have the \`Administrator\` permission.`,
 	NO_OPTIONS: (valid: string[]) =>
 		`You have not provided any options, use the format \`optionName="value"\`, valid options are ${
@@ -268,18 +270,64 @@ const splitChars = (string: string, char = '\u200b') => string.split('').join(ch
 
 const GIVEAWAY_KEYWORDS = /nitro|code|steam|paypal|(£\$)[0-9]*/gi;
 
+/*const mapAliases = (command: Command) => command.aliases.map(
+	alias => typeof alias === 'string' ? alias : alias.name
+);*/
+
+type CommandCategory = { category: string; commands: Command[] };
+
 export const Responses = {
+	CATEGORY_HELP: (category: CommandCategory, client: Client) => {
+		return { content: '', embed: new MessageEmbed()
+			.setAuthor(category.category)
+			.setDescription(category.commands.map(
+				(command, index) => `${
+					client.config.emojis.get('RIGHT_ARROW')
+				} \`[${index+1}]\` ${client.config.prefix[0]}${command.name}`
+			)) };
+	},
+	HELP_PROMPT: (categories: CommandCategory[], client: Client) => {
+		const array = categories.map(({ category }, index) => {
+			return `${client.config.emojis.get('RIGHT_ARROW')} \`[${index+1}]\`${category}`;
+		});
+		array.push('Type a category name to view its commands, or `cancel` to cancel.');
+		array.unshift('**Help**');
+		return array;
+	},
+	COMMAND_HELP: (command: Command, message: GuildMessage<true>) => {
+		const examples = command.formatExamples(message);
+		const capitalized = command.name.charAt(0).toUpperCase() + command.name.slice(1);
+		const aliases = command.aliases.length
+			? command.aliases.map(alias => `\`${typeof alias === 'string' ? alias : alias.name}\``)
+			: 'No Aliases';
+		return {
+			content: `Help: ${capitalized}`,
+			embed: new MessageEmbed()
+				.setAuthor(capitalized)
+				.setColor(Constants.Colors.WHITE)
+				.addFields({
+					name: 'Examples',
+					value: examples
+				}, {
+					name: 'Aliases',
+					value: typeof aliases === 'string'
+						? aliases : aliases.join(', ')
+				})
+		};
+	},
 	REQUIREMENT_ADDED: 'Added a requirement to the giveaway',
 	GIVEAWAY_END: (prize: string, end: Date, winners?: User[]) => {
 		const description = winners
 			? `Winner${winners.length > 1 ? 's' : ''}: ${winners.map(winner => winner.toString()).join('\n')}`
 			: 'No winners';
-		return { content: `**${splitChars('GIVEAWAY ENDED')}**`, embed: new MessageEmbed()
-			.setTitle(prize.replace(GIVEAWAY_KEYWORDS, str => splitChars(str)))
-			.setColor(11506322)
-			.setDescription(description)
-			.setFooter('Ended At')
-			.setTimestamp(end) };
+		return {
+			content: `**${splitChars('GIVEAWAY ENDED')}**`, embed: new MessageEmbed()
+				.setTitle(prize.replace(GIVEAWAY_KEYWORDS, str => splitChars(str)))
+				.setColor(11506322)
+				.setDescription(description)
+				.setFooter('Ended At')
+				.setTimestamp(end)
+		};
 	},
 	GIVEAWAY_START: (prize: string, data: {
 		messageRequirement?: number | null;
@@ -302,15 +350,17 @@ export const Responses = {
 			}
 			if (hasRequirement) description.push(`**${splitChars(data.requirement!)}**`);
 			const index = description.indexOf(str);
-			description.splice(index, 2, `${str} ${description[index+1]}`);
+			description.splice(index, 2, `${str} ${description[index + 1]}`);
 		}
 
-		return { content: `**${splitChars('GIVEAWAY STARTED')}**`, embed: new MessageEmbed()
-			.setTitle(prize.replace(GIVEAWAY_KEYWORDS, str => splitChars(str)))
-			.setColor(11506322)
-			.setDescription(description)
-			.setFooter('Ends At')
-			.setTimestamp(data.end) };
+		return {
+			content: `**${splitChars('GIVEAWAY STARTED')}**`, embed: new MessageEmbed()
+				.setTitle(prize.replace(GIVEAWAY_KEYWORDS, str => splitChars(str)))
+				.setColor(11506322)
+				.setDescription(description)
+				.setFooter('Ends At')
+				.setTimestamp(data.end)
+		};
 	},
 	WON_GIVEAWAY: (winner: User, prize: string, message: GuildMessage<true>) => ({
 		allowedMentions: { users: [winner.id] },
@@ -321,9 +371,9 @@ export const Responses = {
 	}),
 	DM_PUNISHMENT_ACTION: punishmentSuccessDM,
 	PROFILE: (profile: Profile) => [
-    profile.user!.tag,
-    `Description: ${profile.description}`,
-    `Reputation: ${profile.rep}`
+		profile.user!.tag,
+		`Description: ${profile.description}`,
+		`Reputation: ${profile.rep}`
 	],
 	SUCCESSFULLY_EDITED_CASE: (id: number) => `Successfully edited case ${id}.`,
 	STARBOARD_EMBED: (stars: number, message: Message) => {
@@ -428,7 +478,7 @@ export const Responses = {
 	},
 	WITHDRAW_SUCCESS: (amount: number) => `Successfully withdrew **${amount}** points.`,
 	DEPOSIT_SUCCESS: (amount: number) => `Successfully deposited **${amount}** points.`,
-	VAULT_CHECK: (user: User, amount: number) => 
+	VAULT_CHECK: (user: User, amount: number) =>
 		`You have **${amount}** points in your vault.`,
 	POINTS: (user: User, amount: number, self = true) =>
 		`${self ? 'You' : 'They'} have **${amount}** points in ${self ? 'your' : 'their'} wallet.`,
@@ -436,7 +486,7 @@ export const Responses = {
 		return new MessageEmbed()
 			.setAuthor(`${guild.name} Leaderboards`, guild.iconURL({ dynamic: true })!)
 			.setDescription(levels.map(
-				(data, index) => `**#${index+1}** - ${data.user?.tag || 'Unkown User#0000'} Level ${data.level}`
+				(data, index) => `**#${index + 1}** - ${data.user?.tag || 'Unkown User#0000'} Level ${data.level}`
 			))
 			.setColor('WHITE');
 	},
@@ -485,7 +535,7 @@ export const Responses = {
 	HISTORY: (cases: Case[]) => {
 		return cases.flatMap(caseData => [
 			`${caseData.id}: ${caseData.action.charAt(0) + caseData.action.slice(1).toLowerCase()} ${
-				caseData.moderator?.tag || caseData.moderatorID
+			caseData.moderator?.tag || caseData.moderatorID
 			} (${moment.utc(caseData.timestamp).format('DD/MM/YYYY HH:mm A')}): ${caseData.reason}`,
 			...Object.entries(caseData.extras).map(([name, value]) => `${name}: ${value}`)
 		]);
@@ -658,7 +708,7 @@ export const EventResponses = {
 			const addedRoles = newMember.roles.cache.filter(role => !oldMember.roles.cache.has(role.id));
 			const removedRoles = oldMember.roles.cache.filter(role => !newMember.roles.cache.has(role.id));
 			if (addedRoles.size) {
-			// I'm not using role mentions here as the log channel is in a different guild
+				// I'm not using role mentions here as the log channel is in a different guild
 				data.push(`Roles Added: ${addedRoles.map(role => role.name).join(', ')}`);
 			}
 			/** 
@@ -666,7 +716,7 @@ export const EventResponses = {
 		 	 * see https://discord.com/developers/docs/resources/guild#modify-guild-member
 		 	 */
 			if (removedRoles.size) {
-			// I'm not using role mentions here as the log channel is in a different guild
+				// I'm not using role mentions here as the log channel is in a different guild
 				data.push(`Roles Removed: ${removedRoles.map(role => role.name).join(', ')}`);
 			}
 		}
@@ -706,10 +756,10 @@ export const EventResponses = {
 		}
 		return embed;
 	},
-  
+
 	MESSAGE_DELETE_BULK: (channel: TextChannel, options: {
-    amount: number; json: { [key: string]: unknown }[]; previous?: Message;
-  }) => {
+		amount: number; json: { [key: string]: unknown }[]; previous?: Message;
+	}) => {
 		return {
 			embeds: [new MessageEmbed()
 				.setAuthor(`Bulk delete in #${channel.name} ${options.amount} messages deleted`)

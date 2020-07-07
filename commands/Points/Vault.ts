@@ -24,15 +24,16 @@ export default class Vault extends Command {
 			aliases: ['bank', 'v', {
 				name: 'dep',
 				prepend: ['deposit']
-			}],
-			arguments: [{
-				extras: keys.slice(1).map(key => `'${key}'`),
-				type: `'${keys[0]}'`
 			}, {
-				type: 'amount'
+				name: 'w',
+				prepend: ['withdraw']
 			}],
 			category: 'Points',
 			cooldown: 5,
+			examples: [
+				'{alias:3} 500',
+				'{alias:4} 500'
+			],
 			name: 'vault'
 		}, __filename);
 	}

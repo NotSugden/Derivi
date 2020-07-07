@@ -12,18 +12,13 @@ export default class Mute extends Command {
 	constructor(manager: CommandManager) {
 		super(manager, {
 			aliases: [],
-			arguments: [{
-				required: true,
-				type: 'member'
-			}, {
-				required: true,
-				type: 'time'
-			}, {
-				required: true,
-				type: 'reason'
-			}],
 			category: 'Moderation',
 			cooldown: 5,
+			examples: [
+				'{author} 1h Being too cool!',
+				'{author.id} 1d Being too fancy!',
+				'{author} {randommemberid} 1w Trollers!'
+			],
 			name: 'mute',
 			permissions: member => {
 				const config = member.client.config.guilds.get(member.guild.id);
