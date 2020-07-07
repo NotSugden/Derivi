@@ -441,9 +441,10 @@ export default class DatabaseManager {
 		}
 		if (typeof caseOrUser === 'object' && !(caseOrUser instanceof User)) {
 			const warns = await this.query<RawWarn>(
-				'SELECT * FROM warnings WHERE timestamp > :after AND timestamp < :before', {
+				'SELECT * FROM warnings WHERE timestamp > :after AND timestamp < :before LIMIT :limit', {
 					after: caseOrUser.after ?? new Date(0),
-					before: caseOrUser.before ?? new Date()
+					before: caseOrUser.before ?? new Date(),
+					limit: caseOrUser.limit ?? 10e3
 				}
 			);
 			return warns.reduce((collection, next) => {
@@ -588,10 +589,7 @@ export default class DatabaseManager {
 	public async partnerships(options: TimeQueryOptions): Promise<Collection<Snowflake, Partnership[]>>;
 	public async partnerships(guild: Snowflake[]): Promise<Collection<Snowflake, Partnership[]>>;
 	public async partnerships(guild: Snowflake): Promise<Partnership[]>;
-	public async partnerships(guild: Snowflake | Snowflake[] | {
-		before?: Date;
-		after?: Date;
-	}) {
+	public async partnerships(guild: Snowflake | Snowflake[] | TimeQueryOptions) {
 		if (Array.isArray(guild)) {
 			const partnerships = await Promise.all(guild.map(id => this.partnerships(id)));
 			return partnerships.reduce((collection, next) => {
@@ -617,8 +615,8 @@ export default class DatabaseManager {
 		const before = new Date(guild.before ? guild.before : Date.now());
 		const after = new Date(guild.after ? guild.after : 0);
 		const partnerships = await this.query<RawPartnership>(
-			'SELECT * FROM partnerships WHERE timestamp < :before AND timestamp > :after',
-			{ after, before }
+			'SELECT * FROM partnerships WHERE timestamp < :before AND timestamp > :after LIMIT :limit',
+			{ after, before, limit: guild.limit ?? 10e3 }
 		);
 		return partnerships.map(data => {
 			const constructed =
@@ -717,17 +715,17 @@ export default class DatabaseManager {
 			let sql =
 				'SELECT * FROM starboard WHERE guild_id = :guildID AND timestamp > :after AND timestamp < :before';
 			if (typeof message.above === 'number') {
-				sql += ' AND stars > :above';
+				sql += ` AND stars > ${mysql.escape(message.above)}`;
 			}
 			if (typeof message.below === 'number') {
-				sql += ' AND stars < :below';
+				sql += ` AND stars < ${mysql.escape(message.below)}`;
 			}
+			sql += ' LIMIT :limit';
 			const stars = await this.query<RawStar>(sql, {
-				above: message.above ?? null,
 				after: message.after ?? new Date(),
 				before: message.before ?? new Date(0),
-				below: message.below ?? null,
-				guildID: guild.id
+				guildID: guild.id,
+				limit: message.limit ?? 10e3
 			});
 			return stars.reduce((collection, next) => {
 				const constructed = this.cache.stars.get(next.message_id) || new Star(this.client, next);
@@ -1030,6 +1028,7 @@ interface StarEditData {
 interface TimeQueryOptions {
 	after?: Date;
 	before?: Date;
+	limit?: number;
 }
 
 interface WarnCreateData {
