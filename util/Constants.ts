@@ -11,6 +11,7 @@ import { Card } from '../commands/Points/Blackjack';
 import Case from '../structures/Case';
 import Command from '../structures/Command';
 import Levels from '../structures/Levels';
+import Partnership from '../structures/Partnership';
 import Profile from '../structures/Profile';
 import Warn from '../structures/Warn';
 import Guild from '../structures/discord.js/Guild';
@@ -277,6 +278,17 @@ const GIVEAWAY_KEYWORDS = /nitro|code|steam|paypal|(£\$)[0-9]*/gi;
 type CommandCategory = { category: string; commands: Command[] };
 
 export const Responses = {
+	PARTNER_TOP: (partners: {
+		partners: Partnership[];
+		user: User | null;
+		userID: Snowflake;
+	}[], type: 'year' | 'month' | 'week') => {
+		const array = partners.map(
+			(obj, index) => `${index + 1}: ${obj.user ? obj.user.tag : obj.userID} - ${obj.partners.length}`
+		);
+		array.unshift(`Top partners this ${type}.`);
+		return array;
+	},
 	CATEGORY_HELP: (category: CommandCategory, client: Client) => {
 		return { content: '', embed: new MessageEmbed()
 			.setAuthor(category.category)

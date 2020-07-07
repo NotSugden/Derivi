@@ -32,7 +32,7 @@ export default class Partnership {
 	}
 
 	get user() {
-		return this.client.users.resolve(this.userID);
+		return this.client.users.resolve(this.userID) as User | null;
 	}
 }
 

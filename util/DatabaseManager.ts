@@ -586,7 +586,7 @@ export default class DatabaseManager {
 		return affectedRows;
 	}
 
-	public async partnerships(options: TimeQueryOptions): Promise<Collection<Snowflake, Partnership[]>>;
+	public async partnerships(options: TimeQueryOptions): Promise<Partnership[]>;
 	public async partnerships(guild: Snowflake[]): Promise<Collection<Snowflake, Partnership[]>>;
 	public async partnerships(guild: Snowflake): Promise<Partnership[]>;
 	public async partnerships(guild: Snowflake | Snowflake[] | TimeQueryOptions) {
@@ -635,7 +635,7 @@ export default class DatabaseManager {
 			guild_id: data.guild.id,
 			guild_invite: data.guild.invite,
 			timestamp: data.timestamp,
-			user: this.client.users.resolveID(data.user)
+			user_id: this.client.users.resolveID(data.user)
 		};
 
 		await this.query(QueryTypes.INSERT, 'partnerships', values);
