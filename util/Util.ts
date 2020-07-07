@@ -10,6 +10,7 @@ import { ModerationActionTypes, Responses, FLAGS_REGEX, OPTIONS_REGEX } from './
 import { GuildMessage, DMMessage } from './Types';
 import { VALID_EXTENSIONS } from '../commands/Moderation/Attach';
 import OAuthUser from '../structures/OAuthUser';
+import DMChannel from '../structures/discord.js/DMChannel';
 import Guild from '../structures/discord.js/Guild';
 import GuildMember from '../structures/discord.js/GuildMember';
 import Message from '../structures/discord.js/Message';
@@ -328,11 +329,17 @@ export default class Util {
 	}
 
 	static async awaitResponse<C extends Message['channel']>(
-		channel: C, user: User, allowedResponses: string[] | '*', time = 18e4
+		channel: C,
+		user: User,
+		allowedResponses: string[] | '*' | (
+			(response: C extends DMChannel ? DMMessage : GuildMessage<true>) => boolean
+		),
+		time = 18e4
 	) {
 		const response = (await channel.awaitMessages(message => {
 			if (message.author.id !== user.id) return false;
 			if (allowedResponses === '*') return true;
+			if (typeof allowedResponses === 'function') return allowedResponses(message);
 			return allowedResponses.includes(message.content.toLowerCase());
 		}, {
 			max: 1,
