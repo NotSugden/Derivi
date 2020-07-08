@@ -41,7 +41,9 @@ export default class History extends Command {
 
 		if (!users.size) throw new CommandError('MENTION_USERS');
 		if (users.size > 1) return send('Currently only 1 user is supported.');
-		if (time < 432e5 && time !== -1) throw new CommandError('INVALID_TIME', '12 hours');
+		if (time < 432e5 && time !== -1) throw new CommandError('INVALID_TIME', {
+			time: '12 hours'
+		});
     
 		const config = [...this.client.config.guilds.values()].find(
 			cfg => cfg.staffServerCategoryID === (message.channel as TextChannel).parentID

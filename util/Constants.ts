@@ -181,7 +181,9 @@ export const CommandErrors = {
 		}.`,
 	CANNOT_ACTION_USER: (action: keyof typeof ModerationActionTypes, multiple = false) =>
 		`You cannot perform a ${action.toLowerCase()} on ${multiple ? 'one of the users you mentioned' : 'this user'}`,
-	INVALID_TIME: (time = '2 minutes') => `The time you provided is less than ${time}, which is the minimum.`,
+	INVALID_TIME: ({ time = '2 minutes', small = true } = {}) => `The time you provided is ${
+		small ? 'less' : 'more'
+	} than ${time}, which is the ${small ? 'minimum' : 'maximum'}.`,
 	INSUFFICIENT_PERMISSIONS: (help = false) => {
 		if (!help) return 'You have insufficient permissions to perform this action.';
 		return 'You do not have access to this command';

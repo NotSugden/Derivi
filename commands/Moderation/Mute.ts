@@ -44,7 +44,13 @@ export default class Mute extends Command {
 			}]
 		}));
 		
-		if (time < 120e3) throw new CommandError('INVALID_TIME');
+		if (time < 120e3 || time > 6048e5) {
+			const isSmaller = time < 120e3;
+			throw new CommandError('INVALID_TIME', {
+				small: isSmaller,
+				time: isSmaller ? '2 minutes' : '7 days'
+			});
+		}
 
 		if (!reason) throw new CommandError('PROVIDE_REASON');
 		if (!members.size) {
