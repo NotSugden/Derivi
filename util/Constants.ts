@@ -11,7 +11,6 @@ import { Card } from '../commands/Points/Blackjack';
 import Case from '../structures/Case';
 import Command from '../structures/Command';
 import Levels from '../structures/Levels';
-import Partnership from '../structures/Partnership';
 import Profile from '../structures/Profile';
 import Warn from '../structures/Warn';
 import Guild from '../structures/discord.js/Guild';
@@ -279,15 +278,20 @@ type CommandCategory = { category: string; commands: Command[] };
 
 export const Responses = {
 	PARTNER_TOP: (partners: {
-		partners: Partnership[];
+		count: number;
 		user: User | null;
 		userID: Snowflake;
-	}[], type: 'year' | 'month' | 'week') => {
+	}[], type: 'alltime' | 'month' | 'week') => {
 		const array = partners.map(
-			(obj, index) => `${index + 1}: ${obj.user ? obj.user.tag : obj.userID} - ${obj.partners.length}`
+			(obj, index) => `\`${index + 1}.\` ${
+				obj.user ? `**${obj.user.username}**#${obj.user.discriminator}` : obj.userID
+			} - **${obj.count}** Partnerships`
 		);
-		array.unshift(`Top partners this ${type}.`);
-		return array;
+		return new MessageEmbed()
+			.setColor('WHITE')
+			.setAuthor(`Top partners ${type === 'alltime' ? 'for alltime' : `this ${type}.`}`)
+			.setDescription(array)
+			.setFooter(`This is the ${type}${type !== 'alltime' ? 'ly' : ''} counter for partnerships`);
 	},
 	CATEGORY_HELP: (category: CommandCategory, client: Client) => {
 		return { content: '', embed: new MessageEmbed()
