@@ -288,13 +288,14 @@ export const Responses = {
 			} - **${obj.count}** Partnerships`
 		);
 		return new MessageEmbed()
-			.setColor('WHITE')
+			.setColor(11309714)
 			.setAuthor(`Top partners ${type === 'alltime' ? 'for alltime' : `this ${type}.`}`)
 			.setDescription(array)
 			.setFooter(`This is the ${type}${type !== 'alltime' ? 'ly' : ''} counter for partnerships`);
 	},
 	CATEGORY_HELP: (category: CommandCategory, client: Client) => {
 		return { content: '', embed: new MessageEmbed()
+			.setColor(Constants.Colors.WHITE)
 			.setAuthor(category.category)
 			.setDescription(category.commands.map(
 				(command, index) => `${
@@ -394,6 +395,7 @@ export const Responses = {
 	SUCCESSFULLY_EDITED_CASE: (id: number) => `Successfully edited case ${id}.`,
 	STARBOARD_EMBED: (stars: number, message: Message) => {
 		const embed = new MessageEmbed()
+			.setColor(Constants.Colors.WHITE)
 			.addFields({
 				inline: true,
 				name: 'Author',
@@ -435,6 +437,7 @@ export const Responses = {
 		).join(' ');
 		const getWeight = (deck: Card[]) => deck.reduce((acc, card) => acc + card.weight, 0);
 		return new MessageEmbed()
+			.setColor(Constants.Colors.WHITE)
 			.setTitle('Blackjack')
 			.setDescription([
 				'Type `hit` for another card, `double` to double bet and draw card or `stand` to end your turn.',
@@ -459,6 +462,7 @@ export const Responses = {
 		const RIGHT_ARROW = client.config.emojis.get('RIGHT_ARROW')!;
 		return new MessageEmbed()
 			.setTitle('How to play')
+			.setColor(Constants.Colors.WHITE)
 			.addFields({
 				name: 'Goal',
 				value: `${RIGHT_ARROW} beat the dealer's hand without going over 21.`
@@ -504,7 +508,7 @@ export const Responses = {
 			.setDescription(levels.map(
 				(data, index) => `**#${index + 1}** - ${data.user?.tag || 'Unkown User#0000'} Level ${data.level}`
 			))
-			.setColor('WHITE');
+			.setColor(Constants.Colors.WHITE);
 	},
 	LEVEL: (user: User, level: number, xp: number) => {
 		const LEFT_BORDER = user.client.config.emojis.get('LEFT_BORDER')!;
@@ -536,7 +540,7 @@ export const Responses = {
 	AUTO_REPORT_EMBED: (message: Message) => {
 		return new MessageEmbed()
 			.setAuthor('Alert')
-			.setColor('RED')
+			.setColor(Constants.Colors.RED)
 			.setDescription(
 				`${message.author.tag} (${message.author}) has __${
 					message.edits.length > 1 ? 'edited' : 'sent'
