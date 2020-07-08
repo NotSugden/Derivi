@@ -224,6 +224,12 @@ export default class BotConfig extends Command {
 						continue;
 					}
 					setProp(data.key, channel.id);
+					if (data.key === 'general_channel') {
+						const levelChannels = this.client.config.allowedLevelingChannels;
+						if (levelChannels.length && !levelChannels.includes(channel.id)) {
+							levelChannels.push(channel.id);
+						}
+					}
 					if (data.key === 'starboard.channel_id') setProp('starboard.enabled', true);
 				} else if (data.type.startsWith('roles-')) {
 					const _roles = response.content.split(/ *, */g);
@@ -256,6 +262,7 @@ export default class BotConfig extends Command {
 			// eslint-disable-next-line @typescript-eslint/no-var-requires
 			const rawConfig: ClientConfig = require(directory);
 			rawConfig.guilds.push(configData);
+			rawConfig.allowed_level_channels = this.client.config.allowedLevelingChannels;
 			await fs.writeFile(directory, JSON.stringify(rawConfig, null, 2));
 			this.client.config.guilds.set(configData.id, resolveGuildConfig(this.client, configData));
 			if (messages.length > 100) {
