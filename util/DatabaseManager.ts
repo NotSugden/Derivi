@@ -719,7 +719,6 @@ GROUP BY user_id ORDER BY count desc LIMIT :limit',
 
 	public async createStar(data: StarCreateData) {
 		const values: SQLValues = {
-			author_id: data.message.author.id,
 			channel_id: this.client.channels.resolveID(data.channel)!,
 			guild_id: this.client.guilds.resolveID(data.guild)!,
 			message_id: data.message.id,
