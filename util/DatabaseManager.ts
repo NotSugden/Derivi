@@ -570,7 +570,7 @@ export default class DatabaseManager {
 		await this.query(QueryTypes.INSERT, 'mutes', values);
 
 		const constructed = new Mute(this.client, values as unknown as RawMute);
-		this.cache.mutes.delete(`${constructed.guildID}:${constructed.userID}`);
+		this.cache.mutes.set(`${constructed.guildID}:${constructed.userID}`, constructed);
 		return constructed;
 	}
 
