@@ -35,12 +35,12 @@ export default class Profile extends Command {
 		const canvas = createCanvas(798, 798);
 		const context = canvas.getContext('2d');
 		const background = await loadImage('./assets/original.jpg');
-		const avatar = await loadImage(message.author.displayAvatarURL({
+		const avatar = await loadImage(user.displayAvatarURL({
 			format: 'jpg', size: 256
 		}));
 		context.drawImage(background, 0, 0, canvas.width, canvas.height);
 		context.drawImage(avatar, 78, 178, 150, 150);
-		drawText(context, message.author.username, '50px bebas-neue', { x: 265, y: 230 });
+		drawText(context, user.username, '50px bebas-neue', { x: 265, y: 230 });
 		drawText(context, `${profile.rep} Rep`, '40px bebas-neue', { x: 520, y: 313 });
 		drawText(context, level.toString(), '55px bebas-neue', { x: 207, y: 463 });
 		drawText(context, xp.toString(), '55px bebas-neue', { x: 337, y: 463 });
