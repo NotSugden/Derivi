@@ -2,7 +2,7 @@ import { join } from 'path';
 import {
 	Constants, EmbedFieldData, RoleData,
 	MessageEmbed, Snowflake, MessageOptions,
-	MessageAttachment
+	MessageAttachment, Util as DJSUtil
 } from 'discord.js';
 import * as moment from 'moment';
 import Client, { ShopItem } from './Client';
@@ -286,7 +286,7 @@ export const Responses = {
 	}[], type: 'alltime' | 'month' | 'week') => {
 		const array = partners.map(
 			(obj, index) => `\`${index + 1}.\` ${
-				obj.user ? `**${obj.user.username}**#${obj.user.discriminator}` : obj.userID
+				obj.user ? `**${DJSUtil.escapeMarkdown(obj.user.username)}**#${obj.user.discriminator}` : obj.userID
 			} - **${obj.count}** Partnerships`
 		);
 		return new MessageEmbed()
@@ -390,7 +390,7 @@ export const Responses = {
 	}),
 	DM_PUNISHMENT_ACTION: punishmentSuccessDM,
 	PROFILE: (profile: Profile) => [
-		profile.user!.tag,
+		DJSUtil.escapeMarkdown(profile.user!.tag),
 		`Description: ${profile.description}`,
 		`Reputation: ${profile.rep}`
 	],
@@ -429,8 +429,10 @@ export const Responses = {
 		return `Deleted case ${caseID}.`;
 	},
 	POINTS_MODIFY: (user: User, amount: number, mode: 'add' | 'set' | 'remove') => {
-		if (mode === 'set') return `Successfully set ${user.username}'s points to ${amount}.`;
-		return `Successfully ${mode === 'add' ? 'added' : 'removed'} ${amount} points from ${user.username}.`;
+		if (mode === 'set') return `Successfully set ${DJSUtil.escapeMarkdown(user.username)}'s points to ${amount}.`;
+		return `Successfully ${mode === 'add' ? 'added' : 'removed'} ${amount} points from ${
+			DJSUtil.escapeMarkdown(user.username)
+		}.`;
 	},
 	GAME_END_STATE: (state: MatchState, bet: number) => `You ${state === 'won' ? 'won' : 'lost'} **${bet}** points.`,
 	BLACKJACK_MESSAGE: (userHand: Card[], dealerHand: Card[], bet: number) => {
@@ -482,7 +484,7 @@ export const Responses = {
 			});
 	},
 	TRANSFER_SUCCESS: (user: User, amount: number) =>
-		`Successfully transferred **${amount}** points to **${user.username}**.`,
+		`Successfully transferred **${amount}** points to **${DJSUtil.escapeMarkdown(user.username)}**.`,
 	COLLECTED_DAILY: (amount = 250) => `Collected daily **${amount}** points.`,
 	SUCCESSFUL_PURCHASE: (item: string) => `Successfully purchased **${item}**.`,
 	SHOP_LAYOUT: (items: ShopItem[], guild: Guild) => {
@@ -508,7 +510,9 @@ export const Responses = {
 		return new MessageEmbed()
 			.setAuthor(`${guild.name} Leaderboards`, guild.iconURL({ dynamic: true })!)
 			.setDescription(levels.map(
-				(data, index) => `**#${index + 1}** - ${data.user?.tag || 'Unkown User#0000'} Level ${data.level}`
+				(data, index) => `**#${index + 1}** - ${
+					data.user ? DJSUtil.escapeMarkdown(data.user.tag) : 'Unkown User#0000'
+				} Level ${data.level}`
 			))
 			.setColor(Constants.Colors.WHITE);
 	},
@@ -519,7 +523,7 @@ export const Responses = {
 		const MIDDLE_BORDER = user.client.config.emojis.get('MIDDLE_BORDER')!;
 
 		return [
-			`**${user.username}**#${user.discriminator}`,
+			`**${DJSUtil.escapeMarkdown(user.username)}**#${user.discriminator}`,
 			`${LEFT_BORDER}${MIDDLE_BORDER.toString().repeat(6)}${RIGHT_BORDER}`,
 			//`${RIGHT_ARROW} Rank **${rank}**`,
 			`${RIGHT_ARROW} Level **${level}**`,
@@ -544,7 +548,7 @@ export const Responses = {
 			.setAuthor('Alert')
 			.setColor(Constants.Colors.RED)
 			.setDescription(
-				`${message.author.tag} (${message.author}) has __${
+				`${DJSUtil.escapeMarkdown(message.author.tag)} (${message.author}) has __${
 					message.edits.length > 1 ? 'edited' : 'sent'
 				}__ a ${hyperlink('message', message.url)} with a possible restricted term`
 			).addFields({
@@ -557,19 +561,19 @@ export const Responses = {
 	HISTORY: (cases: Case[]) => {
 		return cases.flatMap(caseData => [
 			`${caseData.id}: ${caseData.action.charAt(0) + caseData.action.slice(1).toLowerCase()} ${
-			caseData.moderator?.tag || caseData.moderatorID
+				caseData.moderator ? DJSUtil.escapeMarkdown(caseData.moderator.tag) : caseData.moderatorID
 			} (${moment.utc(caseData.timestamp).format('DD/MM/YYYY HH:mm A')}): ${caseData.reason}`,
 			...Object.entries(caseData.extras).map(([name, value]) => `${name}: ${value}`)
 		]);
 	},
 	WARNINGS: (warns: Warn[]) => {
 		return warns.map(warn => `(${warn.caseID}) ${
-			warn.moderator?.tag || warn.moderatorID
+			warn.moderator ? DJSUtil.escapeMarkdown(warn.moderator.tag) : warn.moderatorID
 		} (${moment.utc(warn.timestamp).format('DD/MM/YYYY HH:mm A')}): ${warn.reason}`);
 	},
 	MODERATION_LOG_FIELDS: (moderator: User, users: User[]): EmbedFieldData[] => [{
 		name: 'Moderator',
-		value: `${moderator.tag} (${moderator.id})`
+		value: `${DJSUtil.escapeMarkdown(moderator.tag)} (${moderator.id})`
 	}, {
 		name: `User${users.length > 1 ? 's' : ''} punished`,
 		value: users.map(({ tag, id }) => `${tag} (${id})`)
@@ -593,7 +597,7 @@ export const Responses = {
 		`${kick ?
 			'Kicked' :
 			kick === null ? 'Softbanned' : 'Banned'
-		} by ${moderator.tag}: Case ${caseID}`,
+		} by ${DJSUtil.escapeMarkdown(moderator.tag)}: Case ${caseID}`,
 
 	/**
    * Big spaghetti code ;(
@@ -608,7 +612,7 @@ export const Responses = {
 		const content = [
 			`${kick ? 'Kicked' : kick === null ? 'Softbanned' : 'Banned'} ${
 				(members || users).length === 1 ?
-					(members ? members[0].user : users[0]).tag :
+					DJSUtil.escapeMarkdown((members ? members[0].user : users[0]).tag) :
 					`${(members || users).length} members`
 			}.`
 		];
@@ -626,10 +630,14 @@ export const Responses = {
 		return content;
 	},
 
-	WARN_SUCCESS: (users: User[], reason: string) =>
-		`${users.length > 1 ? `${users.length} Users were` : `${users[0].tag} was`} warned for ${reason}.`,
-	MUTE_SUCCESS: (members: GuildMember[], reason: string) =>
-		`${members.length > 1 ? `${members.length} Members were` : `${members[0].user.tag} was`} muted for ${reason}.`
+	WARN_SUCCESS: (users: User[], reason: string) => `${users.length > 1
+		? `${users.length} Users were`
+		: `${DJSUtil.escapeMarkdown(users[0].tag)} was`
+	} warned for ${reason}.`,
+	MUTE_SUCCESS: (members: GuildMember[], reason: string) => `${members.length > 1
+		? `${members.length} Members were`
+		: `${DJSUtil.escapeMarkdown(members[0].user.tag)} was`
+	} muted for ${reason}.`
 };
 
 export const URLs = {
