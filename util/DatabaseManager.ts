@@ -743,12 +743,12 @@ GROUP BY user_id ORDER BY count desc LIMIT :limit',
 	): Promise<Collection<Snowflake, Star>>;
 	public async stars(
 		guild: Guild,
-		messages: (User | Message | Snowflake)[]
+		messages: (Message | Snowflake)[]
 	): Promise<Collection<Snowflake, Star | null>>;
-	public async stars(guild: Guild, message: User | Message | Snowflake): Promise<Star | null>;
+	public async stars(guild: Guild, message: Message | Snowflake): Promise<Star | null>;
 	public async stars(
 		guild: Guild,
-		message: User | Message | Snowflake | StarQueryOptions | (User | Message | Snowflake)[]
+		message: Message | Snowflake | StarQueryOptions | (Message | Snowflake)[]
 	) {
 		if (Array.isArray(message)) {
 			const stars = await Promise.all(message.map(
@@ -762,7 +762,7 @@ GROUP BY user_id ORDER BY count desc LIMIT :limit',
 				new Collection<Snowflake, Star | null>()
 			);
 		}
-		if (typeof message === 'object' && !(message instanceof Message) && !(message instanceof User)) {
+		if (typeof message === 'object' && !(message instanceof Message)) {
 			let sql =
 				'SELECT * FROM starboard WHERE guild_id = :guildID AND timestamp > :after AND timestamp < :before';
 			if (typeof message.above === 'number') {
@@ -791,9 +791,7 @@ GROUP BY user_id ORDER BY count desc LIMIT :limit',
 		if (this.cache.stars.has(messageID)) return this.cache.stars.get(messageID);
 		
 		const [data] = await this.query<RawStar>(
-			'SELECT * FROM starboard WHERE (\
-				message_id = :messageID OR author_id = :messageID\
-			) AND guild_id = :guildID', {
+			'SELECT * FROM starboard WHERE message_id = :messageID AND guild_id = :guildID', {
 				guildID: this.client.guilds.resolveID(guild.id)!,
 				messageID
 			}
