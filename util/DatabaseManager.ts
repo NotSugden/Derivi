@@ -589,16 +589,20 @@ export default class DatabaseManager {
 	public async partnershipCounts(
 		options: TimeQueryOptions & { limit?: number }
 	): Promise<{ count: number; userID: Snowflake }[]>;
-	public async partnershipCounts(user: (User | Snowflake)[]): Promise<Collection<Snowflake, number | null>>;
-	public async partnershipCounts(user: User | Snowflake): Promise<number | null>;
+	public async partnershipCounts(
+		user: (User | Snowflake)[],
+		options?: TimeQueryOptions
+	): Promise<Collection<Snowflake, number | null>>;
+	public async partnershipCounts(user: User | Snowflake, options?: TimeQueryOptions): Promise<number | null>;
 	public async partnershipCounts(
 		user:
 			| User | Snowflake
 			| (User | Snowflake)[]
-			| TimeQueryOptions & { limit?: number }
+			| TimeQueryOptions & { limit?: number },
+		options?: TimeQueryOptions
 	) {
 		if (Array.isArray(user)) {
-			const counts = await Promise.all(user.map(id => this.partnershipCounts(id).then(num => ({
+			const counts = await Promise.all(user.map(id => this.partnershipCounts(id, options).then(num => ({
 				count: num,
 				id: this.client.users.resolveID(id)!
 			}))));
@@ -610,8 +614,12 @@ export default class DatabaseManager {
 		if (user instanceof User || typeof user === 'string') {
 			const id = this.client.users.resolveID(user);
 			const [data] = await this.client.database.query<{ count: number }>(
-				'SELECT COUNT(*) as count FROM partnerships WHERE user_id = :userID',
-				{ userID: id }
+				'SELECT COUNT(*) as count FROM partnerships \
+WHERE user_id = :userID AND timestamp < :before AND timestamp > :after', {
+					after: options?.after ?? new Date(0),
+					before: options?.before ?? new Date(),
+					userID: id
+				}
 			);
 			return data ? data.count : null;
 		}

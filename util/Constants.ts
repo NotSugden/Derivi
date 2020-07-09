@@ -135,6 +135,8 @@ export const Errors = {
 };
 
 export const CommandErrors = {
+	NO_PARTNERS: (user?: User | null) =>
+		`${user ? `${DJSUtil.escapeMarkdown(user.tag)} doesn't` : 'You don\'t'} Doesn have any partners.`,
 	RESPONSE_TIMEOUT: (time: string) => `Response timed out, as no answer was recieved in ${time}.`,
 	COMMAND_NOT_FOUND: 'That command couldn\'t be found.',
 	INVALID_CHANNEL: 'The channel provided could not be found.',
@@ -279,6 +281,18 @@ const GIVEAWAY_KEYWORDS = /nitro|code|steam|paypal|(£\$)[0-9]*/gi;
 type CommandCategory = { category: string; commands: Command[] };
 
 export const Responses = {
+	PARTNERSHIPS: (user: User | null, thisWeek: number, thisMonth: number, alltime: number) => {
+		const format = (type: string, num: number) => 
+			`${type} • **${num}** Partnerships`;
+		return new MessageEmbed()
+			.setAuthor(`${user ? `**${DJSUtil.escapeMarkdown(user.username)}**'s` : 'Your'} Partnerships`)
+			.setColor(Constants.Colors.WHITE)
+			.setDescription([
+				format('Alltime', alltime),
+				format('This month', thisMonth),
+				format('This week',thisWeek)
+			]);
+	},
 	PARTNER_TOP: (partners: {
 		count: number;
 		user: User | null;
