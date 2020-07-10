@@ -24,7 +24,10 @@ try {
 export default class Eval extends Command {
 	constructor(manager: CommandManager) {
 		super(manager, {
-			aliases: ['ev'],
+			aliases: ['ev', {
+				name: 'evala',
+				prepend: ['--async=true']
+			}],
 			category: 'Dev',
 			cooldown: 0,
 			examples: [

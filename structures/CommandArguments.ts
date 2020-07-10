@@ -37,4 +37,8 @@ export default class CommandArguments extends Array<string> {
 		super(...cleanContent(message).slice(1));
 		this.regular = message.content.split(' ').slice(1);
 	}
+
+	slice(start?: number, end?: number) {
+		return [...this].slice(start, end);
+	}
 }

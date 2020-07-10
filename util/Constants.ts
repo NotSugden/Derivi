@@ -281,6 +281,19 @@ const GIVEAWAY_KEYWORDS = /nitro|code|steam|paypal|(£\$)[0-9]*/gi;
 type CommandCategory = { category: string; commands: Command[] };
 
 export const Responses = {
+	MESSAGES: (data: {
+		channels: { count: number; channelID: Snowflake }[]; total: number; },
+	user: User,
+	time: string
+	) => {
+		return [
+			`**Messages sent by ${DJSUtil.escapeMarkdown(user.tag)} in the past ${time}.**`,
+			`**Total**: ${data.total}`,
+			...data.channels.slice(0, 5).map(({ count, channelID }) =>
+				`${user.client.config.emojis.get('RIGHT_ARROW')} <#${channelID}>: **${count}** Messages`
+			)
+		];
+	},
 	PARTNERSHIPS: (user: User | null, thisWeek: number, thisMonth: number, alltime: number) => {
 		const format = (type: string, num: number) => 
 			`${type} • **${num}** Partnerships`;
