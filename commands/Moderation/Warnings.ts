@@ -39,13 +39,14 @@ export default class Warnings extends Command {
 		
 		if (!users.size) throw new CommandError('MENTION_USERS');
 
-		const warnings = Object.entries(await this.client.database.warns(message.guild!, users.map(user => user.id)))
-			.flatMap(([userID, warns]) => {
-				const arr = [`${users.get(userID)!.tag}:`];
-				if (warns) arr.push(...Responses.WARNINGS(warns));
-				else arr.push('No warnings');
-				return arr;
-			});
+
+		const warnings = (await this.client.database.warns(message.guild!, users.map(user => user.id)))
+			.reduce<string[]>((array, warns, userID) => {
+				array.push(`${users.get(userID)!.tag}:`);
+				if (warns.length) array.push(...Responses.WARNINGS(warns));
+				else array.push('No warnings');
+				return array;
+			}, []);
 		
 		return send([
 			'All times are in UTC+0',
