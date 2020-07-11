@@ -136,7 +136,7 @@ export const Errors = {
 
 export const CommandErrors = {
 	NO_PARTNERS: (user?: User | null) =>
-		`${user ? `${DJSUtil.escapeMarkdown(user.tag)} doesn't` : 'You don\'t'} Doesn have any partners.`,
+		`${user ? `${DJSUtil.escapeMarkdown(user.tag)} doesn't` : 'You don\'t'} have any partners.`,
 	RESPONSE_TIMEOUT: (time: string) => `Response timed out, as no answer was recieved in ${time}.`,
 	COMMAND_NOT_FOUND: 'That command couldn\'t be found.',
 	INVALID_CHANNEL: 'The channel provided could not be found.',
