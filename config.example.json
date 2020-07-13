@@ -61,6 +61,7 @@
 	"guilds": [
 		{
 			"_comment": "starts at level 1, ends at level 4 ,must have all 4",
+			"lockdown_channel": "123456789012345678",
 			"mfa_moderation": true,
 			"general_channel": "123456789012345678",
 			"access_level_roles": [

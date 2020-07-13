@@ -281,6 +281,10 @@ const GIVEAWAY_KEYWORDS = /nitro|code|steam|paypal|(£\$)[0-9]*/gi;
 type CommandCategory = { category: string; commands: Command[] };
 
 export const Responses = {
+	LOCKDOWN: (locked: boolean, channelID: Snowflake) => {
+		if (locked) return `The server is now locked down, members can only see <#${channelID}>.`;
+		return 'The server is no longer locked down, members can see all channels.';
+	},
 	MESSAGES: (data: {
 		channels: { count: number; channelID: Snowflake }[]; total: number; },
 	user: User,

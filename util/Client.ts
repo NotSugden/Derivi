@@ -49,6 +49,7 @@ export const resolveGuildConfig = (client: Client, cfg: RawGuildConfig): GuildCo
 	generalChannelID: cfg.general_channel,
 	id: cfg.id,
 	levelRoles: cfg.level_roles || null,
+	lockdownChannelID: cfg.lockdown_channel ?? null,
 	mfaModeration: cfg.mfa_moderation ?? false,
 	partnerships: {
 		channels: new Map(cfg.partnership_channels.map(data => [
@@ -321,6 +322,11 @@ export default class Client extends DJSClient {
 					`guilds[${guildConfig.id}].welcome_role`, 'Role'
 				));
 			}
+			if (guildConfig.lockdownChannelID && resolve(guildConfig.lockdownChannelID)?.type !== 'text') {
+				throw new TypeError(Errors.INVALID_CLIENT_OPTION(
+					'guilds[${guildConfig.id}].lockdown_channel', 'TextChannel'
+				));
+			}
 		}
 	}
 }
@@ -381,7 +387,8 @@ export type GuildConfig = {
   casesChannelID: Snowflake;
   reportsChannelID: Snowflake;
   rulesChannelID: Snowflake;
-  rulesMessageID: Snowflake | null;
+	rulesMessageID: Snowflake | null;
+	lockdownChannelID: Snowflake | null;
   staffCommandsChannelID: Snowflake;
   reportsRegex: RegExp[];
   shopItems: ShopItem[];
@@ -399,6 +406,7 @@ export type GuildConfig = {
 }
 
 export type RawGuildConfig = {
+	lockdown_channel?: Snowflake;
   general_channel: Snowflake;
   access_level_roles: [
     Snowflake,

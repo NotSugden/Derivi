@@ -90,6 +90,13 @@ const CONFIG_ITEMS = [{
 	key: 'general_channel',
 	name: 'General Channel',
 	type: 'channel'
+}, {
+	default: (guild: Guild) => guild.channels.cache.find(ch => ch.name === 'lockdown'),
+	description: 'The channel everyone sees when the server is in lockdown.',
+	key: 'lockdown_channel',
+	name: 'Lockdown Channel',
+	optional: true,
+	type: 'channel'
 }];
 // <3 milk
 export default class BotConfig extends Command {
