@@ -25,6 +25,7 @@
 	"token": "Your bot token",
 	"reaction_roles": [
 		{
+			"limit": 1,
 			"message": "123456789012345678",
 			"emojis": [
 				{

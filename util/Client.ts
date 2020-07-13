@@ -90,7 +90,10 @@ export default class Client extends DJSClient {
 		filesDir: string;
 		ownerIDs: Snowflake[];
 		prefix: string[];
-    reactionRoles: Map<Snowflake, Map<string, Snowflake>>;
+    reactionRoles: Map<Snowflake, {
+			emojis: Map<string, Snowflake>;
+			limit: number;
+		}>;
     guilds: Map<Snowflake, GuildConfig>;
     loginURL?: string;
 	};
@@ -120,11 +123,13 @@ export default class Client extends DJSClient {
 		this.config.filesDir = config.files_dir as string,
 		this.config.prefix = config.prefix,
 		this.config.reactionRoles = new Map(config.reaction_roles.map(data => [
-			data.message,
-			new Map(data.emojis.map(emojiData => [
-				emojiData.id,
-				emojiData.role
-			]))
+			data.message, {
+				emojis: new Map(data.emojis.map(emojiData => [
+					emojiData.id,
+					emojiData.role
+				])),
+				limit: data.limit ?? -1
+			}
 		]));
 		this.config.emojis = new EmojiStore(this);
 		for (const { name, id } of config.emojis) {
@@ -335,6 +340,7 @@ export interface ClientConfig {
 	owners: Snowflake[];
 	prefix: string[];
 	reaction_roles: {
+		limit?: number;
 		message: Snowflake;
 		emojis: {
 			id: Snowflake;
