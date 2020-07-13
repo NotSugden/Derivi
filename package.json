@@ -1,5 +1,5 @@
 {
-	"name": "asc-rewrite",
+	"name": "derivi",
 	"version": "3.0.0-dev",
 	"description": "The ASC bot",
 	"main": "index.js",
@@ -8,14 +8,14 @@
 	},
 	"repository": {
 		"type": "git",
-		"url": "git+https://github.com/NotSugden/ASC-rewrite.git"
+		"url": "git+https://github.com/NotSugden/Derivi.git"
 	},
 	"author": "Sugden",
 	"license": "MIT",
 	"bugs": {
-		"url": "https://github.com/NotSugden/ASC-rewrite/issues"
+		"url": "https://github.com/NotSugden/Derivi/issues"
 	},
-	"homepage": "https://github.com/NotSugden/ASC-rewrite#readme",
+	"homepage": "https://github.com/NotSugden/Derivi#readme",
 	"dependencies": {
 		"@naval-base/ms": "^3.1.0",
 		"@types/mysql": "^2.15.10",

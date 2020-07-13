@@ -1,4 +1,4 @@
-# ASC-rewrite
+# Derivi
 
 This is the bot for [ASC](https://discord.gg/Y3WpFhs)
 
