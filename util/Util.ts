@@ -365,6 +365,16 @@ export default class Util {
 			: Object.assign(data, { reason: string.join(' '), time })
 		) as T extends string ? number : T & { time: number };
 	}
+
+	static lastMonday(date: Date, updateOriginal = true) {
+		if (!updateOriginal) date = new Date(date);
+		date.setUTCHours(0);
+		date.setUTCSeconds(0);
+		const day = date.getUTCDay();
+		const _date = date.getUTCDate() + 1;
+		date.setUTCDate(day === 0 ? _date - 7 : _date - day);
+		return date;
+	}
 }
 
 export type PromiseObject<T> = Promise<T> & {

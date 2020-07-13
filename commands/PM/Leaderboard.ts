@@ -5,14 +5,7 @@ import User from '../../structures/discord.js/User';
 import CommandManager from '../../util/CommandManager';
 import { Responses } from '../../util/Constants';
 import { GuildMessage } from '../../util/Types';
-
-const lastMonday = (date: Date, updateOriginal = true) => {
-	if (!updateOriginal) date = new Date(date);
-	const day = date.getUTCDay();
-	const _date = date.getUTCDate() + 1;
-	date.setUTCDate(day === 0 ? _date - 7 : _date - day);
-	return date;
-};
+import Util from '../../util/Util';
 
 enum Dates {
 	WEEK = 'week',
@@ -34,7 +27,7 @@ export default class Leaderboard extends Command {
 	public async run(message: GuildMessage<true>, args: CommandArguments, { send }: CommandData) {
 		let date = new Date();
 		if (args[0] === Dates.WEEK) {
-			lastMonday(date);
+			Util.lastMonday(date);
 		} else if (args[0] === Dates.ALLTIME) {
 			date = new Date(0);
 		} else {
