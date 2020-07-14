@@ -1,8 +1,4 @@
-import { Snowflake, MessageEmbed } from 'discord.js';
-import Guild from './discord.js/Guild';
-import TextChannel from './discord.js/TextChannel';
-import User from './discord.js/User';
-import Client from '../util/Client';
+import { Client, MessageEmbed, Snowflake, TextChannel } from 'discord.js';
 import { ModerationActionTypes } from '../util/Constants';
 import { GuildMessage } from '../util/Types';
 import Util from '../util/Util';
@@ -66,19 +62,19 @@ export default class Case {
 	}
 	
 	public fetchModerator(cache = true) {
-		return this.client.users.fetch(this.moderatorID, cache) as Promise<User>;
+		return this.client.users.fetch(this.moderatorID, cache);
 	}
 
 	public fetchUsers(cache = true) {
-		return Promise.all(this.userIDs.map(id => this.client.users.fetch(id, cache))) as Promise<User[]>;
+		return Promise.all(this.userIDs.map(id => this.client.users.fetch(id, cache)));
 	}
 
 	get guild() {
-		return this.client.guilds.resolve(this.guildID) as Guild;
+		return this.client.guilds.resolve(this.guildID)!;
 	}
 
 	get logMessage() {
-		return this.channel.messages.cache.get(this.logMessageID);
+		return this.channel.messages.cache.get(this.logMessageID) as GuildMessage<true> | null;
 	}
 
 	get moderator() {

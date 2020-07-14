@@ -1,14 +1,13 @@
 import {
-	PermissionResolvable, Snowflake, MessageAdditions,
-	MessageOptions, StringResolvable, MessageEditOptions
+	Client, DMChannel, GuildMember,
+	MessageAdditions, MessageEditOptions,
+	MessageOptions, PermissionResolvable,
+	Snowflake, StringResolvable,
+	TextChannel, User
 } from 'discord.js';
 import CommandArguments from './CommandArguments';
-import GuildMember from './discord.js/GuildMember';
-import TextChannel from './discord.js/TextChannel';
-import User from './discord.js/User';
-import Client from '../util/Client';
 import CommandManager from '../util/CommandManager';
-import { GuildMessage, Message } from '../util/Types';
+import { GuildMessage, TextBasedChannels } from '../util/Types';
 
 export type CommandAlias = string | {
 	append?: string[];
@@ -89,13 +88,13 @@ export default class Command {
 	public run(message: GuildMessage<true>, args: CommandArguments, {
 		send,
 		edited = false
-	}: CommandData): Promise<Message | void> {
+	}: CommandData): Promise<GuildMessage<true> | void> {
 		if (edited) return Promise.resolve();
 		return send('No implementation for command');
 	}
 }
 
-export interface CommandData<> {
+export interface CommandData {
 	edited?: boolean;
 	send(
 		options: MessageAdditions | MessageEditOptions | MessageOptions
@@ -123,5 +122,5 @@ export type CommandArgument = {
 
 type PermissionsFunction = (
 	member: GuildMember,
-	channel: TextChannel,
+	channel: Exclude<TextBasedChannels, DMChannel>,
 ) => boolean | string | Promise<boolean | string>;

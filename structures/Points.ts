@@ -1,5 +1,4 @@
-import { Snowflake } from 'discord.js';
-import Client from '../util/Client';
+import { Client, Snowflake } from 'discord.js';
 import DatabaseManager from '../util/DatabaseManager';
 
 export default class Points {

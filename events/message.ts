@@ -1,17 +1,20 @@
 /* eslint-disable consistent-return */
 import { promises as fs } from 'fs';
 import { join, extname } from 'path';
-import { MessageOptions, MessageEditOptions, StringResolvable, MessageAdditions, Snowflake } from 'discord.js';
+import {
+	ClientEvents, MessageAdditions,
+	MessageEditOptions, MessageOptions,
+	Snowflake, StringResolvable,
+	TextChannel
+} from 'discord.js';
 import fetch from 'node-fetch';
 import { CommandData } from '../structures/Command';
 import CommandArguments from '../structures/CommandArguments';
 import Levels from '../structures/Levels';
-import Message from '../structures/discord.js/Message';
-import TextChannel from '../structures/discord.js/TextChannel';
-import { Events } from '../util/Client';
 import CommandError from '../util/CommandError';
 import { CommandErrors, Responses } from '../util/Constants';
 import { QueryTypes } from '../util/DatabaseManager';
+import { GuildMessage } from '../util/Types';
 import Util from '../util/Util';
 
 const XP_COOLDOWN = new Set<Snowflake>();
@@ -23,13 +26,10 @@ const random = (min: number, max: number): number => {
 
 export default (async message => {
 	try {
+		if (message.author.bot || !Util.isGuildMessage(message, true)) return;
 		const { client, guild } = message;
-		const config = guild && client.config.guilds.get(guild.id);
+		const config = client.config.guilds.get(guild.id);
 		const edited = Boolean(message.editedTimestamp);
-		if (
-			message.author.bot ||
-			!message.guild
-		) return;
 		if (config) {
 			try {
 				if (!edited) {
@@ -92,7 +92,7 @@ export default (async message => {
 
 					await (client.channels.resolve(config.partnerships.rewardsChannelID) as TextChannel)
 						.send(Responses.PARTNER_REWARD(
-							message.author, message.channel as TextChannel, partnerChannel.points
+							message.author, message.channel, partnerChannel.points
 						));
 
 					const points = await client.database.points(message.author);
@@ -168,21 +168,21 @@ export default (async message => {
 		}
 		const { permissions } = command;
 
-		const send = (async (
+		const send: CommandData['send'] = async (
 			content: StringResolvable,
 			options?: MessageOptions | MessageEditOptions | MessageAdditions
 		) => {
 			if (typeof message.commandID === 'string') {
 				const msg = message.channel.messages.cache.get(message.commandID);
 				// Lazy fix here casting it to MessageEditOptions, TS complains otherwise.
-				if (msg) return msg.edit(content, options as MessageEditOptions) as Promise<Message>;
+				if (msg) return msg.edit(content, options as MessageEditOptions) as Promise<GuildMessage<true>>;
 			}
 
 			// Lazy fix here casting it to MessageOptions, TS complains otherwise.
-			const msg = await message.channel.send(content, options as MessageOptions | MessageAdditions) as Message;
+			const msg = await message.channel.send(content, options as MessageOptions | MessageAdditions);
 			message.commandID = msg.id;
-			return msg;
-		}) as CommandData['send'];
+			return msg as GuildMessage<true>;
+		};
 
 		if (
 			!['attach', 'history', 'warnings', 'case', 'purge'].includes(command.name)
@@ -237,8 +237,8 @@ export default (async message => {
 		}
 		await message.channel.send([
 			`An unexpected error has occoured: \`${error.name}\``,
-			`\`\`\`js\n${error.message}\`\`\``
+			`\`\`\`js\n${error.message || error}\`\`\``
 		]).catch(console.error);
 		console.error(error);
 	}
-}) as (...args: Events['message']) => void;
+}) as (...args: ClientEvents['message']) => void;

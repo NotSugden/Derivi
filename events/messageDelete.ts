@@ -1,8 +1,5 @@
 import { promises as fs } from 'fs';
-import { Snowflake } from 'discord.js';
-import Message from '../structures/discord.js/Message';
-import User from '../structures/discord.js/User';
-import { Events } from '../util/Client';
+import { ClientEvents, Snowflake } from 'discord.js';
 import { EventResponses } from '../util/Constants';
 
 export default (async message => {
@@ -31,7 +28,7 @@ export default (async message => {
 		);
 		if (data) {
 			try {
-				message.author = await client.users.fetch(data.user_id) as User;
+				message.author = await client.users.fetch(data.user_id);
 			} catch { } // eslint-disable-line no-empty
 		}
 	}
@@ -61,7 +58,7 @@ export default (async message => {
 	const previous = (await message.channel.messages.fetch({
 		around: message.id,
 		limit: 1
-	})).first() as Message | undefined;
+	})).first();
 
 	const embed = EventResponses.MESSAGE_DELETE(message, {
 		files,
@@ -70,4 +67,4 @@ export default (async message => {
 
 	webhook.send(embed)
 		.catch(console.error);
-}) as (...args: Events['messageDelete']) => void;
+}) as (...args: ClientEvents['messageDelete']) => void;

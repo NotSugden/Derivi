@@ -1,9 +1,6 @@
-import { Snowflake } from 'discord.js';
-import TextChannel from './discord.js/TextChannel';
-import User from './discord.js/User';
-import Client from '../util/Client';
+import { Client, Snowflake } from 'discord.js';
 import { CommandErrors, Responses, Errors } from '../util/Constants';
-import { GuildMessage } from '../util/Types';
+import { GuildMessage, TextBasedChannels } from '../util/Types';
 import Util from '../util/Util';
 
 export default class Giveaway {
@@ -51,7 +48,7 @@ export default class Giveaway {
 	}
 
 	get channel() {
-		return this.client.channels.resolve(this.channelID) as TextChannel;
+		return this.client.channels.resolve(this.channelID) as TextBasedChannels;
 	}
 
 	public async end() {
@@ -75,7 +72,7 @@ export default class Giveaway {
 				this.prize, this.messageRequirement !== null
 			)) as Promise<GuildMessage<true>>;
 		}
-		const winner = entries.random() as User;
+		const winner = entries.random();
 		await this.setWinners([winner.id]);
 		this.client.database.cache.giveaways.clearTimeout(this.messageID);
 		await message.edit(Responses.GIVEAWAY_END(this.prize, this.endAt, [winner]));
@@ -94,7 +91,7 @@ export default class Giveaway {
 		if (!this.winnerIDs) {
 			throw new Error(Errors.WINNERS_NOT_CHOSEN);
 		}
-		return Promise.all(this.winnerIDs.map(winnerID => this.client.users.fetch(winnerID, cache))) as Promise<User[]>;
+		return Promise.all(this.winnerIDs.map(winnerID => this.client.users.fetch(winnerID, cache)));
 	}
 
 	public fetchMessage(cache = false) {
@@ -107,7 +104,7 @@ export default class Giveaway {
 
 	get winners() {
 		return this.winnerIDs
-			? this.winnerIDs.map(winnerID => this.client.users.resolve(winnerID)) as (User | null)[]
+			? this.winnerIDs.map(winnerID => this.client.users.resolve(winnerID))
 			: null;
 	}
 

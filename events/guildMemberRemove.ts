@@ -1,7 +1,7 @@
-import { MessageEmbed, Constants } from 'discord.js';
-import { Events } from '../util/Client';
+import { ClientEvents, MessageEmbed, Constants } from 'discord.js';
+import { GuildMember } from 'discord.js';
 
-export default (async member => {
+export default (async (member: GuildMember) => {
 	const { client, user, guild } = member;
 	const config = guild && client.config.guilds.get(guild.id);
   
@@ -25,4 +25,4 @@ export default (async member => {
 		embeds: [embed],
 		username: 'Member Left'
 	}).catch(console.error);
-}) as (...args: Events['guildMemberRemove']) => void;
+}) as (...args: ClientEvents['guildMemberRemove']) => void;

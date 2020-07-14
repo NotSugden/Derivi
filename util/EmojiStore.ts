@@ -1,5 +1,4 @@
-import { Snowflake, GuildEmoji } from 'discord.js';
-import Client from './Client';
+import { Client, GuildEmoji, Snowflake } from 'discord.js';
 
 export default class EmojiStore extends Map {
 	public readonly client!: Client;

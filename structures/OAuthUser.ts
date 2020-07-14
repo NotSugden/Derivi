@@ -1,6 +1,4 @@
-import { UserFlags, SnowflakeUtil, ImageURLOptions } from 'discord.js';
-import User from './discord.js/User';
-import Client from '../util/Client';
+import { Client, SnowflakeUtil, User, UserFlags } from 'discord.js';
 
 export default class OAuthUser {
 	public readonly client!: Client;
@@ -41,12 +39,12 @@ export default class OAuthUser {
 		return SnowflakeUtil.deconstruct(this.id).timestamp;
 	}
 
-	public avatarURL(options?: ImageURLOptions & { dynamic: boolean }) {
-		return User.prototype.avatarURL.call(this, options);
+	public avatarURL(...args: Parameters<User['avatarURL']>) {
+		return User.prototype.avatarURL.call(this, ...args);
 	}
 
-	public displayAvatarURL(options?: ImageURLOptions & { dynamic: boolean }) {
-		return User.prototype.displayAvatarURL.call(this, options);
+	public displayAvatarURL(...args: Parameters<User['avatarURL']>) {
+		return User.prototype.displayAvatarURL.call(this, ...args);
 	}
 }
 

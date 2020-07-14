@@ -1,4 +1,4 @@
-import { Events } from '../util/Client';
+import { ClientEvents } from 'discord.js';
 import { EventResponses } from '../util/Constants';
 
 /**
@@ -20,4 +20,4 @@ export default (async invite => {
 	const embed = EventResponses.INVITE_DELETE(invite);
 	webhook.send(embed)
 		.catch(console.error);
-}) as (...args: Events['inviteDelete']) => void;
+}) as (...args: ClientEvents['inviteDelete']) => void;

@@ -1,6 +1,7 @@
-import { Events } from '../util/Client';
+import { ClientEvents } from 'discord.js';
+import { User } from 'discord.js';
 
-export default (async (reaction, user) => {
+export default (async (reaction, user: User) => {
 	const { client, guild } = reaction.message;
   
 	const config = guild && client.config.guilds.get(guild.id);
@@ -28,4 +29,4 @@ export default (async (reaction, user) => {
 	} catch (error) {
 		client.emit('error', error);
 	} // eslint-disable-line no-empty
-}) as (...args: Events['messageReactionAdd']) => void;
+}) as (...args: ClientEvents['messageReactionAdd']) => void;

@@ -1,9 +1,8 @@
-import TextChannel from '../structures/discord.js/TextChannel';
-import { Events } from '../util/Client';
+import { ClientEvents, TextChannel, User } from 'discord.js';
 import { Responses } from '../util/Constants';
 import { GuildMessage } from '../util/Types';
 
-export default (async (reaction, user) => {
+export default (async (reaction, user: User) => {
 	const { client, guild } = reaction.message;
 
 	if (reaction.message.author?.id === client.user!.id) {
@@ -64,4 +63,4 @@ export default (async (reaction, user) => {
 	} catch (error) {
 		client.emit('error', error);
 	}
-}) as (...args: Events['messageReactionAdd']) => void;
+}) as (...args: ClientEvents['messageReactionAdd']) => void;

@@ -1,7 +1,4 @@
-import { Snowflake } from 'discord.js';
-import Guild from './discord.js/Guild';
-import User from './discord.js/User';
-import Client from '../util/Client';
+import { Client, Snowflake } from 'discord.js';
 import { Defaults } from '../util/Constants';
 
 export default class Mute {
@@ -21,7 +18,7 @@ export default class Mute {
 	}
 
 	public fetchUser(cache = true) {
-		return this.client.users.fetch(this.userID, cache) as Promise<User>;
+		return this.client.users.fetch(this.userID, cache);
 	}
 
 	get endAt() {
@@ -29,7 +26,7 @@ export default class Mute {
 	}
 
 	get guild() {
-		return this.client.guilds.resolve(this.guildID) as Guild;
+		return this.client.guilds.resolve(this.guildID)!;
 	}
 
 	get startedAt() {

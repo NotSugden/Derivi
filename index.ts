@@ -2,26 +2,14 @@
 import { promises as fs } from 'fs';
 import { join } from 'path';
 import { registerFont } from 'canvas';
-import {
-	Constants,
-	Extendable,
-	Structures,
-	User as DJSUser,
-	Guild as DJSGuild,
-	PartialUser,
-	ClientEvents,
-	Intents
-} from 'discord.js';
-import Guild from './structures/discord.js/Guild';
-import User from './structures/discord.js/User';
+import { ClientEvents, Constants, Extendable, Intents, Structures } from 'discord.js';
 import Client from './util/Client';
 
 registerFont(join(__dirname, 'assets', 'fonts', 'BebasNeue-Bold.ttf'), {
 	family: 'bebas-neue'
 });
 const extended: (keyof Extendable)[] = [
-	'Message', 'Guild', 'GuildMember', 'User',
-	'DMChannel', 'TextChannel'
+	'Message', 'Guild'
 ];
 for (const className of extended) {
 	Structures.extend(className, () => require(join(__dirname, 'structures', 'discord.js', className)).default);
@@ -48,22 +36,19 @@ client.on('warn', console.warn);
  * properties added in the custom extended Guild structure
  * `user` shouldn't be a partial, so it is typed as such
  */
-client.on(Constants.Events.GUILD_BAN_ADD, (async (guild: Guild, user: User) => {
+client.on(Constants.Events.GUILD_BAN_ADD, async (guild, user) => {
 	if (guild.bans.has(user.id)) return;
 	try {
-		const ban = await guild.fetchBan(user) as {
-      user: User;
-      reason: string | null;
-    };
+		const ban = await guild.fetchBan(user.id);
 		guild.bans.set(user.id, ban);
 	} catch {
 		client.emit('warn', 'Recieved an error fetching a ban in the \'guildBanAdd\' event, this should not happen');
 	}
-}) as (guild: DJSGuild, user: DJSUser | PartialUser) => Promise<void>);
+});
 
-client.on(Constants.Events.GUILD_BAN_REMOVE, (async (guild: Guild, user: User) => {
+client.on(Constants.Events.GUILD_BAN_REMOVE, (guild, user) => {
 	guild.bans.delete(user.id);
-}) as (guild: DJSGuild, user: DJSUser | PartialUser) => Promise<void>);
+});
 
 client.connect();
 

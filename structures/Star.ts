@@ -1,10 +1,6 @@
-import { Snowflake } from 'discord.js';
-import Guild from './discord.js/Guild';
-import TextChannel from './discord.js/TextChannel';
-import User from './discord.js/User';
-import Client from '../util/Client';
+import { Client, Guild, Snowflake, User } from 'discord.js';
 import { Responses } from '../util/Constants';
-import { GuildMessage } from '../util/Types';
+import { GuildMessage, TextBasedChannels } from '../util/Types';
 
 export default class Star {
 	public readonly client!: Client;
@@ -42,7 +38,7 @@ export default class Star {
 	}
 
 	get channel() {
-		return this.client.channels.resolve(this.channelID) as TextChannel;
+		return this.client.channels.resolve(this.channelID) as TextBasedChannels;
 	}
 
 	public async fetchAuthor({ cache = false, fromMessage = false } = {}) {
@@ -50,7 +46,7 @@ export default class Star {
 			const message = await this.fetchMessage(cache);
 			return message.author;
 		}
-		return this.client.users.fetch(this.authorID, cache) as Promise<User>;
+		return this.client.users.fetch(this.authorID, cache);
 	}
 
 	public fetchMessage(cache = false) {
@@ -62,7 +58,7 @@ export default class Star {
 	}
 
 	public fetchUsers(cache = true) {
-		return Promise.all(this.userIDs.map(id => this.client.users.fetch(id, cache))) as Promise<User[]>;
+		return Promise.all(this.userIDs.map(id => this.client.users.fetch(id, cache)));
 	}
 
 	get guild() {
@@ -71,7 +67,7 @@ export default class Star {
 
 	get starboardChannel() {
 		const config = this.client.config.guilds.get(this.guildID)!;
-		return this.client.channels.resolve(config.starboard!.channelID) as TextChannel;
+		return this.client.channels.resolve(config.starboard!.channelID) as TextBasedChannels;
 	}
 
 	get starCount() {

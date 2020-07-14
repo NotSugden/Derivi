@@ -2,20 +2,19 @@ import * as crypto from 'crypto';
 import { promises as fs } from 'fs';
 import * as path from 'path';
 import ms from '@naval-base/ms';
-import { Collection, Snowflake, MessageEmbed, DiscordAPIError } from 'discord.js';
+import {
+	Channel, Client, Collection,
+	DMChannel, DiscordAPIError,
+	Guild, GuildMember, Message,
+	MessageEmbed, Snowflake,
+	TextChannel, User
+} from 'discord.js';
 import fetch from 'node-fetch';
-import Client from './Client';
 import CommandError from './CommandError';
-import { ModerationActionTypes, Responses, FLAGS_REGEX, OPTIONS_REGEX } from './Constants';
-import { GuildMessage, DMMessage } from './Types';
+import { FLAGS_REGEX, ModerationActionTypes, OPTIONS_REGEX, Responses } from './Constants';
+import { DMMessage, GuildMessage, TextBasedChannels } from './Types';
 import { VALID_EXTENSIONS } from '../commands/Moderation/Attach';
 import OAuthUser from '../structures/OAuthUser';
-import DMChannel from '../structures/discord.js/DMChannel';
-import Guild from '../structures/discord.js/Guild';
-import GuildMember from '../structures/discord.js/GuildMember';
-import Message from '../structures/discord.js/Message';
-import TextChannel from '../structures/discord.js/TextChannel';
-import User from '../structures/discord.js/User';
 
 const arrToObject = <T extends string>(array: T[], fn: (key: string, index: number) => unknown) => {
 	const obj: { [key: string]: unknown } = {};
@@ -115,7 +114,7 @@ export default class Util {
 			content.shift();
 			let user: User;
 			try {
-				user = await client.users.fetch(id) as User;
+				user = await client.users.fetch(id);
 			} catch {
 				throw new CommandError('RESOLVE_ID', id);
 			}
@@ -164,7 +163,7 @@ export default class Util {
 			content.shift();
 			let user: User;
 			try {
-				user = await client.users.fetch(id) as User;
+				user = await client.users.fetch(id);
 			} catch {
 				throw new CommandError('RESOLVE_ID', id);
 			}
@@ -182,7 +181,7 @@ export default class Util {
 			const members = data.members = new Collection<Snowflake, GuildMember>();
 			for (const user of users.values()) {
 				try {
-					const member = await message.guild!.members.fetch(user) as GuildMember;
+					const member = await message.guild!.members.fetch(user);
 					members.set(member.id, member);
 				} catch { } // eslint-disable-line no-empty
 			}
@@ -328,13 +327,23 @@ export default class Util {
 		return new OAuthUser(client, data);
 	}
 
-	static async awaitResponse<C extends Message['channel']>(
-		channel: C,
-		user: User,
+	static async awaitResponse(
+		channel: GuildMessage['channel'], user: User,
 		allowedResponses: string[] | '*' | (
-			(response: C extends DMChannel ? DMMessage : GuildMessage<true>) => boolean
-		),
-		time = 18e4
+			(response: GuildMessage<true>) => boolean
+		), time?: number
+	): Promise<GuildMessage<true>>;
+	static async awaitResponse(
+		channel: DMChannel, user: User,
+		allowedResponses: string[] | '*' | (
+			(response: DMMessage) => boolean
+		), time?: number
+	): Promise<DMMessage>;
+	static async awaitResponse(
+		channel: Message['channel'], user: User,
+		allowedResponses: string[] | '*' | (
+			(response: Message) => boolean
+		), time = 18e4
 	) {
 		const response = (await channel.awaitMessages(message => {
 			if (message.author.id !== user.id) return false;
@@ -344,7 +353,7 @@ export default class Util {
 		}, {
 			max: 1,
 			time
-		})).first() as C extends GuildMessage<true>['channel'] ? GuildMessage<true> : DMMessage;
+		})).first();
 		return response ? response : null;
 	}
 
@@ -374,6 +383,16 @@ export default class Util {
 		const _date = date.getUTCDate() + 1;
 		date.setUTCDate(day === 0 ? _date - 7 : _date - day);
 		return date;
+	}
+
+	static isGuildMessage<T extends boolean>(message: Message, hasMember?: T): message is GuildMessage<T> {
+		if (!message.guild) return false;
+		if (hasMember) return message.member !== null;
+		return true;
+	}
+
+	static isTextBasedChannel(channel: Channel): channel is TextBasedChannels  {
+		return ['text', 'news', 'dm'].includes(channel.type);
 	}
 }
 

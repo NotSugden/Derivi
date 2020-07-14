@@ -1,6 +1,5 @@
 import Command, { CommandData } from '../structures/Command';
 import CommandArguments from '../structures/CommandArguments';
-import TextChannel from '../structures/discord.js/TextChannel';
 import CommandError from '../util/CommandError';
 import CommandManager, { CommandResolvable } from '../util/CommandManager';
 import { Responses } from '../util/Constants';
@@ -29,7 +28,7 @@ export default class Help extends Command {
 		}
 		let hasPermissions: boolean | string;
 		if (typeof command.permissions === 'function') {
-			hasPermissions = await command.permissions(message.member, message.channel as TextChannel);
+			hasPermissions = await command.permissions(message.member, message.channel);
 		} else {
 			hasPermissions = message.member.hasPermission(command.permissions);
 		}
@@ -50,7 +49,7 @@ export default class Help extends Command {
 				const { permissions } = command;
 				if (typeof permissions === 'function') {
 					if (isAsync(permissions)) return array;
-					const hasPerms = permissions(message.member, message.channel as TextChannel) === true;
+					const hasPerms = permissions(message.member, message.channel) === true;
 					if (!hasPerms) return array;
 				} else if (!message.member.hasPermission(permissions)) {
 					return array;

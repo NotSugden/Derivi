@@ -1,4 +1,4 @@
-import { Events } from '../util/Client';
+import { ClientEvents } from 'discord.js';
 import { EventResponses } from '../util/Constants';
 
 /**
@@ -21,4 +21,4 @@ export default (async invite => {
 	const embed = EventResponses.INVITE_CREATE(invite);
 	webhook.send(embed)
 		.catch(console.error);
-}) as (...args: Events['inviteCreate']) => void;
+}) as (...args: ClientEvents['inviteCreate']) => void;

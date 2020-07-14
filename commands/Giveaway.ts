@@ -1,7 +1,6 @@
 import { Permissions } from 'discord.js';
 import Command, { CommandData } from '../structures/Command';
 import CommandArguments from '../structures/CommandArguments';
-import TextChannel from '../structures/discord.js/TextChannel';
 import CommandError from '../util/CommandError';
 import CommandManager from '../util/CommandManager';
 import { Responses, SNOWFLAKE_REGEX } from '../util/Constants';
@@ -67,7 +66,7 @@ export default class Giveaway extends Command {
 				type: 'string'
 			}]);
 			const channel = id ? message.guild.channels.cache.get(id) : message.channel;
-			if (!(channel instanceof TextChannel)) {
+			if (!channel || !Util.isTextBasedChannel(channel)) {
 				throw new CommandError('INVALID_CHANNEL');
 			}
 			if (!prize.length) {

@@ -1,6 +1,4 @@
-import { Snowflake } from 'discord.js';
-import User from './discord.js/User';
-import Client from '../util/Client';
+import { Client, Snowflake } from 'discord.js';
 import DatabaseManager from '../util/DatabaseManager';
 
 export default class Levels {
@@ -30,7 +28,7 @@ export default class Levels {
 	}
 
 	public fetchUser(cache = true) {
-		return this.client.users.fetch(this.userID, cache) as Promise<User>;
+		return this.client.users.fetch(this.userID, cache);
 	}
 
 	get user() {

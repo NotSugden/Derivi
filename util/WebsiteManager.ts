@@ -1,8 +1,7 @@
-import { fork, ChildProcess } from 'child_process';
+import { ChildProcess, fork } from 'child_process';
 import { EventEmitter } from 'events';
 import * as path from 'path';
-import { Snowflake, MessageEmbedOptions, Util as DJSUtil } from 'discord.js';
-import Client from './Client';
+import { Client, MessageEmbedOptions, Snowflake, Util as DJSUtil } from 'discord.js';
 import handlers from './handlers';
 
 export default class WebsiteManager extends EventEmitter {

@@ -1,9 +1,13 @@
-import { WebhookClient, MessageEmbed, Constants, WebhookMessageOptions, MessageOptions } from 'discord.js';
-import TextChannel from '../structures/discord.js/TextChannel';
-import { Events } from '../util/Client';
+import {
+	ClientEvents, Constants,
+	GuildMember, MessageEmbed,
+	MessageOptions, TextChannel,
+	WebhookClient,
+	WebhookMessageOptions
+} from 'discord.js';
 import { EventResponses } from '../util/Constants';
 
-export default (async member => {
+export default (async (member: GuildMember) => {
 	const { client, user, guild } = member;
 	const config = guild && client.config.guilds.get(guild.id);
   
@@ -52,4 +56,4 @@ export default (async member => {
 		embeds: [embed],
 		username: 'Member Joined'
 	}).catch(console.error);
-}) as (...args: Events['guildMemberAdd']) => void;
+}) as (...args: ClientEvents['guildMemberAdd']) => void;

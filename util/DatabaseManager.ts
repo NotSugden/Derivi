@@ -1,9 +1,8 @@
-import { Snowflake, SnowflakeUtil, Collection, Util as DJSUtil } from 'discord.js';
+import { Client, Collection, Guild,  Message, Snowflake, SnowflakeUtil, User, Util as DJSUtil } from 'discord.js';
 import * as mysql from 'mysql';
 import CacheManager from './CacheManager';
-import Client from './Client';
 import { Errors, ModerationActionTypes, Defaults } from './Constants';
-import { GuildMessage } from './Types';
+import { GuildMessage, TextBasedChannels } from './Types';
 import Util from './Util';
 import Case, { RawCase } from '../structures/Case';
 import Giveaway, { RawGiveaway } from '../structures/Giveaway';
@@ -14,10 +13,6 @@ import Points, { RawPoints } from '../structures/Points';
 import Profile, { RawProfile } from '../structures/Profile';
 import Star, { RawStar } from '../structures/Star';
 import Warn, { RawWarn } from '../structures/Warn';
-import Guild from '../structures/discord.js/Guild';
-import Message from '../structures/discord.js/Message';
-import TextChannel from '../structures/discord.js/TextChannel';
-import User from '../structures/discord.js/User';
 
 export enum QueryTypes {
 	INSERT = 'INSERT',
@@ -1059,7 +1054,7 @@ interface SQLValues<E = never> {
 }
 
 interface StarCreateData {
-	channel: TextChannel | Snowflake;
+	channel: TextBasedChannels | Snowflake;
 	guild: Guild | Snowflake;
 	message: GuildMessage;
 	starboardMessage: GuildMessage<true> | Snowflake;

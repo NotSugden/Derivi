@@ -1,10 +1,8 @@
 import { promises as fs } from 'fs';
 import { join } from 'path';
-import { MessageMentions } from 'discord.js';
+import { MessageMentions, Guild } from 'discord.js';
 import Command, { CommandData } from '../structures/Command';
 import CommandArguments from '../structures/CommandArguments';
-import Guild from '../structures/discord.js/Guild';
-import TextChannel from '../structures/discord.js/TextChannel';
 import { RawGuildConfig, ClientConfig, resolveGuildConfig } from '../util/Client';
 import CommandError from '../util/CommandError';
 import CommandManager from '../util/CommandManager';
@@ -192,7 +190,7 @@ export default class BotConfig extends Command {
 				const question = await message.channel.send(str);
 
 				const response = await Util.awaitResponse(
-					message.channel as TextChannel,
+					message.channel,
 					message.author,
 					allowedResponses
 				);

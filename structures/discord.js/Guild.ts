@@ -1,38 +1,48 @@
-import { Guild as DJSGuild, Collection, Permissions } from 'discord.js';
-import User from './User';
+import { Guild as DJSGuild, Collection, Permissions, User, Invite } from 'discord.js';
 import Client from '../../util/Client';
-import { Invite } from '../../util/Types';
+
+async function _init(this: Guild) {
+	if (this.me) {
+		if (this.me.hasPermission(Permissions.FLAGS.BAN_MEMBERS)) {
+			try {
+				const bans = await this.fetchBans();
+				for (const ban of bans.values()) {
+					this.bans.set(ban.user.id, ban);
+				}
+			} catch (error) {
+				this.client.emit('error', error);
+			}
+		}
+
+		if (this.me.hasPermission(Permissions.FLAGS.MANAGE_GUILD)) {
+			try {
+				const invites = await this.fetchInvites();
+				for (const invite of invites.values()) {
+					this.invites.set(invite.code, invite);
+				}
+			} catch (error) {
+				this.client.emit('error', error);
+			}
+		}
+	}
+}
+
+interface BanInfo {
+	reason: string | null;
+	user: User;
+}
+
+export interface DeriviGuildT {
+	bans: Collection<string, BanInfo>;
+	invites: Collection<string, Invite>;
+}
 
 export default class Guild extends DJSGuild {
-	public bans = new Collection<string, {
-		reason: string | null;
-		user: User;
-	}>()
-	public readonly client!: Client;
+	public bans = new Collection<string, BanInfo>();
 	public invites = new Collection<string, Invite>();
 
 	constructor(client: Client, data: object) {
 		super(client, data);
-
-		if (this.me && this.me.hasPermission(Permissions.FLAGS.BAN_MEMBERS)) {
-			this.fetchBans()
-				.then(bans => {
-					for (const ban of bans.values()) {
-						this.bans.set(ban.user.id, ban as {
-						reason: string | null;
-						user: User;
-					});
-					}
-				});
-		}
-
-		if (this.me && this.me.hasPermission(Permissions.FLAGS.MANAGE_GUILD)) {
-			this.fetchInvites()
-				.then(invites => {
-					for (const invite of invites.values()) {
-						this.invites.set(invite.code, invite as Invite);
-					}
-				}).catch(error => console.error(error));
-		}
+		_init.apply(this);
 	}
 }

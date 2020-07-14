@@ -1,7 +1,5 @@
 import Command, { CommandData } from '../../structures/Command';
 import CommandArguments from '../../structures/CommandArguments';
-import Guild from '../../structures/discord.js/Guild';
-import TextChannel from '../../structures/discord.js/TextChannel';
 import CommandError from '../../util/CommandError';
 import CommandManager from '../../util/CommandManager';
 import { Responses } from '../../util/Constants';
@@ -46,11 +44,11 @@ export default class History extends Command {
 		});
     
 		const config = [...this.client.config.guilds.values()].find(
-			cfg => cfg.staffServerCategoryID === (message.channel as TextChannel).parentID
+			cfg => cfg.staffServerCategoryID === message.channel.parentID
 		)!;
 
 		// until i think of a better way
-		const data = await this.client.database.case(this.client.guilds.resolve(config.id) as Guild, {
+		const data = await this.client.database.case(this.client.guilds.resolve(config.id)!, {
 			after: time === -1 ? new Date(0) : new Date(Date.now() - time)
 		}).then(cases => Responses.HISTORY(cases.array()
 			.filter(caseData => caseData.userIDs.some(userID => users.has(userID))))

@@ -1,7 +1,6 @@
-import { Snowflake } from 'discord.js';
+import { Snowflake, User } from 'discord.js';
 import Command, { CommandData } from '../../structures/Command';
 import CommandArguments from '../../structures/CommandArguments';
-import User from '../../structures/discord.js/User';
 import CommandManager from '../../util/CommandManager';
 import { Responses } from '../../util/Constants';
 import { GuildMessage } from '../../util/Types';
@@ -43,7 +42,7 @@ export default class Leaderboard extends Command {
 		}[];
 		for (const obj of partnerships) {
 			try {
-				obj.user = await this.client.users.fetch(obj.userID) as User;
+				obj.user = await this.client.users.fetch(obj.userID);
 			} catch { obj.user = null; } // eslint-disable-line no-empty
 		}
 		return send(Responses.PARTNER_TOP(

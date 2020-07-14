@@ -1,4 +1,4 @@
-import { Events } from '../util/Client';
+import { ClientEvents } from 'discord.js';
 import { EventResponses } from '../util/Constants';
 
 export default (async (oldMessage, newMessage) => {
@@ -22,4 +22,4 @@ export default (async (oldMessage, newMessage) => {
 	const embed = EventResponses.MESSAGE_UPDATE(oldMessage, newMessage);
 	webhook.send(embed)
 		.catch(console.error);
-}) as (...args: Events['messageUpdate']) => void;
+}) as (...args: ClientEvents['messageUpdate']) => void;

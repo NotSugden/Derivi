@@ -2,8 +2,6 @@
 import { extname } from 'path';
 import Command, { CommandData } from '../../structures/Command';
 import CommandArguments from '../../structures/CommandArguments';
-import Guild from '../../structures/discord.js/Guild';
-import TextChannel from '../../structures/discord.js/TextChannel';
 import CommandError from '../../util/CommandError';
 import CommandManager from '../../util/CommandManager';
 import { GuildMessage } from '../../util/Types';
@@ -43,11 +41,11 @@ export default class Attach extends Command {
 		}
     
 		const config = [...this.client.config.guilds.values()].find(
-			cfg => cfg.staffServerCategoryID === (message.channel as TextChannel).parentID
+			cfg => cfg.staffServerCategoryID === message.channel.parentID
 		)!;
 
 		const caseData = await this.client.database.case(
-      this.client.guilds.resolve(config.id) as Guild, caseID
+      this.client.guilds.resolve(config.id)!, caseID
 		);
 
 		if (!caseData) {

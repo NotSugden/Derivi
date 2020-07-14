@@ -1,7 +1,6 @@
 import { promises as fs } from 'fs';
 import { join } from 'path';
-import { Collection } from 'discord.js';
-import Client from './Client';
+import { Client, Collection } from 'discord.js';
 import { Errors } from './Constants';
 import Command, { CommandAlias } from '../structures/Command';
 

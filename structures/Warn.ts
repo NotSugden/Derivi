@@ -1,7 +1,5 @@
-import { Snowflake } from 'discord.js';
+import { Client, Guild, Snowflake } from 'discord.js';
 import Case from './Case';
-import Guild from './discord.js/Guild';
-import Client from '../util/Client';
 import Util from '../util/Util';
 
 export default class Warn {

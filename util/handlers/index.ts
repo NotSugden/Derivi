@@ -1,13 +1,14 @@
 import {
-	User, GuildMember, VoiceChannel,
-	CategoryChannel, GuildChannel,
-	NewsChannel, StoreChannel,
-	Message, Role, Snowflake, Collection
+	CategoryChannel, Client,
+	Collection, DMChannel,
+	Guild, GuildMember, Message,
+	NewsChannel, Role,
+	Snowflake, StoreChannel,
+	TextChannel, User,
+	VoiceChannel
 } from 'discord.js';
-import DMChannel from '../../structures/discord.js/DMChannel';
-import Guild from '../../structures/discord.js/Guild';
-import TextChannel from '../../structures/discord.js/TextChannel';
-import Client from '../Client';
+import { GuildChannels } from '../Types';
+import Util from '../Util';
 import { ProcessActionObject } from '../WebsiteManager';
 
 type HandlerFunction<T> = ((client: Client, data: T extends never ? 
@@ -100,8 +101,8 @@ const serializeMessage = (message: Message | null) => {
 };
 
 const serializeChannel = (channel:
-	NewsChannel | StoreChannel | GuildChannel |
-	TextChannel | VoiceChannel | DMChannel |
+	TextChannel | NewsChannel | StoreChannel |
+	VoiceChannel | DMChannel |
 	CategoryChannel | null
 ): { [key: string]: unknown } | null => {
 	if (!channel) return null;
@@ -109,12 +110,17 @@ const serializeChannel = (channel:
 		id: channel.id,
 		type: channel.type
 	} as { [key: string]: unknown };
-	if (['text', 'news', 'store'].includes(channel.type)) {
-		if (channel.type !== 'store') {
-			baseObj.messages = (channel as TextChannel).messages.cache.map(serializeMessage);
-			baseObj.topic = (channel as NewsChannel).topic;
+	if (Util.isTextBasedChannel(channel)) {
+		baseObj.messages = channel.messages.cache.map(serializeMessage);
+		if (channel.type !== 'dm') {
+			baseObj.topic = channel.topic;
+			baseObj.nsfw = channel.nsfw;
 		}
-		baseObj.nsfw = (channel as TextChannel).nsfw;
+	}
+	if (channel.type === 'store') {
+		return {
+			...baseObj
+		};
 	}
 	if (channel.type === 'dm') {
 		return {
@@ -127,18 +133,19 @@ const serializeChannel = (channel:
 	if (channel.type === 'category') {
 		return {
 			...baseObj,
-			children: (channel as CategoryChannel).children.map(serializeChannel)
+			children: (channel.children as Collection<Snowflake, Exclude<GuildChannels, CategoryChannel>>)
+				.map(serializeChannel)
 		};
 	} else if (channel.type === 'voice') {
 		return {
 			...baseObj,
-			bitrate: (channel as VoiceChannel).bitrate,
-			userLimit: (channel as VoiceChannel).userLimit
+			bitrate: channel.bitrate,
+			userLimit: channel.userLimit
 		};
 	} else if (channel.type === 'text') {
 		return {
 			...baseObj,
-			slowmode: (channel as TextChannel).rateLimitPerUser
+			slowmode: channel.rateLimitPerUser
 		};
 	}
 	return baseObj;
@@ -171,7 +178,7 @@ handlers.set('EVAL', async (client, data) => {
 });
 
 handlers.set('SEND_MESSAGE', async (client, data) => {
-	const channel = client.channels.resolve(data.channelID) as TextChannel | null;
+	const channel = client.channels.resolve(data.channelID) as GuildChannels | DMChannel | null;
 	if (channel?.type !== 'text') {
 		throw channel ? 'INVALID_CHANNEL_TYPE' : 'INVALID_CHANNEL';
 	}
@@ -206,7 +213,10 @@ handlers.set('GET_GUILD_CHANNELS', async (client, data) => {
 	if (!guild) {
 		throw 'UNKNOWN_GUILD_ID';
 	}
-	return { channels: guild.channels.cache.map(serializeChannel) };
+	return {
+		channels: (guild.channels.cache as Collection<Snowflake, GuildChannels>)
+			.map(serializeChannel)
+	};
 });
 
 handlers.set('DATABASE_QUERY', async (client, data) => {
@@ -217,19 +227,17 @@ handlers.set('DATABASE_QUERY', async (client, data) => {
 });
 
 handlers.set('GET_CHANNEL_MESSAGES', async (client, data) => {
-	const channel = client.channels.resolve(data.channelID);
-	if (!channel) {
-		throw 'UNKNOWN_CHANNEL_ID';
-	} else if (channel.type !== 'text') {
-		throw 'INVALID_CHANNEL_TYPE';
+	const channel = client.channels.resolve(data.channelID) as GuildChannels | DMChannel | null;
+	if (channel?.type !== 'text') {
+		throw channel ? 'INVALID_CHANNEL_TYPE' : 'INVALID_CHANNEL';
 	}
 
 	if (data.id) {
-		const message = await (channel as TextChannel).messages.fetch(data.id);
+		const message = await channel.messages.fetch(data.id);
 		return { message: serializeMessage(message) };
 	}
   
-	const messages = await (channel as TextChannel).messages.fetch({
+	const messages = await channel.messages.fetch({
 		after: data.after,
 		around: data.around,
 		before: data.before,
@@ -241,25 +249,28 @@ handlers.set('GET_CHANNEL_MESSAGES', async (client, data) => {
 
 handlers.set('GET_GUILD', async (client, data) => {
 	if (!data.id) {
-		const guilds = (client.guilds.cache as Collection<Snowflake, Guild>).map(serializeGuild);
+		const guilds = client.guilds.cache.map(serializeGuild);
 		if (data.withChannels) {
 			for (const guild of guilds) {
 				// this is dumb but whatever
-				(guild as unknown as { channels: { [key: string]: unknown }[]})
-					.channels = guild!.channels
-						.map(id => serializeChannel(client.channels.resolve(id) as TextChannel)!);
+				(guild as unknown as { channels: { [key: string]: unknown }[] })
+					.channels = guild!.channels.map(
+						id => serializeChannel(client.channels.resolve(id) as TextChannel)!
+					);
 			}
 		}
 		return { guilds };
 	}
-	const guild = serializeGuild(client.guilds.resolve(data.id) as Guild | null);
+	const guild = serializeGuild(client.guilds.resolve(data.id));
 	if (!guild) {
 		throw 'UNKNOWN_GUILD_ID';
 	}
   
 	if (data.withChannels) {
 		(guild as unknown as { channels: { [key: string]: unknown }[]})
-			.channels = guild!.channels.map(id => serializeChannel(client.channels.resolve(id) as TextChannel)!);
+			.channels = guild!.channels.map(
+				id => serializeChannel(client.channels.resolve(id) as GuildChannels)!
+			);
 	}
   
 	return { guild };

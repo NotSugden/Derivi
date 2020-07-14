@@ -1,7 +1,4 @@
-import { Snowflake } from 'discord.js';
-import User from './discord.js/User';
-import Client from '../util/Client';
-import { Invite } from '../util/Types';
+import { Client, Snowflake } from 'discord.js';
 
 export default class Partnership {
 	public client!: Client;
@@ -20,11 +17,11 @@ export default class Partnership {
 	}
 
 	public fetchInvite() {
-		return this.client.fetchInvite(this.invite) as Promise<Invite>;
+		return this.client.fetchInvite(this.invite);
 	}
 
 	public fetchUser(cache = true) {
-		return this.client.users.fetch(this.userID, cache) as Promise<User>;
+		return this.client.users.fetch(this.userID, cache);
 	}
 
 	get postedAt() {
@@ -32,7 +29,7 @@ export default class Partnership {
 	}
 
 	get user() {
-		return this.client.users.resolve(this.userID) as User | null;
+		return this.client.users.resolve(this.userID);
 	}
 }
 

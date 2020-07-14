@@ -1,23 +1,13 @@
 import { promises as fs } from 'fs';
-import { SnowflakeUtil, Snowflake } from 'discord.js';
+import { ClientEvents, SnowflakeUtil, Snowflake } from 'discord.js';
 import * as moment from 'moment';
 import { escape } from 'mysql';
-import Message from '../structures/discord.js/Message';
-import TextChannel from '../structures/discord.js/TextChannel';
-import User from '../structures/discord.js/User';
-import { Events } from '../util/Client';
 import { EventResponses } from '../util/Constants';
+import { GuildMessage } from '../util/Types';
 
 export default (async messages => {
-	const { client, guild, channel } = messages.find(
-		message => message.guild !== null
-	) || {};
-  
-	if (!guild) {
-		console.warn('A `messageDeleteBulk` event was emitted, but no messages had a `guild property`', messages);
-		return;
-	}
-  
+	const { client, guild, channel } = messages.first()! as GuildMessage;
+
 	const config = guild && client!.config.guilds.get(guild.id);
 	if (!config) return;
 
@@ -32,7 +22,7 @@ export default (async messages => {
 			);
 			if (!data) continue;
 			try {
-				message.author = await client!.users.fetch(data.user_id) as User;
+				message.author = await client!.users.fetch(data.user_id);
 			} catch { } // eslint-disable-line no-empty
 		}
 		await client!.database.query(
@@ -85,12 +75,12 @@ export default (async messages => {
 	const previous = (await channel!.messages.fetch({
 		around: messages.last()!.id,
 		limit: 1
-	})).first() as Message | undefined;
+	})).first();
 
-	const response = EventResponses.MESSAGE_DELETE_BULK(channel as TextChannel, {
+	const response = EventResponses.MESSAGE_DELETE_BULK(channel, {
 		amount: messages.size, json, previous
 	});
 
 	webhook.send(response)
 		.catch(console.error);
-}) as (...args: Events['messageDeleteBulk']) => void;
+}) as (...args: ClientEvents['messageDeleteBulk']) => void;

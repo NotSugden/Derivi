@@ -1,5 +1,4 @@
-import { Snowflake } from 'discord.js';
-import Client from './Client';
+import { Client, Snowflake } from 'discord.js';
 import DatabaseManager from './DatabaseManager';
 import LimitedCollection from './LimitedCollection';
 import Case from '../structures/Case';

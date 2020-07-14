@@ -1,5 +1,4 @@
-import { Snowflake } from 'discord.js';
-import { Message } from '../util/Types';
+import { Message, Snowflake } from 'discord.js';
 
 const MENTION_REGEX = /<(@!?|@&|#)([0-9]{17,19})>/g;
 const cleanContent = (message: Message) => {

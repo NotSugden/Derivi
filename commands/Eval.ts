@@ -7,7 +7,7 @@ import CommandArguments from '../structures/CommandArguments';
 import CommandManager from '../util/CommandManager';
 import { URLs } from '../util/Constants';
 import Util from '../util/Util';
-import { GuildMessage, Message, DMMessage } from '../util/Types';
+import { GuildMessage } from '../util/Types';
 
 const util: typeof import('util') = require('util');
 const djs: typeof import('discord.js') = require('discord.js');
@@ -40,7 +40,7 @@ export default class Eval extends Command {
 
 	public async run(message: GuildMessage<true>, args: CommandArguments, {
 		send
-	}: CommandData): Promise<Message | void> {
+	}: CommandData): Promise<void> {
 		const { string: _code, flags } = Util.extractFlags(
 			args.regular.join(' '), [{
 				name: 'silent',
@@ -57,7 +57,7 @@ export default class Eval extends Command {
 		const reverse = (string: string) => string.split('').reverse().join('');
 		const finish = async (result: unknown) => {
 			let inspected = (typeof result === 'string' ? result : util.inspect(result)).replace(
-				new RegExp(`${this.client.token}|${reverse(this.client.token)}`, 'gi'),
+				new RegExp(`${this.client.token}|${reverse(this.client.token!)}`, 'gi'),
 				'[TOKEN]'
 			);
 			const webhooks = [...this.client.config.guilds.values()].reduce((acc, next) => {
@@ -80,7 +80,7 @@ export default class Eval extends Command {
 				);
 			}
 			const respond = (content: unknown, options?: MessageOptions) => flags.silent ?
-        message.author.send(content, options) as Promise<DMMessage> :
+				message.author.send(content, options) :
 				send(content, options);
 			if (inspected.length > 1250 || flags.hastebin) {
 				const json = await fetch(URLs.HASTEBIN('documents'), {
@@ -106,9 +106,9 @@ export default class Eval extends Command {
 			if (Array.isArray(result) && result.every(element => typeof element?.then === 'function')) {
 				result = await Promise.all(result);
 			}
-			return finish(result);
+			await finish(result);
 		} catch (error) {
-			return finish(error.stack);
+			await finish(error.stack);
 		}
 	}
 }

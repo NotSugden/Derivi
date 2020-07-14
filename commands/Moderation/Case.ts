@@ -1,8 +1,6 @@
-import { Permissions, MessageEmbed, Util as DJSUtil, Snowflake } from 'discord.js';
+import { TextChannel, Permissions, MessageEmbed, Util as DJSUtil, Snowflake } from 'discord.js';
 import Command, { CommandData } from '../../structures/Command';
 import CommandArguments from '../../structures/CommandArguments';
-import Guild from '../../structures/discord.js/Guild';
-import TextChannel from '../../structures/discord.js/TextChannel';
 import CommandError from '../../util/CommandError';
 import CommandManager from '../../util/CommandManager';
 import { Responses, ModerationActionTypes } from '../../util/Constants';
@@ -62,10 +60,10 @@ export default class Case extends Command {
 		}
     
 		const config = [...this.client.config.guilds.values()].find(
-			cfg => cfg.staffServerCategoryID === (message.channel as TextChannel).parentID
+			cfg => cfg.staffServerCategoryID === message.channel.parentID
 		)!;
     
-		const guild = this.client.guilds.resolve(config.id) as Guild;
+		const guild = this.client.guilds.resolve(config.id)!;
 
 		const caseData = await message.client.database.case(guild, caseID);
 		if (!caseData) {

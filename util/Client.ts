@@ -1,48 +1,18 @@
 import * as fs from 'fs';
 import { promisify } from 'util';
 import {
-	Client as DJSClient,
-	ClientOptions,
-	Constants,
-	Util as DJSUtil,
-	Snowflake,
-	WebhookClient,
-	Collection,
-	ClientEvents,
-	MessageReaction
+	Channel, Client as DJSClient,
+	ClientOptions, Constants,
+	Snowflake, TextChannel,
+	Util as DJSUtil, WebhookClient
 } from 'discord.js';
 import CommandManager from './CommandManager';
 import { Defaults, Errors } from './Constants';
 import DatabaseManager, { DatabaseOptions } from './DatabaseManager';
 import EmojiStore from './EmojiStore';
-import { Invite, PartialMessage, Role } from './Types';
-import { Message } from './Types';
 import WebsiteManager from './WebsiteManager';
-import Guild from '../structures/discord.js/Guild';
-import GuildMember from '../structures/discord.js/GuildMember';
-import TextChannel from '../structures/discord.js/TextChannel';
-import User from '../structures/discord.js/User';
 
-export interface Events extends ClientEvents {
-	guildBanAdd: [Guild, User];
-	guildBanRemove: [Guild, User];
-	guildMemberAdd: [GuildMember];
-	guildMemberRemove: [GuildMember];
-	guildMemberUpdate: [GuildMember, GuildMember];
-	inviteCreate: [Invite];
-	inviteDelete: [Invite];
-	message: [Message<true>];
-	messageDelete: [Message | PartialMessage];
-	messageReactionRemoveAll: [Message | PartialMessage];
-	messageReactionRemoveEmoji: [MessageReaction & { message: Message }];
-	messageDeleteBulk: [Collection<Snowflake, Message | PartialMessage>];
-	messageReactionAdd: [MessageReaction & { message: Message | PartialMessage }, User];
-	messageReactionRemove: [MessageReaction & { message: Message | PartialMessage }, User];
-	messageUpdate: [Message | PartialMessage, Message | PartialMessage];
-	roleCreate: [Role];
-}
-
-export const resolveGuildConfig = (client: Client, cfg: RawGuildConfig): GuildConfig => ({
+export const resolveGuildConfig = (client: DJSClient, cfg: RawGuildConfig): GuildConfig => ({
 	accessLevelRoles: cfg.access_level_roles,
 	casesChannelID: cfg.punishment_channel,
 	filePermissionsRole: cfg.file_permissions_role ?? null,
@@ -79,6 +49,34 @@ export const resolveGuildConfig = (client: Client, cfg: RawGuildConfig): GuildCo
 	welcomeRoleID: cfg.welcome_role ?? null
 });
 
+export interface DeriviClientT {
+	commands: CommandManager;
+	readonly config: {
+		allowedLevelingChannels: Snowflake[];
+		attachmentLogging: boolean;
+		attachmentsURL?: string;
+    readonly encryptionPassword: string;
+    emojis: EmojiStore;
+		database: DatabaseOptions;
+		filesDir: string;
+		ownerIDs: Snowflake[];
+		prefix: string[];
+    reactionRoles: Map<Snowflake, {
+			emojis: Map<string, Snowflake>;
+			limit: number;
+		}>;
+    guilds: Map<Snowflake, GuildConfig>;
+    loginURL?: string;
+	};
+	database: DatabaseManager;
+	lockedPoints: Set<Snowflake>;
+	recentlyKicked: Set<string>;
+	website?: WebsiteManager;
+
+	connect(token?: string): Promise<this>;
+	disconnect(): Promise<void>;
+}
+
 export default class Client extends DJSClient {
 	public commands: CommandManager;
 	public readonly config!: {
@@ -99,14 +97,15 @@ export default class Client extends DJSClient {
     loginURL?: string;
 	};
 	public database: DatabaseManager;
-	public lockedPoints = new Set<Snowflake>();
-	public recentlyKicked = new Set<string>();
-	public token: string;
+	public lockedPoints: Set<Snowflake>;
+	public recentlyKicked: Set<string>;
 	public website?: WebsiteManager;
 
 	constructor(config: ClientConfig, options: ClientOptions) {
 		super(options);
 		DJSUtil.mergeDefault(Defaults.CLIENT_CONFIG, config);
+		this.lockedPoints = new Set();
+		this.recentlyKicked = new Set();
 
 		this.commands = new CommandManager(this, config.commands_dir as string);
 		
@@ -154,10 +153,6 @@ export default class Client extends DJSClient {
 		this.database = new DatabaseManager(this, config.database);
 	}
 
-	public on<K extends keyof Events>(event: K, listener: (...args: Events[K]) => void): this {
-		return super.on(event, listener as (...args: ClientEvents[K]) => void);
-	}
-
 	public async connect(token = this.token) {
 		try {
 			await this.database.open();
@@ -186,7 +181,7 @@ export default class Client extends DJSClient {
 				}
 			};
 			this.once(Constants.Events.CLIENT_READY, handler);
-			this.login(token).catch(error => {
+			this.login(token!).catch(error => {
 				this.off(Constants.Events.CLIENT_READY, handler);
 				this.disconnect()
 					.then(() => reject(error))
@@ -231,7 +226,7 @@ export default class Client extends DJSClient {
 				`emojis[${name}]`, 'GuildEmoji'
 			));
 		}
-		const resolve = (id: Snowflake) => this.channels.resolve(id);
+		const resolve = <T extends Channel>(id: Snowflake) => this.channels.resolve(id) as T | null;
 		for (const guildConfig of config.guilds.values()) {
 			const guild = this.guilds.resolve(guildConfig.id);
 			if (!guild) {
@@ -285,7 +280,7 @@ export default class Client extends DJSClient {
 					`guilds[${guildConfig.id}].reports_channel`, 'TextChannel'
 				));
 			}
-			const rulesChannel = resolve(guildConfig.rulesChannelID) as TextChannel | null;
+			const rulesChannel = resolve<TextChannel>(guildConfig.rulesChannelID);
 			if (rulesChannel?.type !== 'text') {
 				throw new TypeError(Errors.INVALID_CLIENT_OPTION(
 					`guilds[${guildConfig.id}].rules_channel`, 'TextChannel'

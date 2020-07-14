@@ -1,12 +1,11 @@
-import TextChannel from '../structures/discord.js/TextChannel';
-import { Events } from '../util/Client';
+import { ClientEvents, TextChannel, GuildMember } from 'discord.js';
 import { EventResponses } from '../util/Constants';
 
 /**
  * To enable logging for this event, a webhook with the name `audit-logs`
  * should be in the config.json
  */
-export default (async (oldMember, newMember) => {
+export default (async (oldMember: GuildMember, newMember: GuildMember) => {
 	const { client, guild } = newMember;
 	const config = guild && client.config.guilds.get(guild.id);
   
@@ -32,4 +31,4 @@ export default (async (oldMember, newMember) => {
 	
 	webhook.send(embed)
 		.catch(console.error);
-}) as (...args: Events['guildMemberUpdate']) => void;
+}) as (...args: ClientEvents['guildMemberUpdate']) => void;

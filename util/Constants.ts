@@ -1,23 +1,22 @@
 import { join } from 'path';
 import {
-	Constants, EmbedFieldData, RoleData,
-	MessageEmbed, Snowflake, MessageOptions,
-	MessageAttachment, Util as DJSUtil
+	Client, Constants, EmbedFieldData,
+	Guild, GuildMember, Invite, Message,
+	MessageAttachment, MessageEmbed,
+	MessageOptions, PartialMessage,
+	RoleData, Snowflake, TextChannel,
+	User, Util as DJSUtil
 } from 'discord.js';
+import { DMChannel } from 'discord.js';
 import * as moment from 'moment';
-import Client, { ShopItem } from './Client';
-import { Invite, PartialMessage, GuildMessage } from './Types';
+import { ShopItem } from './Client';
+import { GuildMessage, TextBasedChannels } from './Types';
 import { Card } from '../commands/Points/Blackjack';
 import Case from '../structures/Case';
 import Command from '../structures/Command';
 import Levels from '../structures/Levels';
 import Profile from '../structures/Profile';
 import Warn from '../structures/Warn';
-import Guild from '../structures/discord.js/Guild';
-import GuildMember from '../structures/discord.js/GuildMember';
-import Message from '../structures/discord.js/Message';
-import TextChannel from '../structures/discord.js/TextChannel';
-import User from '../structures/discord.js/User';
 /* eslint-disable sort-keys */
 
 const hyperlink = (name: string, url: string) => `[${name}](${url})`;
@@ -568,7 +567,7 @@ export const Responses = {
 			users: [user.id]
 		}
 	}),
-	PARTNER_REWARD: (user: User, channel: TextChannel, points: number) => ({
+	PARTNER_REWARD: (user: User, channel: TextBasedChannels, points: number) => ({
 		content: `${user} Was rewarded **${points}** points for a ${channel}.`,
 		allowedMentions: {
 			users: [user.id]
@@ -818,7 +817,7 @@ export const EventResponses = {
 		return embed;
 	},
 
-	MESSAGE_DELETE_BULK: (channel: TextChannel, options: {
+	MESSAGE_DELETE_BULK: (channel: Exclude<TextBasedChannels, DMChannel>, options: {
 		amount: number; json: { [key: string]: unknown }[]; previous?: Message;
 	}) => {
 		return {
