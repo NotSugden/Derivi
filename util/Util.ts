@@ -18,7 +18,7 @@ import OAuthUser from '../structures/OAuthUser';
 
 const arrToObject = <T extends string>(array: T[], fn: (key: string, index: number) => unknown) => {
 	const obj: { [key: string]: unknown } = {};
-	for (let i = 0;i < array.length;i++) {
+	for (let i = 0; i < array.length; i++) {
 		const key = array[i];
 		obj[key] = fn(key, i);
 	}
@@ -68,7 +68,7 @@ export default class Util {
 					const number = parseInt(value);
 					if (!isNaN(number)) flagsObj[name] = number;
 				}
-        
+
 				const type = typeof flagsObj[name];
 
 				if (typeof data.type === 'string' ? type !== data.type : !includes(type as FlagType)) {
@@ -77,7 +77,7 @@ export default class Util {
 			}
 		}
 		return {
-			flags: flagsObj, 
+			flags: flagsObj,
 			string: string.replace(FLAGS_REGEX, '').replace(/\s\s+/g, ' ')
 		};
 	}
@@ -188,11 +188,11 @@ export default class Util {
 		}
 
 		if (withFlags) {
-			const { flags, string: newReason } = Util.extractFlags(data.reason);
+			const { flags, string: newReason } = Util.extractFlags(data.reason, withFlags);
 			data.reason = newReason;
 			data.flags = flags;
 		}
-		
+
 		return data;
 	}
 
@@ -200,7 +200,7 @@ export default class Util {
 		action: keyof typeof ModerationActionTypes;
 		context?: Message;
 		extras: { [key: string]: string };
-    guild: Guild;
+		guild: Guild;
 		moderator: User;
 		reason: string;
 		screenshots: string[];
@@ -220,11 +220,12 @@ export default class Util {
 		}));
 		if (client.config.attachmentLogging) {
 			embed.addField(
-				'Screenshots', options.screenshots.length ?
-					options.screenshots.join('\n') : 'None attached'
+				'Screenshots', options.screenshots.length
+					? options.screenshots.join('\n')
+					: 'None attached'
 			);
 		}
-    
+
 		const config = client.config.guilds.get(options.guild.id)!;
 
 		const channel = client.channels.resolve(
@@ -257,7 +258,7 @@ export default class Util {
 							max: 1,
 							time: 18e4
 						})).first()!;
-            
+
 						const urls = [];
 						for (const attachment of response.attachments.values()) {
 							const url = await Util.downloadImage(
@@ -284,7 +285,7 @@ export default class Util {
 					console.error(error);
 				});
 		}
-		return caseData; 
+		return caseData;
 	}
 
 	static makePromiseObject<T>() {
@@ -305,7 +306,7 @@ export default class Util {
 		if (position < 0) return true;
 		return false;
 	}
-  
+
 	static async fetchOauthUser(client: Client, accessToken: string, tokenType = 'Bearer') {
 		const response = await fetch(
 			`${client.options.http!.api}/v${client.options.http!.version}/users/@me`, {
@@ -391,7 +392,7 @@ export default class Util {
 		return true;
 	}
 
-	static isTextBasedChannel(channel: Channel): channel is TextBasedChannels  {
+	static isTextBasedChannel(channel: Channel): channel is TextBasedChannels {
 		return ['text', 'news', 'dm'].includes(channel.type);
 	}
 }
