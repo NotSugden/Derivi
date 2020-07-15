@@ -1,6 +1,9 @@
 import { promises as fs } from 'fs';
 import { join } from 'path';
 import { MessageMentions, Guild } from 'discord.js';
+import { GuildChannelManager } from 'discord.js';
+import { TextChannel } from 'discord.js';
+import { DataResolver } from 'discord.js';
 import Command, { CommandData } from '../structures/Command';
 import CommandArguments from '../structures/CommandArguments';
 import { RawGuildConfig, ClientConfig, resolveGuildConfig } from '../util/Client';
@@ -25,7 +28,7 @@ const CONFIG_ITEMS = [{
 	key: 'access_level_roles',
 	name: 'Access Level Roles',
 	type: 'roles-4'
-}, {
+}, /*{
 	description: 'The category in the staff server.',
 	key: 'staff_server_category',
 	name: 'Staff Server Category',
@@ -45,6 +48,11 @@ const CONFIG_ITEMS = [{
 	key: 'reports_channel',
 	name: 'Auto Reports Channel.',
 	type: 'channel_id'
+},*/ {
+	description: 'The Staff Server ID.',
+	key: 'staff-server',
+	name: 'Staff Server ID',
+	type: 'guild_id'
 }, {
 	default: (guild: Guild) => guild.id,
 	description: 'The ID of the guild',
@@ -123,18 +131,18 @@ export default class BotConfig extends Command {
 
 			const configData = {
 				// this needs to be done manually
-				partnership_channels: [] as RawGuildConfig['partnership_channels'],
-				report_regex: [] as string[],
-				shop_items: [] as RawGuildConfig['shop_items'],
+				partnership_channels: [],
+				report_regex: [],
+				shop_items: [],
 				starboard: {
 					enabled: false,
 					minimum: 3,
 					reaction_only: true
 				},
-				webhooks: [] as RawGuildConfig['webhooks']
-			} as RawGuildConfig;
+				webhooks: []
+			} as unknown as RawGuildConfig;
 
-			const setProp = (str: string, value: string | boolean | string[]) => {
+			const setProp = (str: string, value: string | boolean | string[] | RawGuildConfig['webhooks']) => {
 				const keys = str.split('.') as (keyof RawGuildConfig)[];
 				// im lazy and couldn't think of a better way to do this
 				// eslint-disable-next-line @typescript-eslint/ban-ts-ignore
@@ -162,6 +170,8 @@ export default class BotConfig extends Command {
 					|| msg.guild.channels.cache.find(ch => ch.name.toLowerCase() === msg.content.toLowerCase());
 			};
 
+			const webhooks: RawGuildConfig['webhooks'] = [];
+
 			for (let i = 0; i < CONFIG_ITEMS.length; i++) {
 				const data = CONFIG_ITEMS[i];
 				if (typeof data.default === 'function') {
@@ -177,6 +187,7 @@ export default class BotConfig extends Command {
 				else allowedResponses = '*';
 				if (data.type === 'role') type = 'role name/mention/id';
 				else if (data.type === 'channel') type = 'channel mention/name/id';
+				else if (data.type === 'guild_id') type = 'Guild ID';
 				else if (data.type === 'channel_id') type = 'channel ID';
 				else if (data.type.startsWith('roles-')) {
 					type = `${data.type.split('-')[1]} roles seperated by a comma`;
@@ -236,6 +247,54 @@ export default class BotConfig extends Command {
 						}
 					}
 					if (data.key === 'starboard.channel_id') setProp('starboard.enabled', true);
+				} else if (data.type === 'guild_id') {
+					const guild = this.client.guilds.cache.get(response.content);
+
+					if (!guild) {
+						await tryAgain('That is not a valid guild ID, please try again');
+						continue;
+					}
+					if (data.key === 'staff-server') {
+						messages.push((await message.channel.send('Creating channels... please wait.')).id);
+						const category = await guild.channels.create(message.guild.id, {
+							type: 'category'
+						});
+						// tfw GuildChannelCreateOptions isn't exported
+						const options: Parameters<GuildChannelManager['create']>[1] = {
+							parent: category,
+							type: 'text'
+						};
+						const cases = await guild.channels.create('cases', options);
+						const commands = await guild.channels.create('commands', options);
+						const reports = await guild.channels.create('reports', options);
+						const logsCategory = await guild.channels.create(`${message.guild.id}-LOGS`, {
+							type: 'category'
+						});
+						options.parent = logsCategory;
+						const logChannels = await Promise.all([
+							guild.channels.create('audit-logs', options),
+							guild.channels.create('member-logs', options),
+							guild.channels.create('invite-logs', options)
+						]) as [TextChannel, TextChannel, TextChannel];
+						const webhookOptions: { avatar?: string } = {};
+						if (message.guild.icon) {
+							webhookOptions.avatar = await DataResolver.resolveImage(message.guild.iconURL()!);
+						}
+						for (const logChannel of logChannels) {
+							const webhook = await logChannel.createWebhook(logChannel.name, webhookOptions);
+							webhooks.push({
+								id: webhook.id,
+								name: logChannel.name,
+								token: webhook.token!
+							});
+						}
+						setProp('webhooks', webhooks);
+						setProp('staff_server_category', category.id);
+						setProp('reports_channel', reports.id);
+						setProp('staff_commands_channel', commands.id);
+						setProp('punishment_channel', cases.id);
+						messages.push((await message.channel.send('Finished creating channels')).id);
+					}
 				} else if (data.type.startsWith('roles-')) {
 					const _roles = response.content.split(/ *, */g);
 					const errorResponse = [
