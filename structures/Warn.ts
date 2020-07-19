@@ -1,4 +1,4 @@
-import { Client, Guild, Snowflake } from 'discord.js';
+import { Client, Snowflake } from 'discord.js';
 import Case from './Case';
 import Util from '../util/Util';
 
@@ -38,7 +38,7 @@ export default class Warn {
 	}
 	
 	get guild() {
-		return this.client.guilds.resolve(this.guildID) as Guild;
+		return this.client.guilds.resolve(this.guildID)!;
 	}
 
 	get moderator() {

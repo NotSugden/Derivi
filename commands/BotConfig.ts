@@ -1,14 +1,13 @@
-import { promises as fs } from 'fs';
-import { join } from 'path';
 import { MessageMentions, Guild } from 'discord.js';
 import { GuildChannelManager } from 'discord.js';
 import { TextChannel } from 'discord.js';
 import { DataResolver } from 'discord.js';
+import { Role } from 'discord.js';
 import Command, { CommandData } from '../structures/Command';
 import CommandArguments from '../structures/CommandArguments';
-import { RawGuildConfig, ClientConfig, resolveGuildConfig } from '../util/Client';
 import CommandError from '../util/CommandError';
 import CommandManager from '../util/CommandManager';
+import { SQLValues, QueryTypes } from '../util/DatabaseManager';
 import { GuildMessage } from '../util/Types';
 import Util from '../util/Util';
 
@@ -28,27 +27,7 @@ const CONFIG_ITEMS = [{
 	key: 'access_level_roles',
 	name: 'Access Level Roles',
 	type: 'roles-4'
-}, /*{
-	description: 'The category in the staff server.',
-	key: 'staff_server_category',
-	name: 'Staff Server Category',
-	type: 'channel_id'
 }, {
-	description: 'The channel moderation cases are sent to.',
-	key: 'punishment_channel',
-	name: 'Case Logging Channel',
-	type: 'channel_id'
-}, {
-	description: 'The channel staff commands should be used in.',
-	key: 'staff_commands_channel',
-	name: 'Staff Commands Channel',
-	type: 'channel_id'
-}, {
-	description: 'The channel auto reports are sent to.',
-	key: 'reports_channel',
-	name: 'Auto Reports Channel.',
-	type: 'channel_id'
-},*/ {
 	description: 'The Staff Server ID.',
 	key: 'staff-server',
 	name: 'Staff Server ID',
@@ -86,7 +65,7 @@ const CONFIG_ITEMS = [{
 }, {
 	default: (guild: Guild) => guild.channels.cache.find(ch => ch.name === 'starboard'),
 	description: 'The starboard channel.',
-	key: 'starboard.channel_id',
+	key: 'starboard_channel_id',
 	name: 'Starboard Channel',
 	optional: true,
 	type: 'channel'
@@ -123,38 +102,14 @@ export default class BotConfig extends Command {
 		const mode = args[0];
 		if (mode === ConfigModes.SETUP) {
 			if (message.editedTimestamp) return send('This command does not support being edited.');
-			if (this.client.config.guilds.has(message.guild.id)) {
+			const existing = await message.guild.fetchConfig();
+			if (existing) {
 				return message.channel.send(
 					'Configuration is already setup for this guild'
 				) as Promise<GuildMessage<true>>;
 			}
 
-			const configData = {
-				// this needs to be done manually
-				partnership_channels: [],
-				report_regex: [],
-				shop_items: [],
-				starboard: {
-					enabled: false,
-					minimum: 3,
-					reaction_only: true
-				},
-				webhooks: []
-			} as unknown as RawGuildConfig;
-
-			const setProp = (str: string, value: string | boolean | string[] | RawGuildConfig['webhooks']) => {
-				const keys = str.split('.') as (keyof RawGuildConfig)[];
-				// im lazy and couldn't think of a better way to do this
-				// eslint-disable-next-line @typescript-eslint/ban-ts-ignore
-				// @ts-ignore
-				keys.reduce((acc, next, index) => {
-					const item = acc[next];
-					// eslint-disable-next-line @typescript-eslint/ban-ts-ignore
-					// @ts-ignore
-					if (index === keys.length - 1) acc[next] = value;
-					return item;
-				}, configData);
-			};
+			const values: SQLValues = {};
 
 			const messages = [];
 
@@ -169,15 +124,16 @@ export default class BotConfig extends Command {
 					|| msg.guild.channels.cache.get(msg.content)
 					|| msg.guild.channels.cache.find(ch => ch.name.toLowerCase() === msg.content.toLowerCase());
 			};
-
-			const webhooks: RawGuildConfig['webhooks'] = [];
-
 			for (let i = 0; i < CONFIG_ITEMS.length; i++) {
 				const data = CONFIG_ITEMS[i];
 				if (typeof data.default === 'function') {
 					const def = data.default(message.guild);
 					if (typeof def !== 'undefined' && def !== null) {
-						setProp(data.key, typeof def === 'string' ? def : def.id);
+						values[data.key] = typeof def === 'string' ? def : def.id;
+						if (data.key === 'starboard_channel_id') {
+							values['starboard_enabled'] = 1;
+							values['starboard_minimum'] = 3;
+						}
 						continue;
 					}
 				}
@@ -222,14 +178,14 @@ export default class BotConfig extends Command {
 				};
 
 				if (data.type === 'boolean') {
-					setProp(data.key, response.content === 'y');
+					values[data.key] = response.content === 'y' ? 1 : 0;
 				} else if (data.type === 'role') {
 					const role = resolveRole(response);
 					if (!role) {
 						await tryAgain('That is not a valid role, please try again');
 						continue;
 					}
-					setProp(data.key, role.id);
+					values[data.key] = role.id;
 				} else if (data.type === 'channel' || data.type === 'channel_id') {
 					const channel = data.type === 'channel' ?
 						resolveChannel(response) :
@@ -239,14 +195,11 @@ export default class BotConfig extends Command {
 						await tryAgain('That is not a valid channel, please try again');
 						continue;
 					}
-					setProp(data.key, channel.id);
-					if (data.key === 'general_channel') {
-						const levelChannels = this.client.config.allowedLevelingChannels;
-						if (levelChannels.length && !levelChannels.includes(channel.id)) {
-							levelChannels.push(channel.id);
-						}
+					values[data.key] = channel.id;
+					if (data.key === 'starboard_channel_id') {
+						values['starboard_enabled'] = 1;
+						values['starboard_minimum'] = 3;
 					}
-					if (data.key === 'starboard.channel_id') setProp('starboard.enabled', true);
 				} else if (data.type === 'guild_id') {
 					const guild = this.client.guilds.cache.get(response.content);
 
@@ -266,7 +219,6 @@ export default class BotConfig extends Command {
 						};
 						const cases = await guild.channels.create('cases', options);
 						const commands = await guild.channels.create('commands', options);
-						const reports = await guild.channels.create('reports', options);
 						const logsCategory = await guild.channels.create(`${message.guild.id}-LOGS`, {
 							type: 'category'
 						});
@@ -280,19 +232,18 @@ export default class BotConfig extends Command {
 						if (message.guild.icon) {
 							webhookOptions.avatar = await DataResolver.resolveImage(message.guild.iconURL()!);
 						}
-						for (const logChannel of logChannels) {
+						for (let i = 0; i < logChannels.length; i++) {
+							const logChannel = logChannels[i];
 							const webhook = await logChannel.createWebhook(logChannel.name, webhookOptions);
-							webhooks.push({
-								id: webhook.id,
-								name: logChannel.name,
-								token: webhook.token!
-							});
+							let hookName: 'audit_logs' | 'member_logs' | 'invite_logs';
+							if (i === 0) hookName = 'audit_logs';
+							else if (i === 1) hookName = 'member_logs';
+							else hookName = 'invite_logs';
+							values[`${hookName}_webhook`] = `${webhook.id}:${webhook.token}`;
 						}
-						setProp('webhooks', webhooks);
-						setProp('staff_server_category', category.id);
-						setProp('reports_channel', reports.id);
-						setProp('staff_commands_channel', commands.id);
-						setProp('punishment_channel', cases.id);
+						values['staff_server_category'] = category.id;
+						values['staff_commands_channel'] = commands.id;
+						values['punishment_channel'] = cases.id;
 						messages.push((await message.channel.send('Finished creating channels')).id);
 					}
 				} else if (data.type.startsWith('roles-')) {
@@ -312,23 +263,16 @@ export default class BotConfig extends Command {
 							role => role.name.toLowerCase() === idOrName.toLowerCase()
 						);
 					});
-					if (roles.some(role => typeof role === 'undefined')) {
+					if (roles.some(role => !(role instanceof Role))) {
 						await tryAgain(errorResponse);
 						continue;
 					}
-					setProp(data.key, roles.map(role => role!.id));
+					values[data.key] = JSON.stringify(roles.map(role => role!.id));
 				}
 			}
 
-			const directory = join(__dirname, '..', 'config.json');
-
-			delete require.cache[require.resolve(directory)];
-			// eslint-disable-next-line @typescript-eslint/no-var-requires
-			const rawConfig: ClientConfig = require(directory);
-			rawConfig.guilds.push(configData);
-			rawConfig.allowed_level_channels = this.client.config.allowedLevelingChannels;
-			await fs.writeFile(directory, JSON.stringify(rawConfig, null, 2));
-			this.client.config.guilds.set(configData.id, resolveGuildConfig(this.client, configData));
+			await this.client.database.query(QueryTypes.INSERT, 'settings', values);
+			
 			if (messages.length > 100) {
 				while (messages.length > 100) {
 					const msgs = messages.splice(0, 100);

@@ -17,16 +17,14 @@ export default class Attach extends Command {
 			cooldown: 5,
 			examples: ['69 <attached image>'],
 			name: 'attach',
-			permissions: (member, channel) => {
+			permissions: async (member, channel) => {
 				if (!channel.parentID) return 'You\'re not using this command in the correct category!';
-				const config = [...member.client.config.guilds.values()].find(
-					cfg => cfg.staffServerCategoryID === channel.parentID
-				);
-				if (!config) return 'You\'re not using this command in the correct category!';
+				const config = await this.client.database.guildConfig({
+					staff_server_category: channel.parentID
+				});
+				if (!config) return null;
 				const channelID = config.staffCommandsChannelID;
-				return channel.id === channelID || (channelID ?
-					`This command can only be used in <#${channelID}>.` :
-					'The Staff commands channel has not been configured.');
+				return channel.id === channelID || `This command can only be used in <#${channelID}>.`;
 			}
 		}, __filename);
 	}
@@ -40,13 +38,11 @@ export default class Attach extends Command {
 			throw new CommandError('INVALID_CASE_ID', args[0] || '');
 		}
     
-		const config = [...this.client.config.guilds.values()].find(
-			cfg => cfg.staffServerCategoryID === message.channel.parentID
-		)!;
+		const config = (await this.client.database.guildConfig({
+			staff_server_category: message.channel.parentID!
+		}))!;
 
-		const caseData = await this.client.database.case(
-      this.client.guilds.resolve(config.id)!, caseID
-		);
+		const caseData = await this.client.database.case(config.guild, caseID);
 
 		if (!caseData) {
 			throw new CommandError('INVALID_CASE_ID', args[0]);

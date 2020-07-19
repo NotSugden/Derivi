@@ -5,6 +5,7 @@ import {
 	Snowflake, StringResolvable,
 	TextChannel, User
 } from 'discord.js';
+import { NewsChannel } from 'discord.js';
 import CommandArguments from './CommandArguments';
 import CommandManager from '../util/CommandManager';
 import { GuildMessage, TextBasedChannels } from '../util/Types';
@@ -42,6 +43,14 @@ export default class Command {
 		this.path = path;
 
 		this._examples = options.examples;
+	}
+
+	static async hasPermissions(command: Command, member: GuildMember, channel: TextChannel | NewsChannel) {
+		if (typeof command.permissions === 'function') {
+			const perms = await command.permissions(member, channel);
+			return perms;
+		}
+		return member.hasPermission(command.permissions);
 	}
 
 	public formatExamples(message: GuildMessage<true>, limit: 1): string;
@@ -120,7 +129,9 @@ export type CommandArgument = {
 	extras?: string[];
 };
 
-type PermissionsFunction = (
+type PermissionsReturn = boolean | string | null;
+
+export type PermissionsFunction = (
 	member: GuildMember,
 	channel: Exclude<TextBasedChannels, DMChannel>,
-) => boolean | string | Promise<boolean | string>;
+) => PermissionsReturn | Promise<PermissionsReturn>;

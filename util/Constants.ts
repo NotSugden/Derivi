@@ -9,13 +9,13 @@ import {
 } from 'discord.js';
 import { DMChannel } from 'discord.js';
 import * as moment from 'moment';
-import { ShopItem } from './Client';
 import { GuildMessage, TextBasedChannels } from './Types';
 import { Card } from '../commands/Points/Blackjack';
 import Case from '../structures/Case';
 import Command from '../structures/Command';
 import Levels from '../structures/Levels';
 import Profile from '../structures/Profile';
+import ShopItem from '../structures/ShopItem';
 import Warn from '../structures/Warn';
 /* eslint-disable sort-keys */
 
@@ -130,7 +130,8 @@ export const Errors = {
 	INVALID_TYPE: (parameter: string, type: string) => `Provided '${parameter}' should be a '${type}'`,
 
 	NO_GIVEAWAYS_IN_CHANNEL: (id: Snowflake) => `There are no giveaways in channel ${id}.`,
-	WINNERS_NOT_CHOSEN: 'This giveaway hasn\'t had its winners picked yet.'
+	WINNERS_NOT_CHOSEN: 'This giveaway hasn\'t had its winners picked yet.',
+	CONFIG_NOT_CACHED: 'The guild\'s config is not cached.'
 };
 
 export const CommandErrors = {
@@ -521,14 +522,14 @@ export const Responses = {
 		const RIGHT_ARROW = guild.client.config.emojis.get('RIGHT_ARROW')!;
 		return [...items.map(item => {
 			if (item.action === 'give_role') {
-				const role = guild.roles.cache.get(item.role_id)!;
+				const role = item.item;
 				return `${RIGHT_ARROW} **${role.name}** Role for ${
 					item.cost > 0 ?
 						`**${item.cost}** Points` :
 						'**Free**'
 				}.`;
 			}
-		}), 'Use `.buy [name]` to buy an item.'];
+		}), `Use \`${guild.client.config.prefix[0]}buy [name]\` to buy an item.'`];
 	},
 	WITHDRAW_SUCCESS: (amount: number) => `Successfully withdrew **${amount}** points.`,
 	DEPOSIT_SUCCESS: (amount: number) => `Successfully deposited **${amount}** points.`,
@@ -573,21 +574,6 @@ export const Responses = {
 			users: [user.id]
 		}
 	}),
-	AUTO_REPORT_EMBED: (message: Message) => {
-		return new MessageEmbed()
-			.setAuthor('Alert')
-			.setColor(Constants.Colors.RED)
-			.setDescription(
-				`${DJSUtil.escapeMarkdown(message.author.tag)} (${message.author}) has __${
-					message.edits.length > 1 ? 'edited' : 'sent'
-				}__ a ${hyperlink('message', message.url)} with a possible restricted term`
-			).addFields({
-				name: 'Message Content',
-				value: hyperlinkEmojis(message.content.length > 1000 ?
-					`${message.content.slice(0, 1000)}...` :
-					message.content)
-			});
-	},
 	HISTORY: (cases: Case[]) => {
 		return cases.flatMap(caseData => [
 			`${caseData.id}: ${caseData.action.charAt(0) + caseData.action.slice(1).toLowerCase()} ${
@@ -724,8 +710,8 @@ export const EventResponses = {
 			.setTimestamp(invite.createdAt!);
 	},
 
-	GUILD_MEMBER_ADD: (member: GuildMember & { client: Client }, webhook = true) => {
-		const config = member.client.config.guilds.get(member.guild.id)!;
+	GUILD_MEMBER_ADD: (member: GuildMember & { client: Client }) => {
+		const config = member.guild.config!;
 		return {
 			content: `${member.client.config.emojis.get('RIGHT_ARROW')!} ${
 				config.welcomeRoleID && member.guild.roles.cache.has(config.welcomeRoleID) ?
@@ -733,14 +719,14 @@ export const EventResponses = {
 			} to **${
 				member.guild.name
 			}** ${member.user}, you can click ${
-				webhook && config.rulesMessageID ? `[here](<${
+				config.rulesMessageID ? `[here](<${
 					messageURL(member.guild.id, config.rulesChannelID, config.rulesMessageID)
 				}>)` : `<#${config.rulesChannelID}>`
 			} to read the rules!`,
 			allowedMentions: {
 				users: [member.id],
 				roles: config.welcomeRoleID ? [config.welcomeRoleID] : []
-			}
+			}, username: 'Welcome'
 		};
 	},
 	GUILD_MEMBER_UPDATE: (oldMember: GuildMember, newMember: GuildMember) => {

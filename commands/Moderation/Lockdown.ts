@@ -14,8 +14,8 @@ export default class Lockdown extends Command {
 			examples: [''],
 			name: 'lockdown',
 			permissions: member => {
-				const config = member.client.config.guilds.get(member.guild.id);
-				if (!config) return false;
+				const config = member.guild.config;
+				if (!config) return null;
 				const hasAccess = config.accessLevelRoles.slice(1).some(
 					roleID => member.roles.cache.has(roleID)
 				);
@@ -52,7 +52,7 @@ export default class Lockdown extends Command {
 			newPermissions.push('VIEW_CHANNEL');
 			options.deny = ['VIEW_CHANNEL'];
 		}
-		const config = this.client.config.guilds.get(message.guild.id)!;
+		const config = message.guild.config!;
 		const lockdownChannel = message.guild.channels.cache.get(config.lockdownChannelID!) as TextChannel;
 		await lockdownChannel.overwritePermissions([options], `Lockdown by ${message.author.tag}`);
 		await everyone.setPermissions(newPermissions, `Lockdown by ${message.author.tag}`);

@@ -60,13 +60,12 @@ export default class Eval extends Command {
 				new RegExp(`${this.client.token}|${reverse(this.client.token!)}`, 'gi'),
 				'[TOKEN]'
 			);
-			const webhooks = [...this.client.config.guilds.values()].reduce((acc, next) => {
-				acc.push(...next.webhooks.values());
-				return acc;
-			}, [] as WebhookClient[]);
-			if (webhooks.length) {
+			const { config } = message.guild;
+			const webhooks = config && Object.values(config.webhooks)
+				.filter(value => typeof value !== 'undefined');
+			if (webhooks && webhooks.length) {
 				inspected = inspected.replace(new RegExp(
-					webhooks.map(hook => `${hook.token}|${reverse(hook.token)}`).join('|'),
+					webhooks.map(hook => `${hook!.token}|${reverse(hook!.token)}`).join('|'),
 					'gi'
 				), '[WEBHOOK TOKEN]');
 			}

@@ -19,19 +19,18 @@ export default class Shop extends Command {
 	}
 
 	public async run(message: GuildMessage<true>, args: CommandArguments, { send }: CommandData) {
-		const config = message.guild && this.client.config.guilds.get(message.guild.id);
-  
-		if (!config) return;
 		if (this.client.lockedPoints.has(message.author.id)) {
 			throw new CommandError('LOCKED_POINTS');
 		}
+
+		const items = await this.client.database.shopItems(message.guild);
 		if (!args[0]) {
-			return send(Responses.SHOP_LAYOUT(config.shopItems, message.guild!));
+			return send(Responses.SHOP_LAYOUT(items, message.guild!));
 		}
 
-		const NAMES = config.shopItems.map(item => {
+		const NAMES = items.map(item => {
 			if (item.action === 'give_role') {
-				const role = message.guild.roles.cache.get(item.role_id)!;
+				const role = item.item;
 				return {
 					action: 'give_role',
 					cost: item.cost,

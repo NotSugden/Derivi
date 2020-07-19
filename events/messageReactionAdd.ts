@@ -1,8 +1,11 @@
-import { ClientEvents, TextChannel, User } from 'discord.js';
+import { ClientEvents, User, Message, PartialMessage, MessageReaction } from 'discord.js';
 import { Responses } from '../util/Constants';
 import { GuildMessage } from '../util/Types';
 
-export default (async (reaction, user: User) => {
+export default (async (
+	reaction: Omit<MessageReaction, 'message'> & { message: Message | PartialMessage },
+	user: User
+) => {
 	const { client, guild } = reaction.message;
 
 	if (reaction.message.author?.id === client.user!.id) {
@@ -15,22 +18,20 @@ export default (async (reaction, user: User) => {
 		}
 	}
   
-	const config = guild && client.config.guilds.get(guild.id);
+	const config = guild && await guild.fetchConfig();
 	if (!guild || !config) return;
 	
-	if (config.starboard && reaction.emoji.name === '⭐') {
+	if (config.starboard.enabled && reaction.emoji.name === '⭐') {
 		if (reaction.partial) await reaction.fetch();
-		if (reaction.message.author.id === user.id) {
+		if (reaction.message.author!.id === user.id) {
 			await reaction.users.remove(user.id);
 			await reaction.message.channel.send(Responses.STAR_OWN_MESSAGE(user));
 		}
 		const existing = await client.database.stars(guild, reaction.message.id);
 		if (!existing && reaction.count! >= config.starboard.minimum) {
 			const users = (await reaction.users.fetch()).keyArray();
-			const starboardMessage = await (
-        client.channels.resolve(config.starboard.channelID) as TextChannel
-			).send(
-				Responses.STARBOARD_EMBED(users.length, reaction.message)
+			const starboardMessage = await config.starboard.channel!.send(
+				Responses.STARBOARD_EMBED(users.length, reaction.message as Message)
 			);
 			await client.database.createStar({
 				channel: reaction.message.channel.id,

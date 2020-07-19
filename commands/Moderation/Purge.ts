@@ -40,8 +40,8 @@ export default class Purge extends Command {
 			],
 			name: 'purge',
 			permissions: member => {
-				const config = member.client.config.guilds.get(member.guild.id);
-				if (!config) return false;
+				const config = member.guild.config;
+				if (!config) return null;
 				const hasAccess = config.accessLevelRoles.slice(1).some(
 					roleID => member.roles.cache.has(roleID)
 				);

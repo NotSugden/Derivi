@@ -1,5 +1,6 @@
 import { Guild as DJSGuild, Collection, Permissions, User, Invite } from 'discord.js';
 import Client from '../../util/Client';
+import GuildConfig from '../GuildConfig';
 
 async function _init(this: Guild) {
 	if (this.me) {
@@ -33,16 +34,25 @@ interface BanInfo {
 }
 
 export interface DeriviGuildT {
+	config: GuildConfig | null;
 	bans: Collection<string, BanInfo>;
 	invites: Collection<string, Invite>;
+	fetchConfig(options?: { cache?: boolean; force?: boolean }): Promise<GuildConfig | null>;
 }
 
 export default class Guild extends DJSGuild {
+	public config: GuildConfig | null;
 	public bans = new Collection<string, BanInfo>();
 	public invites = new Collection<string, Invite>();
 
 	constructor(client: Client, data: object) {
 		super(client, data);
 		_init.apply(this);
+
+		this.config = null;
+	}
+
+	public fetchConfig({ cache = true, force = false } = {}): Promise<GuildConfig | null> {
+		return this.client.database.guildConfig(this, { cache, force });
 	}
 }

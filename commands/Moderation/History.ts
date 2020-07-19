@@ -1,4 +1,4 @@
-import Command, { CommandData } from '../../structures/Command';
+import Command, { CommandData, PermissionsFunction } from '../../structures/Command';
 import CommandArguments from '../../structures/CommandArguments';
 import CommandError from '../../util/CommandError';
 import CommandManager from '../../util/CommandManager';
@@ -19,16 +19,8 @@ export default class History extends Command {
 				'{randomuserid} {randomuserid} 24h'
 			],
 			name: 'history',
-			permissions: (member, channel) => {
-				if (!channel.parentID) return 'You\'re not using this command in the correct category!';
-				const config = [...member.client.config.guilds.values()].find(
-					cfg => cfg.staffServerCategoryID === channel.parentID
-				);
-				if (!config) return 'You\'re not using this command in the correct category!';
-				const channelID = config.staffCommandsChannelID;
-				return channel.id === channelID || (channelID ?
-					`This command can only be used in <#${channelID}>.` :
-					'The Staff commands channel has not been configured.');
+			permissions: (...args) => {
+				return (this.client.commands.get('attach')!.permissions as PermissionsFunction)(...args);
 			}
 		}, __filename);
 	}
@@ -43,12 +35,12 @@ export default class History extends Command {
 			time: '12 hours'
 		});
     
-		const config = [...this.client.config.guilds.values()].find(
-			cfg => cfg.staffServerCategoryID === message.channel.parentID
-		)!;
+		const config = (await this.client.database.guildConfig({
+			staff_server_category: message.channel.parentID!
+		}))!;
 
 		// until i think of a better way
-		const data = await this.client.database.case(this.client.guilds.resolve(config.id)!, {
+		const data = await this.client.database.case(config.guild, {
 			after: time === -1 ? new Date(0) : new Date(Date.now() - time)
 		}).then(cases => Responses.HISTORY(cases.array()
 			.filter(caseData => caseData.userIDs.some(userID => users.has(userID))))

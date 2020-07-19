@@ -37,8 +37,8 @@ export default class Giveaway extends Command {
 			],
 			name: 'giveaway',
 			permissions: member => {
-				const config = member.client.config.guilds.get(member.guild.id);
-				if (!config) return false;
+				const config = member.guild.config;
+				if (!config) return null;
 				const hasAccess = config.accessLevelRoles.slice(1).some(
 					roleID => member.roles.cache.has(roleID)
 				);

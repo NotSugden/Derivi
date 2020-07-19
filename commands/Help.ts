@@ -6,8 +6,6 @@ import { Responses } from '../util/Constants';
 import { GuildMessage } from '../util/Types';
 import Util from '../util/Util';
 
-const isAsync = (fn: Function) => fn.constructor.name === 'AsyncFunction';
-
 export default class Help extends Command {
 	constructor(manager: CommandManager) {
 		super(manager, {
@@ -26,13 +24,8 @@ export default class Help extends Command {
 		if (!command) {
 			throw new CommandError('COMMAND_NOT_FOUND');
 		}
-		let hasPermissions: boolean | string;
-		if (typeof command.permissions === 'function') {
-			hasPermissions = await command.permissions(message.member, message.channel);
-		} else {
-			hasPermissions = message.member.hasPermission(command.permissions);
-		}
-		if (typeof hasPermissions === 'string') {
+		const hasPermissions = await Command.hasPermissions(command, message.member, message.channel);
+		if (hasPermissions === null || typeof hasPermissions === 'string') {
 			throw new CommandError('COMMAND_NOT_FOUND');
 		}
 		if (!hasPermissions) {
@@ -44,25 +37,17 @@ export default class Help extends Command {
 	public async run(message: GuildMessage<true>, args: CommandArguments, { send }: CommandData) {
 		if (args[0]) return this.commandHelp(send, message, args[0]);
 
-		const categories = this.client.commands.reduce<{ category: string; commands: Command[] }[]>(
-			(array, command) => {
-				const { permissions } = command;
-				if (typeof permissions === 'function') {
-					if (isAsync(permissions)) return array;
-					const hasPerms = permissions(message.member, message.channel) === true;
-					if (!hasPerms) return array;
-				} else if (!message.member.hasPermission(permissions)) {
-					return array;
-				}
-				const existing = array.find(({ category }) => category === command.category);
-				if (existing) {
-					existing.commands.push(command);
-				} else {
-					array.push({ category: command.category, commands: [command] });
-				}
-				return array;
-			}, []
-		);
+		const categories: { category: string; commands: Command [] }[] = [];
+		for (const command of this.client.commands.values()) {
+			const hasPermissions = await Command.hasPermissions(command, message.member, message.channel);
+			if (hasPermissions !== true) continue;
+			const existing = categories.find(({ category }) => category === command.category);
+			if (existing) {
+				existing.commands.push(command);
+				continue;
+			}
+			categories.push({ category: command.category, commands: [command] });
+		}
 
 		await send(Responses.HELP_PROMPT(categories, this.client));
 		let category: { category: string; commands: Command[] } | undefined;

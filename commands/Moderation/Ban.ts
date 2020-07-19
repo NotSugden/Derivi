@@ -28,8 +28,8 @@ export default class Ban extends Command {
 			],
 			name: 'ban',
 			permissions: member => {
-				const config = member.client.config.guilds.get(member.guild.id);
-				if (!config) return false;
+				const config = member.guild.config;
+				if (!config) return null;
 				const hasAccess = config.accessLevelRoles.slice(1).some(
 					roleID => member.roles.cache.has(roleID)
 				);

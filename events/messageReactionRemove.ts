@@ -1,15 +1,17 @@
-import { ClientEvents } from 'discord.js';
-import { User } from 'discord.js';
+import { ClientEvents, User, MessageReaction, Message, PartialMessage } from 'discord.js';
 
-export default (async (reaction, user: User) => {
+export default (async (
+	reaction: Omit<MessageReaction, 'message'> & { message: Message | PartialMessage },
+	user: User
+) => {
 	const { client, guild } = reaction.message;
   
-	const config = guild && client.config.guilds.get(guild.id);
+	const config = guild && await guild.fetchConfig();
 	if (!guild || !config) return;
 	
-	if (config.starboard && reaction.emoji.name === '⭐') {
+	if (config.starboard.enabled && reaction.emoji.name === '⭐') {
 		if (reaction.partial) await reaction.fetch();
-		if (reaction.message.author.id === user.id) return;
+		if (reaction.message.author!.id === user.id) return;
 		const existing = await client.database.stars(guild, reaction.message.id);
 		if (!existing) return;
 		await existing.removeStar(user);

@@ -20,8 +20,8 @@ export default class Warnings extends Command {
 			],
 			name: 'warnings',
 			permissions: member => {
-				const config = member.client.config.guilds.get(member.guild.id);
-				if (!config) return false;
+				const config = member.guild.config;
+				if (!config) return null;
 				const hasAccess = config.accessLevelRoles.some(
 					roleID => member.roles.cache.has(roleID)
 				);

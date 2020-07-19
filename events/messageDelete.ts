@@ -5,10 +5,9 @@ import { EventResponses } from '../util/Constants';
 export default (async message => {
 	const { client, guild } = message;
   
-	const config = guild && client.config.guilds.get(guild.id);
-	const isBot = message.author?.bot;
+	const config = guild && await guild.fetchConfig();
 	if (!config) return;
-	if (isBot) {
+	if (!message.author || message.author.id === client.user!.id) {
 		await client.database.query(
 			'DELETE FROM giveaways WHERE message_id = :messageID',
 			{ messageID: message.id }
@@ -18,7 +17,6 @@ export default (async message => {
 			cache.clearTimeout(message.id);
 			cache.delete(message.id);
 		}
-		return;
 	}
 
 	if (!message.author) {
@@ -29,7 +27,9 @@ export default (async message => {
 		if (data) {
 			try {
 				message.author = await client.users.fetch(data.user_id);
-			} catch { } // eslint-disable-line no-empty
+			} catch (error) {
+				client.emit('error', error);
+			}
 		}
 	}
 
@@ -39,14 +39,14 @@ export default (async message => {
 			message.id
 		);
 	} catch (error) {
-		console.error(error);
+		client.emit('error', error);
 	}
 	
-	const webhook = config.webhooks.get('audit-logs');
+	const webhook = config.webhooks.auditLogs;
 	if (!webhook) return;
 
 	let files;
-	if (client.config.attachmentLogging && config.filePermissionsRole) {
+	if (client.config.attachmentLogging) {
 	/* 
 	 * this is the best way i can think of, other than storing the message IDs,
 	 * to get the file linked to the message, which i may plan on doing

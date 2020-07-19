@@ -1,7 +1,7 @@
 import { promises as fs } from 'fs';
 import { join } from 'path';
 import { Client, Collection } from 'discord.js';
-import { Errors } from './Constants';
+import { Error } from './Errors';
 import Command, { CommandAlias } from '../structures/Command';
 
 export default class CommandManager extends Collection<string, Command> {
@@ -19,7 +19,7 @@ export default class CommandManager extends Collection<string, Command> {
 
 	public reload(command: CommandResolvable) {
 		const resolved = this.resolve(command);
-		if (!resolved) throw new Error(Errors.RESOLVE_COMMAND);
+		if (!resolved) throw new Error('RESOLVE_COMMAND');
 		this.delete(resolved.name);
 		delete require.cache[resolved.path];
 		return this.load(command);
@@ -56,13 +56,13 @@ export default class CommandManager extends Collection<string, Command> {
 	public load(command: CommandResolvable | CommandResolvable[]) {
 		if (Array.isArray(command)) return command.map(cmd => this.load(cmd));
 		const resolved = this.resolve(command);
-		if (!resolved) throw new Error(Errors.RESOLVE_COMMAND);
+		if (!resolved) throw new Error('RESOLVE_COMMAND');
 		try {
 			const cmd = new (require(resolved.path) as (new (manager: CommandManager) => Command))(this);
 			this.set(cmd.name, cmd);
 			return cmd;
 		} catch {
-			throw new Error(Errors.COMMAND_LOAD_FAILED(resolved.name));
+			throw new Error('COMMAND_LOAD_FAILED', resolved.name);
 		}
 	}
 

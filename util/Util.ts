@@ -7,7 +7,7 @@ import {
 	DMChannel, DiscordAPIError,
 	Guild, GuildMember, Message,
 	MessageEmbed, Snowflake,
-	TextChannel, User
+	User
 } from 'discord.js';
 import fetch from 'node-fetch';
 import CommandError from './CommandError';
@@ -226,11 +226,9 @@ export default class Util {
 			);
 		}
 
-		const config = client.config.guilds.get(options.guild.id)!;
+		const config = (await options.guild.fetchConfig())!;
 
-		const channel = client.channels.resolve(
-			config.casesChannelID
-		) as TextChannel;
+		const channel = config.punishmentChannel;
 		const message = await channel!.send('Initializing new case...') as GuildMessage<true>;
 		const caseData = await client.database.createCase({
 			action: options.action,

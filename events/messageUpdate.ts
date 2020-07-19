@@ -1,22 +1,25 @@
 import { ClientEvents } from 'discord.js';
+import messageEvent from './message';
 import { EventResponses } from '../util/Constants';
 
 export default (async (oldMessage, newMessage) => {
 	const { guild, client } = newMessage;
-	const config = guild && client.config.guilds.get(guild?.id);
+	const config = guild && await guild.fetchConfig();
 	if (
 		!config ||
 		newMessage.partial || oldMessage.content === newMessage.content ||
 		newMessage.author.bot
 	) return;
 
-	// lazy edit handling
-	client.emit('message', newMessage);
+	messageEvent(newMessage);
 
-	// so logs aren't spammed with my eval edits
-	if (newMessage.author.id === '381694604187009025' && newMessage.content.startsWith('+eval')) return;
+	// so logs aren't spammed with eval edits
+	if (
+		client.config.ownerIDs.includes(newMessage.author.id) &&
+		/^.eval/.test(newMessage.content)
+	) return;
 
-	const webhook = config.webhooks.get('audit-logs');
+	const webhook = config.webhooks.auditLogs;
 	if (!webhook) return;
 
 	const embed = EventResponses.MESSAGE_UPDATE(oldMessage, newMessage);

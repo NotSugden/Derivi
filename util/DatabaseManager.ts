@@ -1,18 +1,21 @@
 import { Client, Collection, Guild,  Message, Snowflake, SnowflakeUtil, User, Util as DJSUtil } from 'discord.js';
 import * as mysql from 'mysql';
 import CacheManager from './CacheManager';
-import { Errors, ModerationActionTypes, Defaults } from './Constants';
+import { ModerationActionTypes, Defaults } from './Constants';
 import { GuildMessage, TextBasedChannels } from './Types';
 import Util from './Util';
 import Case, { RawCase } from '../structures/Case';
 import Giveaway, { RawGiveaway } from '../structures/Giveaway';
+import GuildConfig, { RawGuildConfig } from '../structures/GuildConfig';
 import Levels, { RawLevels } from '../structures/Levels';
 import Mute, { RawMute } from '../structures/Mute';
 import Partnership, { RawPartnership } from '../structures/Partnership';
 import Points, { RawPoints } from '../structures/Points';
 import Profile, { RawProfile } from '../structures/Profile';
+import ShopItem, { RawShopItem } from '../structures/ShopItem';
 import Star, { RawStar } from '../structures/Star';
 import Warn, { RawWarn } from '../structures/Warn';
+import { RangeError, Error, TypeError } from '../util/Errors';
 
 export enum QueryTypes {
 	INSERT = 'INSERT',
@@ -117,11 +120,11 @@ export default class DatabaseManager {
 		const values: SQLValues = {};
 
 		if (typeof data.amount === 'number') {
-			if (data.amount < 0) throw new RangeError(Errors.NEGATIVE_NUMBER('points'));
+			if (data.amount < 0) throw new RangeError('NEGATIVE_NUMBER', 'points');
 			values.amount = data.amount;
 		}
 		if (typeof data.vault === 'number') {
-			if (data.vault < 0) throw new RangeError(Errors.NEGATIVE_NUMBER('vault'));
+			if (data.vault < 0) throw new RangeError('NEGATIVE_NUMBER', 'vault');
 			values.vault = data.vault;
 		}
 		if (typeof data.daily === 'boolean' || data.daily instanceof Date) {
@@ -186,10 +189,10 @@ export default class DatabaseManager {
 		}
 
 		if (typeof data.level !== 'number' || typeof data.xp !== 'number') {
-			throw new TypeError(Errors.INVALID_TYPE('level\' or \'xp', 'number'));
+			throw new TypeError('INVALID_TYPE', 'level\' or \'xp', 'number');
 		}
 		if (data.level < 0 || data.xp < 0) {
-			throw new RangeError(Errors.NEGATIVE_NUMBER(data.level < 0 ? 'level' : 'xp'));
+			throw new RangeError('NEGATIVE_NUMBER', data.level < 0 ? 'level' : 'xp');
 		}
 
 		existing.patch(data as Partial<RawLevels>);
@@ -608,7 +611,7 @@ export default class DatabaseManager {
 		}
 		if (user instanceof User || typeof user === 'string') {
 			const id = this.client.users.resolveID(user);
-			const [data] = await this.client.database.query<{ count: number }>(
+			const [data] = await this.query<{ count: number }>(
 				'SELECT COUNT(*) as count FROM partnerships \
 WHERE user_id = :userID AND timestamp < :before AND timestamp > :after', {
 					after: options?.after ?? new Date(0),
@@ -623,7 +626,7 @@ WHERE user_id = :userID AND timestamp < :before AND timestamp > :after', {
 			before: user.before ?? new Date(),
 			limit: user.limit ?? 10e3
 		};
-		const counts = await this.client.database.query<{ count: number; userID: Snowflake }>(
+		const counts = await this.query<{ count: number; userID: Snowflake }>(
 			'SELECT COUNT(*) as count, user_id as userID FROM partnerships \
 WHERE timestamp < :before AND timestamp > :after \
 GROUP BY user_id ORDER BY count desc LIMIT :limit',
@@ -872,7 +875,7 @@ message_id = :messageID OR author_id = :messageID\
 				`SELECT * FROM giveaways WHERE channel_id = :channelID ORDER BY start desc${all ? '' : ' LIMIT 1'}`,
 				{ channelID: id }
 			);
-			if (!giveaways.length) throw new Error(Errors.NO_GIVEAWAYS_IN_CHANNEL(id));
+			if (!giveaways.length) throw new Error('NO_GIVEAWAYS_IN_CHANNEL', id);
 			if (all) {
 				return giveaways.reduce((collection, next) => {
 					const constructed = this.cache.giveaways.get(next.message_id) || new Giveaway(this.client, next);
@@ -973,6 +976,69 @@ message_id = :messageID OR author_id = :messageID\
 		await this.query(sql, { data: values, id });
 	}
 
+	public async guildConfig(
+		match: Partial<Omit<RawGuildConfig, 'id'>>,
+		options?: { cache?: boolean; force?: boolean }
+	): Promise<GuildConfig | null>;
+	public async guildConfig(guild: Guild, options?: { cache?: boolean; force?: boolean }): Promise<GuildConfig | null>;
+	public async guildConfig(guild: Guild | Partial<Omit<RawGuildConfig, 'id'>>, {
+		cache = true, force = false
+	} = {}) {
+		if (guild instanceof Guild) {
+			if (guild.config && !force) return guild.config;
+			const [data] = await this.query<RawGuildConfig>(
+				'SELECT * FROM settings WHERE id = :id LIMIT 1',
+				{ id: guild.id }
+			);
+			if (cache) {
+				if (!data) {
+					return guild.config = null;
+				}
+				if (!guild.config) {
+					return guild.config = new GuildConfig(this.client, data);
+				} else {
+					guild.config.patch(data);
+					return guild.config;
+				}
+			}
+			return data ? new GuildConfig(this.client, data) : null;
+		}
+		const entries = Object.entries(guild);
+		if (!force) {
+			const existingGuild = this.client.guilds.cache.find(
+				_guild => _guild.config !== null && entries.every(
+					([key, value]) => _guild.config!.raw[key as keyof RawGuildConfig] === value
+				)
+			);
+			if (existingGuild) return existingGuild.config;
+		}
+		const [data] = await this.query<RawGuildConfig>(
+			`SELECT * FROM settings WHERE ${entries.map(
+				([key, value]) => `${mysql.escapeId(key)} = ${mysql.escape(value)}`
+			).join(' AND ')} LIMIT 1`
+		);
+		if (!data) return null;
+		if (cache) {
+			const _guild = this.client.guilds.resolve(data.id)!;
+			if (!_guild.config) {
+				return _guild.config = new GuildConfig(this.client, data);
+			} else {
+				_guild.config.patch(data);
+				return _guild.config;
+			}
+		}
+		return data ? new GuildConfig(this.client, data) : null;
+	}
+
+	// this structure doesn't need to be cached
+	public async shopItems(guild: Guild) {
+		const items = await this.query<RawShopItem>(
+			'SELECT * FROM shop_items WHERE guild_id = :id',
+			{ id: guild.id }
+		);
+		return items.map(item => new ShopItem(this.client, item));
+	}
+
 	private async deleteWarn(id: number, guild: Guild): Promise<number>
 	private async deleteWarn(id: Snowflake): Promise<number>;
 	private async deleteWarn(id: number | Snowflake, guild?: Guild) {
@@ -981,7 +1047,7 @@ message_id = :messageID OR author_id = :messageID\
 		if (isNumber) {
 			sql += ` AND guild_id = ${mysql.escape(guild!.id)}`;
 		}
-		const { affectedRows } = await this.client.database.query(sql, { id });
+		const { affectedRows } = await this.query(sql, { id });
 		const cache = this.cache.warnings;
 		if (isNumber) {
 			for (const warn of cache.values()) {
@@ -1049,7 +1115,7 @@ interface MuteCreateData {
 
 type SQLDataType<E = never> = number | Date | string | null | E;
 
-interface SQLValues<E = never> {
+export interface SQLValues<E = never> {
 	[key: string]: SQLDataType | E;
 }
 

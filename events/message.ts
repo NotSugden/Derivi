@@ -4,11 +4,10 @@ import { join, extname } from 'path';
 import {
 	ClientEvents, MessageAdditions,
 	MessageEditOptions, MessageOptions,
-	Snowflake, StringResolvable,
-	TextChannel
+	Snowflake, StringResolvable
 } from 'discord.js';
 import fetch from 'node-fetch';
-import { CommandData } from '../structures/Command';
+import Command, { CommandData } from '../structures/Command';
 import CommandArguments from '../structures/CommandArguments';
 import Levels from '../structures/Levels';
 import CommandError from '../util/CommandError';
@@ -28,7 +27,7 @@ export default (async message => {
 	try {
 		if (message.author.bot || !Util.isGuildMessage(message, true)) return;
 		const { client, guild } = message;
-		const config = client.config.guilds.get(guild.id);
+		const config = await guild.fetchConfig();
 		const edited = Boolean(message.editedTimestamp);
 		if (config) {
 			try {
@@ -42,9 +41,9 @@ export default (async message => {
 					});
 				}
 			} catch (error) {
-				console.error(error);
+				client.emit('error', error);
 			}
-			if (message.attachments.size && config.filePermissionsRole && client.config.attachmentLogging && !edited) {
+			if (message.attachments.size && !edited && client.config.attachmentLogging) {
 				const urls = message.attachments.map(({ proxyURL }) => proxyURL);
 				for (let i = 0; i < urls.length; i++) {
 					const url = urls[i];
@@ -60,14 +59,14 @@ export default (async message => {
 				}
 			}
 
-			if (config.reportsRegex.length && config.reportsChannelID) {
-				const content = message.content.replace(/( |\n)*/g, '');
-				if (config.reportsRegex.some(regex => regex.test(content))) {
-					(client.channels.resolve(config.reportsChannelID) as TextChannel)
-						.send(Responses.AUTO_REPORT_EMBED(message));
-				}
-			}
-			const partnerChannel = config.partnerships.channels.get(message.channel.id);
+			const [partnerChannel] = await client.database.query<{
+				min_members: number;
+				max_members: number | null;
+				points: number;
+			}>(
+				'SELECT min_members, max_members, points FROM partnership_channels WHERE channel_id = :channelID',
+				{ channelID: message.channel.id }
+			);
 			if (partnerChannel) {
 				if (message.invites.length > 1) {
 					await message.delete();
@@ -84,16 +83,18 @@ export default (async message => {
 						throw new CommandError('UNKNOWN_INVITE', invite.code).dm();
 					}
 
-					if (invite.memberCount < partnerChannel.minimum || invite.memberCount > partnerChannel.maximum) {
+					if (
+						invite.memberCount < partnerChannel.min_members ||
+						(partnerChannel.max_members && invite.memberCount > partnerChannel.max_members)
+					) {
 						throw new CommandError(
-							'PARTNER_MEMBER_COUNT', invite.memberCount < partnerChannel.minimum
+							'PARTNER_MEMBER_COUNT', invite.memberCount < partnerChannel.min_members
 						).dm();
 					}
 
-					await (client.channels.resolve(config.partnerships.rewardsChannelID) as TextChannel)
-						.send(Responses.PARTNER_REWARD(
-							message.author, message.channel, partnerChannel.points
-						));
+					await config.partnerRewardsChannel.send(Responses.PARTNER_REWARD(
+						message.author, message.channel, partnerChannel.points
+					));
 
 					const points = await client.database.points(message.author);
 					await points.set({ amount: points.amount + partnerChannel.points });
@@ -114,10 +115,9 @@ export default (async message => {
 					throw error;
 				}
 			}
-		
-			const allowedChannels = client.config.allowedLevelingChannels;
+
 			if (
-				(!allowedChannels.length || allowedChannels.includes(message.channel.id)) &&
+				config.generalChannelID === message.channel.id &&
 				!XP_COOLDOWN.has(message.author.id) && !edited
 			) {
 				const levels = await client.database.levels(message.author.id);
@@ -126,17 +126,29 @@ export default (async message => {
 					xp: levels.xp + random(12, 37)
 				};
 				if (newData.xp > Levels.levelCalc(levels.level)) {
-					const { levelRoles } = config;
-					newData.level = levels.level + 1;
-					const index = levelRoles?.findIndex(data => data.level === newData.level);
-					if (typeof index === 'number' && index !== -1) {
-						if (index > 0 && message.member.roles.cache.has(levelRoles![index - 1].id)) {
-							const roles = message.member.roles.cache.keyArray();
-							roles.splice(roles.indexOf(levelRoles![index - 1].id), 1, levelRoles![index].id);
-							await message.member.roles.set(roles);
-						} else {
-							await message.member.roles.add(levelRoles![index].id);
+					const newLevel = newData.level = levels.level + 1;
+					const options = { guildID: config.guildID, level: newLevel };
+					const [data] = await client.database.query<{ role_id: Snowflake }>(
+						'SELECT role_id FROM level_roles WHERE guild_id = :guildID AND level = :level',
+						options
+					);
+					if (data) {
+						// only start removing roles after level 5 to reduce spam on new members
+						let roles = message.member.roles.cache.keyArray();
+						if (newLevel > 5) {
+							const previousRoles = (await client.database.query<{ role_id: Snowflake }>(
+								'SELECT role_id FROM level_roles WHERE guild_id = :guildID AND level < :level',
+								options
+							)).map(({ role_id }) => role_id);
+							if (
+								previousRoles.length &&
+								previousRoles.some(roleID => roles.includes(roleID))
+							) {
+								roles = roles.filter(roleID => !previousRoles.includes(roleID));
+							}
 						}
+						roles.push(data.role_id);
+						await message.member.roles.set(roles);
 					}
 				}
 
@@ -166,7 +178,6 @@ export default (async message => {
 				args.regular.push(...alias.append);
 			}
 		}
-		const { permissions } = command;
 
 		const send: CommandData['send'] = async (
 			content: StringResolvable,
@@ -191,14 +202,11 @@ export default (async message => {
 			throw new CommandError('GUILD_NOT_CONFIGURED');
 		}
 
-		let hasPermissions: boolean | string;
-		if (typeof permissions === 'function') {
-			hasPermissions = await permissions(message.member, message.channel as TextChannel);
-		} else {
-			hasPermissions = message.member.hasPermission(permissions);
-		}
-		if (!hasPermissions || typeof hasPermissions === 'string') {
-			return send(typeof hasPermissions === 'string' ?
+		const hasPermissions = await Command.hasPermissions(command, message.member, message.channel);
+		if (hasPermissions === null) return;
+		const isString = typeof hasPermissions === 'string';
+		if (!hasPermissions || isString) {
+			return send(isString ?
 				hasPermissions : CommandErrors.INSUFFICIENT_PERMISSIONS()
 			);
 		}

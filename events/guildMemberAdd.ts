@@ -1,17 +1,14 @@
 import {
 	ClientEvents, Constants,
-	GuildMember, MessageEmbed,
-	MessageOptions, TextChannel,
-	WebhookClient,
-	WebhookMessageOptions
+	GuildMember, MessageEmbed
 } from 'discord.js';
 import { EventResponses } from '../util/Constants';
 
 export default (async (member: GuildMember) => {
 	const { client, user, guild } = member;
-	const config = guild && client.config.guilds.get(guild.id);
+	const config = await guild.fetchConfig();
   
-	if (!config || !guild || user.bot) return;
+	if (!config || user.bot) return;
 
 	const key = `${guild.id}:${user.id}`;
   
@@ -29,21 +26,12 @@ export default (async (member: GuildMember) => {
 			});
 		}
 	}
-	const hookOrChannel = config.webhooks.get('welcome-messages') ||
-		(guild.channels.cache.find(ch => ch.type === 'text' && ch.name === 'general') as TextChannel);
-	const isWebhook = hookOrChannel instanceof WebhookClient;
-	if (hookOrChannel && !isMuted && !recentlyKicked) {
-		const options = {} as MessageOptions | WebhookMessageOptions;
-		Object.assign(options, EventResponses.GUILD_MEMBER_ADD(member, isWebhook));
-
-		if (isWebhook) {
-			(options as WebhookMessageOptions).username = 'Welcome';
-		}
-		hookOrChannel.send(options)
-			.catch(console.error);
+	const joinsHook = config.webhooks.joins;
+	if (joinsHook && !isMuted && !recentlyKicked) {
+		joinsHook.send(EventResponses.GUILD_MEMBER_ADD(member)).catch(console.error);
 	}
-	const hook = config.webhooks.get('member-logs');
-	if (!hook) return;
+	const auditHook = config.webhooks.memberLogs;
+	if (!auditHook) return;
 	// This will be added to constants at a later date
 	const embed = new MessageEmbed()
 		.setAuthor(user.tag)
@@ -52,7 +40,7 @@ export default (async (member: GuildMember) => {
 		.setFooter(user.id)
 		.setTimestamp(member.joinedAt!)
 		.setThumbnail(user.displayAvatarURL({ dynamic: true }));
-	hook.send({
+	auditHook.send({
 		embeds: [embed],
 		username: 'Member Joined'
 	}).catch(console.error);

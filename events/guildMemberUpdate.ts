@@ -1,4 +1,4 @@
-import { ClientEvents, TextChannel, GuildMember } from 'discord.js';
+import { ClientEvents, GuildMember } from 'discord.js';
 import { EventResponses } from '../util/Constants';
 
 /**
@@ -6,25 +6,26 @@ import { EventResponses } from '../util/Constants';
  * should be in the config.json
  */
 export default (async (oldMember: GuildMember, newMember: GuildMember) => {
-	const { client, guild } = newMember;
-	const config = guild && client.config.guilds.get(guild.id);
+	const { guild } = newMember;
+	const config = await guild.fetchConfig();
   
-	if (!config || !guild || newMember.user.bot) return;
-	const webhook = config.webhooks.get('audit-logs');
-	if (!webhook) return;
-  
+	if (!config || newMember.user.bot) return;
+	
 	if (
-		config.filePermissionsRole && !oldMember.roles.cache.has(config.filePermissionsRole) &&
-    newMember.roles.cache.has(config.filePermissionsRole)
+		config.filePermissionsRole && !oldMember.roles.cache.has(config.filePermissionsRoleID) &&
+    newMember.roles.cache.has(config.filePermissionsRoleID)
 	) {
 		try {
 			await newMember.send(EventResponses.FILE_PERMISSIONS_NOTICE(true, guild));
 		} catch {
-			await (client.channels.resolve(config.generalChannelID) as TextChannel).send(
+			await config.generalChannel.send(
 				EventResponses.FILE_PERMISSIONS_NOTICE(newMember, guild)
 			);
 		}
 	}
+
+	const webhook = config.webhooks.auditLogs;
+	if (!webhook) return;
 	
 	const embed = EventResponses.GUILD_MEMBER_UPDATE(oldMember, newMember);
 	if (!embed) return;

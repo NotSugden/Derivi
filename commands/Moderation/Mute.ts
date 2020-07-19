@@ -21,8 +21,8 @@ export default class Mute extends Command {
 			],
 			name: 'mute',
 			permissions: member => {
-				const config = member.client.config.guilds.get(member.guild.id);
-				if (!config) return false;
+				const config = member.guild.config;
+				if (!config) return null;
 				const hasAccess = config.accessLevelRoles.some(
 					roleID => member.roles.cache.has(roleID)
 				);

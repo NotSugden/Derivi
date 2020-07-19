@@ -1,5 +1,5 @@
-import { TextChannel, Permissions, MessageEmbed, Util as DJSUtil, Snowflake } from 'discord.js';
-import Command, { CommandData } from '../../structures/Command';
+import { Permissions, MessageEmbed, Util as DJSUtil, Snowflake } from 'discord.js';
+import Command, { CommandData, PermissionsFunction } from '../../structures/Command';
 import CommandArguments from '../../structures/CommandArguments';
 import CommandError from '../../util/CommandError';
 import CommandManager from '../../util/CommandManager';
@@ -37,16 +37,8 @@ export default class Case extends Command {
 				'edit 420 reason="dank"'
 			],
 			name: 'case',
-			permissions: (member, channel) => {
-				if (!channel.parentID) return 'You\'re not using this command in the correct category!';
-				const config = [...member.client.config.guilds.values()].find(
-					cfg => cfg.staffServerCategoryID === channel.parentID
-				);
-				if (!config) return 'You\'re not using this command in the correct category!';
-				const channelID = config.staffCommandsChannelID;
-				return channel.id === channelID || (channelID ?
-					`This command can only be used in <#${channelID}>.` :
-					'The Staff commands channel has not been configured.');
+			permissions: (...args) => {
+				return (this.client.commands.get('attach')!.permissions as PermissionsFunction)(...args);
 			}
 		}, __filename);
 	}
@@ -59,13 +51,11 @@ export default class Case extends Command {
 			throw new CommandError('INVALID_CASE_ID', args[1] || '');
 		}
     
-		const config = [...this.client.config.guilds.values()].find(
-			cfg => cfg.staffServerCategoryID === message.channel.parentID
-		)!;
-    
-		const guild = this.client.guilds.resolve(config.id)!;
+		const config = (await this.client.database.guildConfig({
+			staff_server_category: message.channel.parentID!
+		}))!;
 
-		const caseData = await message.client.database.case(guild, caseID);
+		const caseData = await message.client.database.case(config.guild, caseID);
 		if (!caseData) {
 			throw new CommandError('INVALID_CASE_ID', args[1]);
 		}
@@ -79,28 +69,29 @@ export default class Case extends Command {
     
 		if (mode === CaseModes.DELETE) {
 			this.client.database.cache.cases.clear();
-			const channel = this.client.channels.resolve(config.casesChannelID) as TextChannel;
+			const channel = config.punishmentChannel;
 			const caseMessage = await channel.messages.fetch(caseData.logMessageID);
 			await caseMessage.delete();
 			const response = await send(Responses.DELETE_CASE(caseID));
-			await this.client.database.deleteCase(guild, caseID);
+			await this.client.database.deleteCase(config.guild, caseID);
+			const options = { caseID, guildID: config.guildID };
 			const cases = await this.client.database.query<{
 				action: keyof typeof ModerationActionTypes;
 				id: number;
 				message_id: Snowflake;
 			}>(
-				'SELECT message_id, id, action FROM cases WHERE id > ? AND guild_id = ?',
-				caseID, guild.id
+				'SELECT message_id, id, action FROM cases WHERE id > :caseID AND guild_id = :guildID',
+				options
 			);
 			await this.client.database.query(
 				'UPDATE cases SET id = id - 1 WHERE id > :caseID AND guild_id = :guildID',
-				{ caseID, guildID: guild.id }
+				options
 			);
 			if (!cases.length) return response.edit(Responses.DELETE_CASE(caseID, true)) as Promise<GuildMessage<true>>;
 			for (const data of cases) {
 				const newID = data.id - 1;
 				if (data.action === 'WARN') {
-					await this.client.database.editWarn(data.id, { caseID: newID }, guild);
+					await this.client.database.editWarn(data.id, { caseID: newID }, config.guild);
 				}
 				const msg = await channel.messages.fetch(data.message_id);
 				await msg.edit(`Case ${newID}`, new MessageEmbed(msg.embeds[0]));
@@ -132,7 +123,7 @@ export default class Case extends Command {
       
 			await caseMessage.edit(newEmbed);
 
-			await this.client.database.editCase(guild, caseData.id, {
+			await this.client.database.editCase(config.guild, caseData.id, {
 				reason: newData.reason as string
 			});
       

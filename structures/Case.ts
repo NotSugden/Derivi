@@ -1,4 +1,4 @@
-import { Client, MessageEmbed, Snowflake, TextChannel } from 'discord.js';
+import { Client, MessageEmbed, Snowflake } from 'discord.js';
 import { ModerationActionTypes } from '../util/Constants';
 import { GuildMessage } from '../util/Types';
 import Util from '../util/Util';
@@ -53,12 +53,15 @@ export default class Case {
 	}
 
 	get channel() {
-		const config = this.client.config.guilds.get(this.guildID)!;
-		return this.client.channels.resolve(config.casesChannelID) as TextChannel;
+		if (!this.guild.config) return null;
+		return this.guild.config.punishmentChannel;
 	}
 
-	public fetchLogMessage(cache = false) {
-		return this.channel.messages.fetch(this.logMessageID, cache) as Promise<GuildMessage<true>>;
+	public async fetchLogMessage(cache = false) {
+		if (!this.channel) {
+			await this.guild.fetchConfig();
+		}
+		return this.channel!.messages.fetch(this.logMessageID, cache) as Promise<GuildMessage<true>>;
 	}
 	
 	public fetchModerator(cache = true) {
@@ -71,10 +74,6 @@ export default class Case {
 
 	get guild() {
 		return this.client.guilds.resolve(this.guildID)!;
-	}
-
-	get logMessage() {
-		return this.channel.messages.cache.get(this.logMessageID) as GuildMessage<true> | null;
 	}
 
 	get moderator() {

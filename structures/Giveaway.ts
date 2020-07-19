@@ -1,5 +1,5 @@
 import { Client, Snowflake } from 'discord.js';
-import { CommandErrors, Responses, Errors } from '../util/Constants';
+import { CommandErrors, Responses } from '../util/Constants';
 import { GuildMessage, TextBasedChannels } from '../util/Types';
 import Util from '../util/Util';
 
@@ -56,7 +56,7 @@ export default class Giveaway {
 		const entries = await message.reactions.cache.get('🎁')!.users.fetch();
 		entries.delete(this.client.user!.id);
 		if (this.messageRequirement) {
-			const config = this.client.config.guilds.get(message.guild.id)!;
+			const config = (await message.guild.fetchConfig())!;
 			for (const user of entries.values()) {
 				const [{ count }] = await this.client.database.query<{ count: number }>(
 					'SELECT COUNT(*) AS count FROM messages WHERE sent_timestamp > :sent AND channel_id = :channelID',
@@ -89,7 +89,7 @@ export default class Giveaway {
 
 	public fetchWinners(cache = true) {
 		if (!this.winnerIDs) {
-			throw new Error(Errors.WINNERS_NOT_CHOSEN);
+			throw new Error('WINNERS_NOT_CHOSEN');
 		}
 		return Promise.all(this.winnerIDs.map(winnerID => this.client.users.fetch(winnerID, cache)));
 	}

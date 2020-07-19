@@ -53,8 +53,11 @@ export default class Star {
 		return this.channel.messages.fetch(this.messageID, cache) as Promise<GuildMessage>;
 	}
 
-	public fetchStarboardMessage(cache = false) {
-		return this.starboardChannel.messages.fetch(this.starboardID, cache) as Promise<GuildMessage<true>>;
+	public async fetchStarboardMessage(cache = false) {
+		if (!this.guild.config) {
+			await this.guild.fetchConfig();
+		}
+		return this.starboardChannel!.messages.fetch(this.starboardID, cache) as Promise<GuildMessage<true>>;
 	}
 
 	public fetchUsers(cache = true) {
@@ -66,8 +69,9 @@ export default class Star {
 	}
 
 	get starboardChannel() {
-		const config = this.client.config.guilds.get(this.guildID)!;
-		return this.client.channels.resolve(config.starboard!.channelID) as TextBasedChannels;
+		const config = this.guild.config;
+		if (!config) return null;
+		return config.starboard.channel!;
 	}
 
 	get starCount() {

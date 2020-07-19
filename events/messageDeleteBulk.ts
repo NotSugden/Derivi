@@ -1,14 +1,13 @@
 import { promises as fs } from 'fs';
-import { ClientEvents, SnowflakeUtil, Snowflake } from 'discord.js';
+import { ClientEvents, SnowflakeUtil, Snowflake, TextChannel } from 'discord.js';
 import * as moment from 'moment';
 import { escape } from 'mysql';
 import { EventResponses } from '../util/Constants';
-import { GuildMessage } from '../util/Types';
 
 export default (async messages => {
-	const { client, guild, channel } = messages.first()! as GuildMessage;
+	const { client, guild, channel } = messages.first()!;
 
-	const config = guild && client!.config.guilds.get(guild.id);
+	const config = guild && await guild.fetchConfig();
 	if (!config) return;
 
 	try {
@@ -16,23 +15,25 @@ export default (async messages => {
 		for (const message of messages.values()) {
 			ids.push(`id = ${escape(message.id)}`);
 			if (message.author) continue;
-			const [data] = await client!.database.query<{ user_id: Snowflake }>(
+			const [data] = await client.database.query<{ user_id: Snowflake }>(
 				'SELECT user_id FROM messages WHERE id = ?',
 				message.id
 			);
 			if (!data) continue;
 			try {
-				message.author = await client!.users.fetch(data.user_id);
-			} catch { } // eslint-disable-line no-empty
+				message.author = await client.users.fetch(data.user_id);
+			} catch (error) {
+				client.emit('error', error);
+			}
 		}
-		await client!.database.query(
+		await client.database.query(
 			`DELETE FROM messages WHERE ${ids.join(' OR ')}`
 		);
 	} catch (error) {
 		console.error(error);
 	}
 	
-	const webhook = config.webhooks.get('audit-logs');
+	const webhook = config.webhooks.auditLogs;
 	if (!webhook) return;
 
 	const json = messages.map(message => ({
@@ -77,7 +78,7 @@ export default (async messages => {
 		limit: 1
 	})).first();
 
-	const response = EventResponses.MESSAGE_DELETE_BULK(channel, {
+	const response = EventResponses.MESSAGE_DELETE_BULK(channel as TextChannel, {
 		amount: messages.size, json, previous
 	});
 

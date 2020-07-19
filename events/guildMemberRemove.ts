@@ -1,22 +1,21 @@
-import { ClientEvents, MessageEmbed, Constants } from 'discord.js';
-import { GuildMember } from 'discord.js';
+import { ClientEvents, MessageEmbed, Constants, GuildMember } from 'discord.js';
 
 export default (async (member: GuildMember) => {
-	const { client, user, guild } = member;
-	const config = guild && client.config.guilds.get(guild.id);
+	const { user, guild } = member;
+	const config = await guild.fetchConfig();
   
-	if (!config || !guild || user.bot) return;
-	const hook = config.webhooks.get('member-logs');
+	if (!config || user.bot) return;
+	const hook = config.webhooks.memberLogs;
 	if (!hook) return;
-	const roles = member.roles.cache;
-	roles.delete(guild.roles.everyone!.id);
+	const roles = member.roles.cache.clone();
+	roles.delete(guild.id);
 	// This will be added to constants at a later date
 	const embed = new MessageEmbed()
 		.setAuthor(user.tag)
 		.setColor(Constants.Colors.RED)
 		.setDescription([
 			`${user} (${user.id}) Left`,
-			`Roles: ${roles.size > 1 ? roles.map(role => role.name) : 'No roles'}`
+			`Roles: ${roles.size ? roles.map(role => role.name) : 'No roles'}`
 		])
 		.setFooter(user.id)
 		.setTimestamp()
