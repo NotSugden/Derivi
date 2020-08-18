@@ -6,7 +6,6 @@ import Giveaway from '../structures/Giveaway';
 import Levels from '../structures/Levels';
 import Mute from '../structures/Mute';
 import Partnership from '../structures/Partnership';
-import Points from '../structures/Points';
 import Profile from '../structures/Profile';
 import Star from '../structures/Star';
 import Warn from '../structures/Warn';
@@ -18,12 +17,11 @@ export default class CacheManager {
 
 	public cases: Collection<Case, string>
 	public giveaways: Collection<Giveaway>;
-	public levels: Collection<Levels>
-	public mutes: Collection<Mute>
+	public levels: Collection<Levels>;
+	public mutes: Collection<Mute>;
 	public partnerships: Collection<Partnership, number>;
 	public profiles: Collection<Profile>;
-	public points: Collection<Points>
-	public stars: Collection<Star>
+	public stars: Collection<Star>;
 	public warnings: Collection<Warn>;
 
 	public sweepInterval: NodeJS.Timer;
@@ -43,7 +41,6 @@ export default class CacheManager {
 		this.mutes = new LimitedCollection(maxSize);
 		this.partnerships = new LimitedCollection(maxSize);
 		this.profiles = new LimitedCollection(maxSize);
-		this.points = new LimitedCollection(maxSize);
 		this.stars = new LimitedCollection(maxSize);
 		this.warnings = new LimitedCollection(maxSize);
 		this.sweepInterval = database.client.setInterval(() => this.sweepCache(), cacheSweepInterval! * 1000);
@@ -53,7 +50,7 @@ export default class CacheManager {
 		const keys = Object.keys(this) as (keyof this)[];
 		for (const key of keys) {
 			const coll = this[key];
-			if (!(coll instanceof LimitedCollection)) continue;
+			if (!(coll instanceof LimitedCollection) || coll.hasTimeouts) continue;
 			coll.clear();
 		}
 	}

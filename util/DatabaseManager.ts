@@ -155,8 +155,6 @@ export default class DatabaseManager {
 			);
 		}
 		const userID = this.client.users.resolveID(user)!;
-
-		if (this.cache.points.has(userID)) return this.cache.points.get(userID);
 		
 		const [data] = await this.query<RawPoints>(
 			'SELECT * FROM points WHERE user_id = :userID LIMIT 1',
@@ -170,9 +168,7 @@ export default class DatabaseManager {
 			);
 			return this.points(userID);
 		}
-		const constructed = new Points(this.client, data);
-		this.cache.points.set(constructed.userID, constructed);
-		return constructed;
+		return new Points(this.client, data);
 	}
 
 	public async editLevels(user: User | Snowflake, data: Partial<Omit<RawLevels, 'user_id'>>) {
