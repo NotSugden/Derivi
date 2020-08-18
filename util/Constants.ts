@@ -529,7 +529,7 @@ export const Responses = {
 						'**Free**'
 				}.`;
 			}
-		}), `Use \`${guild.client.config.prefix[0]}buy [name]\` to buy an item.'`];
+		}), `Use \`${guild.client.config.prefix[0]}buy [name]\` to buy an item.`];
 	},
 	WITHDRAW_SUCCESS: (amount: number) => `Successfully withdrew **${amount}** points.`,
 	DEPOSIT_SUCCESS: (amount: number) => `Successfully deposited **${amount}** points.`,

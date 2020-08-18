@@ -1,8 +1,4 @@
-import { MessageMentions, Guild } from 'discord.js';
-import { GuildChannelManager } from 'discord.js';
-import { TextChannel } from 'discord.js';
-import { DataResolver } from 'discord.js';
-import { Role } from 'discord.js';
+import { MessageMentions, Guild, GuildChannelManager, TextChannel, DataResolver, Role } from 'discord.js';
 import Command, { CommandData } from '../structures/Command';
 import CommandArguments from '../structures/CommandArguments';
 import CommandError from '../util/CommandError';
