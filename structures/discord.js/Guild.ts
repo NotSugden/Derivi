@@ -1,32 +1,6 @@
-import { Guild as DJSGuild, Collection, Permissions, User, Invite } from 'discord.js';
+import { Guild as DJSGuild, Collection, User, Invite } from 'discord.js';
 import Client from '../../util/Client';
 import GuildConfig from '../GuildConfig';
-
-async function _init(this: Guild) {
-	if (this.me) {
-		if (this.me.hasPermission(Permissions.FLAGS.BAN_MEMBERS)) {
-			try {
-				const bans = await this.fetchBans();
-				for (const ban of bans.values()) {
-					this.bans.set(ban.user.id, ban);
-				}
-			} catch (error) {
-				this.client.emit('error', error);
-			}
-		}
-
-		if (this.me.hasPermission(Permissions.FLAGS.MANAGE_GUILD)) {
-			try {
-				const invites = await this.fetchInvites();
-				for (const invite of invites.values()) {
-					this.invites.set(invite.code, invite);
-				}
-			} catch (error) {
-				this.client.emit('error', error);
-			}
-		}
-	}
-}
 
 interface BanInfo {
 	reason: string | null;
@@ -47,7 +21,6 @@ export default class Guild extends DJSGuild {
 
 	constructor(client: Client, data: object) {
 		super(client, data);
-		_init.apply(this);
 
 		this.config = null;
 	}
