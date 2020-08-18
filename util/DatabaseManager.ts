@@ -899,7 +899,7 @@ message_id = :messageID OR author_id = :messageID\
 			);
 			if (!data) return null;
 			const constructed = new Giveaway(this.client, data);
-			if (constructed.endTimestamp < Date.now()) {
+			if (constructed.endTimestamp < Date.now() && !constructed.ended) {
 				await constructed.end();
 			}
 			this.cache.giveaways.set(constructed.messageID, constructed);
