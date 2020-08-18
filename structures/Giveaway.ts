@@ -53,14 +53,23 @@ export default class Giveaway {
 
 	public async end() {
 		const message = await this.fetchMessage();
-		const entries = await message.reactions.cache.get('🎁')!.users.fetch();
+		const reaction = message.reactions.cache.get('🎁');
+		if (!reaction) {
+			await message.edit(Responses.GIVEAWAY_END(this.prize, this.endAt));
+			await this.setWinners([]);
+			return message.channel.send(CommandErrors.NO_GIVEAWAY_WINNERS(
+				this.prize
+			));
+		}
+		const entries = await reaction.users.fetch();
 		entries.delete(this.client.user!.id);
 		if (this.messageRequirement) {
 			const config = (await message.guild.fetchConfig())!;
 			for (const user of entries.values()) {
 				const [{ count }] = await this.client.database.query<{ count: number }>(
-					'SELECT COUNT(*) AS count FROM messages WHERE sent_timestamp > :sent AND channel_id = :channelID',
-					{ channelID: config.generalChannelID, sent: new Date(this.startAt) }
+					'SELECT COUNT(*) AS count FROM messages WHERE ' +
+					'sent_timestamp > :sent AND channel_id = :channelID AND user_id = :userID',
+					{ channelID: config.generalChannelID, sent: new Date(this.startAt), userID: user.id }
 				);
 				if (count < this.messageRequirement) entries.delete(user.id);
 			}
