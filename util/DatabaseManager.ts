@@ -879,7 +879,7 @@ message_id = :messageID OR author_id = :messageID\
 			if (all) {
 				return giveaways.reduce((collection, next) => {
 					const constructed = this.cache.giveaways.get(next.message_id) || new Giveaway(this.client, next);
-					if (constructed.endTimestamp < Date.now()) {
+					if (constructed.endTimestamp < Date.now() && !constructed.ended) {
 						constructed.end()
 							.catch(error => this.client.emit('error', error));
 					}
