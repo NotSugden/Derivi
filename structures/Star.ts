@@ -93,17 +93,26 @@ export default class Star {
 		const id = this.client.users.resolveID(user)!;
 		if (this.userIDs.includes(id)) return this;
 		await this.client.database.editStar(this.messageID, { users: this.userIDs });
-		const message = await this.fetchStarboardMessage(cacheMessage);
-		await message.edit(Responses.STARBOARD_EMBED(this.starCount, await this.fetchMessage()));
+		await this.updateMessage(cacheMessage);
 		return this;
 	}
 
 	public async removeStar(user: User | Snowflake, cacheMessage = false) {
 		const index = this.userIDs.indexOf(this.client.users.resolveID(user)!);
 		if (index === -1) return this;
-		this.userIDs.splice(index, 1);
 		await this.client.database.editStar(this.messageID, { users: this.userIDs });
-		return this.updateMessage(cacheMessage);
+		await this.updateMessage(cacheMessage);
+		return this;
+	}
+
+	public async refreshStars(cacheMessage = false) {
+		const message = await this.fetchMessage(cacheMessage);
+		const reaction = message.reactions.cache.get('⭐');
+		if (!reaction) return this;
+		const users = (await reaction.users.fetch()).keyArray();
+		await this.client.database.editStar(this.messageID, { users });
+		await this.updateMessage(cacheMessage);
+		return this;
 	}
 }
 

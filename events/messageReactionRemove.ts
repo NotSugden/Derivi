@@ -14,7 +14,7 @@ export default (async (
 		if (reaction.message.author!.id === user.id) return;
 		const existing = await client.database.stars(guild, reaction.message.id);
 		if (!existing) return;
-		await existing.removeStar(user);
+		await existing.refreshStars();
 		return;
 	}
 	if (!client.config.reactionRoles.size) return;

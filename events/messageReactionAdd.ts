@@ -26,10 +26,11 @@ export default (async (
 		if (reaction.message.author!.id === user.id) {
 			await reaction.users.remove(user.id);
 			await reaction.message.channel.send(Responses.STAR_OWN_MESSAGE(user));
+			return;
 		}
 		const existing = await client.database.stars(guild, reaction.message.id);
+		const users = (await reaction.users.fetch()).keyArray();
 		if (!existing && reaction.count! >= config.starboard.minimum) {
-			const users = (await reaction.users.fetch()).keyArray();
 			const starboardMessage = await config.starboard.channel!.send(
 				Responses.STARBOARD_EMBED(users.length, reaction.message as Message)
 			);
@@ -41,7 +42,7 @@ export default (async (
 				users
 			});
 		} else if (existing) {
-			await existing.addStar(user);
+			await existing.refreshStars();
 		}
 		return;
 	}
