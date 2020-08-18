@@ -53,7 +53,7 @@ export default class Giveaway extends Command {
 
 	public async run(message: GuildMessage<true>, args: CommandArguments, { send }: CommandData) {
 		if (args[0] === GiveawayModes.START) {
-			const [id] = args.regular[1].match(SNOWFLAKE_REGEX) || [];
+			const [id] = args.regular[1]?.match(SNOWFLAKE_REGEX) || [];
 			const length = Util.parseMS(args.regular[id ? 2 : 1]);
 			if (length === -1 || length < 120e3) {
 				throw new CommandError('INVALID_TIME');
@@ -108,7 +108,7 @@ export default class Giveaway extends Command {
 		const reroll = args[0] === GiveawayModes.REROLL;
 		if (reroll || args[0] === GiveawayModes.END) {
 			const giveaway = await fetchGiveaway(args[1] || message.channel.id, typeof args[1] === 'string');
-			const ended = giveaway.ended;
+			const ended = reroll ? giveaway.endTimestamp < Date.now() : giveaway.ended;
 			if ((!ended && reroll) || (ended && !reroll)) {
 				throw new CommandError(reroll ? 'GIVEAWAY_NOT_FINISHED' : 'GIVEAWAY_FINISHED');
 			}

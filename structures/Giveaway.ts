@@ -59,7 +59,7 @@ export default class Giveaway {
 			await this.setWinners([]);
 			return message.channel.send(CommandErrors.NO_GIVEAWAY_WINNERS(
 				this.prize
-			));
+			)) as Promise<GuildMessage<true>>;
 		}
 		const entries = await reaction.users.fetch();
 		entries.delete(this.client.user!.id);
