@@ -134,7 +134,6 @@ export default class DatabaseManager {
 			'UPDATE points SET :data WHERE user_id = :userID',
 			{ data: values, userID }
 		);
-		return existing;
 	}
 
 	public async points(user: User | Snowflake): Promise<Points>;
