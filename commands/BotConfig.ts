@@ -1,7 +1,10 @@
-import { MessageMentions, Guild, GuildChannelManager, TextChannel, DataResolver, Role } from 'discord.js';
-import { Permissions } from 'discord.js';
-import { PermissionOverwrites } from 'discord.js';
-import { OverwriteResolvable } from 'discord.js';
+import {
+	Permissions, PermissionOverwrites,
+	OverwriteResolvable, CategoryChannel,
+	MessageMentions, Guild,
+	GuildChannelManager, TextChannel,
+	DataResolver, Role
+} from 'discord.js';
 import Command, { CommandData } from '../structures/Command';
 import CommandArguments from '../structures/CommandArguments';
 import CommandError from '../util/CommandError';
@@ -241,11 +244,13 @@ export default class BotConfig extends Command {
 							reason: `Config setup by ${message.author.tag}`,
 							type: 'text'
 						};
-						const cases = await guild.channels.create('cases', options);
-						const commands = await guild.channels.create('commands', options);
-						const logsCategory = await guild.channels.create(`${message.guild.id}-LOGS`, {
-							permissionOverwrites, type: 'category'
-						});
+						const [cases, commands, logsCategory] = await Promise.all([
+							guild.channels.create('cases', options),
+							guild.channels.create('commands', options),
+							guild.channels.create(`${message.guild.id}-LOGS`, {
+								permissionOverwrites, type: 'category'
+							})
+						]) as [TextChannel, TextChannel, CategoryChannel];
 						options.parent = logsCategory;
 						const logChannels = await Promise.all([
 							guild.channels.create('audit-logs', options),
