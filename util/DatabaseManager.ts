@@ -97,9 +97,6 @@ export default class DatabaseManager {
 		});
 	}
 
-	/**
-	 * Warning: database file will need to be properly configured.
-	 */
 	public open() {
 		return new Promise<this>((resolve, reject) => {
 			this.rawDatabase.connect(error => {
@@ -115,7 +112,6 @@ export default class DatabaseManager {
 	) {
 		data = DJSUtil.cloneObject(data);
 		const userID = this.client.users.resolveID(user)!;
-		const existing = await this.points(userID);
 
 		const values: SQLValues = {};
 
@@ -131,17 +127,13 @@ export default class DatabaseManager {
 			const date = typeof data.daily === 'boolean'
 				? new Date()
 				: new Date(data.daily);
-			(data as RawPoints).last_daily = date;
-			data.daily = undefined;
+			values.last_daily = date;
 		}
-
-		existing.patch(data as Partial<RawPoints>);
 
 		await this.query(
 			'UPDATE points SET :data WHERE user_id = :userID',
 			{ data: values, userID }
 		);
-		return existing;
 	}
 
 	public async points(user: User | Snowflake): Promise<Points>;
