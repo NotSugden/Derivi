@@ -238,6 +238,7 @@ export default class BotConfig extends Command {
 						const options: Parameters<GuildChannelManager['create']>[1] = {
 							parent: category,
 							permissionOverwrites,
+							reason: `Config setup by ${message.author.tag}`,
 							type: 'text'
 						};
 						const cases = await guild.channels.create('cases', options);
