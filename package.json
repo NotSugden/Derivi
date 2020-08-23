@@ -4,7 +4,8 @@
 	"description": "The ASC bot",
 	"main": "index.js",
 	"scripts": {
-		"test": "echo \"Error: no test specified\" && exit 1"
+		"build": "tsc && npm run start",
+		"start": "cd ../compiled && node index.js"
 	},
 	"repository": {
 		"type": "git",
