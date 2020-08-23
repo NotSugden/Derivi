@@ -234,7 +234,7 @@ export default class BotConfig extends Command {
 							id: serverRole.id,
 							type: 'role'
 						}] as OverwriteResolvable[]).map(o => PermissionOverwrites.resolve(o, guild));
-						const category = await guild.channels.create(message.guild.id, {
+						const category = await guild.channels.create(message.guild.name, {
 							permissionOverwrites, type: 'category'
 						});
 						// tfw GuildChannelCreateOptions isn't exported
@@ -247,7 +247,7 @@ export default class BotConfig extends Command {
 						const [cases, commands, logsCategory] = await Promise.all([
 							guild.channels.create('cases', options),
 							guild.channels.create('commands', options),
-							guild.channels.create(`${message.guild.id}-LOGS`, {
+							guild.channels.create(`${message.guild.name}-LOGS`, {
 								permissionOverwrites, type: 'category'
 							})
 						]) as [TextChannel, TextChannel, CategoryChannel];
