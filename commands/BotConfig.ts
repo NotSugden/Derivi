@@ -1,4 +1,7 @@
 import { MessageMentions, Guild, GuildChannelManager, TextChannel, DataResolver, Role } from 'discord.js';
+import { Permissions } from 'discord.js';
+import { PermissionOverwrites } from 'discord.js';
+import { OverwriteResolvable } from 'discord.js';
 import Command, { CommandData } from '../structures/Command';
 import CommandArguments from '../structures/CommandArguments';
 import CommandError from '../util/CommandError';
@@ -205,18 +208,42 @@ export default class BotConfig extends Command {
 					}
 					if (data.key === 'staff-server') {
 						messages.push((await message.channel.send('Creating channels... please wait.')).id);
+						let staffMember = guild.roles.cache.find(role => role.name.toLowerCase() === 'staff member');
+						if (!staffMember) {
+							staffMember = await guild.roles.create({ data: {
+								name: 'Staff Member', permissions: 0
+							}, reason: 'Staff Member Role' });
+						}
+						let serverRole = guild.roles.cache.find(
+							role => role.name.toLowerCase() === message.guild.name.toLowerCase()
+						);
+						if (!serverRole) {
+							serverRole = await guild.roles.create({ data: {
+								name: message.guild.name, permissions: 0
+							}, reason: `Server Role for ${message.guild.name}` });
+						}
+						const permissionOverwrites = ([{
+							deny: Permissions.FLAGS.VIEW_CHANNEL,
+							id: staffMember.id,
+							type: 'role'
+						}, {
+							allow: Permissions.FLAGS.VIEW_CHANNEL,
+							id: serverRole.id,
+							type: 'role'
+						}] as OverwriteResolvable[]).map(o => PermissionOverwrites.resolve(o, guild));
 						const category = await guild.channels.create(message.guild.id, {
-							type: 'category'
+							permissionOverwrites, type: 'category'
 						});
 						// tfw GuildChannelCreateOptions isn't exported
 						const options: Parameters<GuildChannelManager['create']>[1] = {
 							parent: category,
+							permissionOverwrites,
 							type: 'text'
 						};
 						const cases = await guild.channels.create('cases', options);
 						const commands = await guild.channels.create('commands', options);
 						const logsCategory = await guild.channels.create(`${message.guild.id}-LOGS`, {
-							type: 'category'
+							permissionOverwrites, type: 'category'
 						});
 						options.parent = logsCategory;
 						const logChannels = await Promise.all([
