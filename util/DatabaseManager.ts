@@ -376,14 +376,16 @@ export default class DatabaseManager {
 			guild_id: this.client.guilds.resolveID(data.guild)!,
 			message_id: typeof data.message === 'string'
 				? data.message : data.message.id,
-			moderator_id: this.client.users.resolveID(data.moderator),
+			moderator_id: this.client.users.resolveID(data.moderator)!,
 			reason: this.encrypt(data.reason),
 			screenshots: Array.isArray(data.screenshots)
 				? JSON.stringify(data.screenshots)
 				: data.screenshots || '[]',
+			timestamp: data.timestamp ?? new Date(),
 			user_ids: typeof data.users === 'string'
 				? data.users
 				: JSON.stringify(data.users.map(userOrId => this.client.users.resolveID(userOrId)!))
+
 		};
 		const [{ id }] = await this.query<{ id: number }>(
 			'SELECT COUNT(*) + 1 AS id FROM cases WHERE guild_id = :guildID',
@@ -1069,6 +1071,7 @@ interface CaseCreateData {
 	moderator: User | Snowflake;
 	reason: string;
 	screenshots?: string[] | string;
+	timestamp?: Date;
 	users: (User | Snowflake)[] | string;
 }
 
