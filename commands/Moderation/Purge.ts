@@ -92,7 +92,7 @@ export default class Purge extends Command {
 			throw new CommandError('INVALID_NUMBER', { max: 100, min: 2 });
 		} else if (usingSimpleFilter) limit = 50;
     
-		const { flags } = Util.extractFlags((usingSimpleFilter
+		const { options } = Util.extractOptions((usingSimpleFilter
 			? args.regular
 			: args.regular.slice(1)
 		).join(' '), [{
@@ -118,43 +118,43 @@ export default class Purge extends Command {
 			type: 'string'
 		}]);
 
-		if (typeof flags.before === 'string') {
-			validateSnowflake(flags.before, { past: message.channel.createdTimestamp });
+		if (typeof options.before === 'string') {
+			validateSnowflake(options.before, { past: message.channel.createdTimestamp });
 		}
-		if (typeof flags.after === 'string') {
-			validateSnowflake(flags.after, { past: message.channel.createdTimestamp });
+		if (typeof options.after === 'string') {
+			validateSnowflake(options.after, { past: message.channel.createdTimestamp });
 		}
 
-		if (flags.before && flags.after) {
+		if (options.before && options.after) {
 			throw new CommandError('CONFLICTING_FLAGS', ['before', 'after']);
 		}
     
-		const botsIsBoolean = typeof flags.bots === 'boolean';
+		const botsIsBoolean = typeof options.bots === 'boolean';
     
 		if (botsIsBoolean) {
 			const conflicting = ['bots'];
-			if (botsIsBoolean && typeof flags.user === 'string') conflicting.push('user');
+			if (botsIsBoolean && typeof options.user === 'string') conflicting.push('user');
 			if (conflicting.length > 1) throw new CommandError('CONFLICTING_FLAGS', conflicting);
 		}
     
-		if (typeof flags.match === 'string' && typeof flags.matchexact === 'string') {
+		if (typeof options.match === 'string' && typeof options.matchexact === 'string') {
 			throw new CommandError('CONFLICTING_FLAGS', ['match', 'matchexact']);
 		}
     
 		let messages = await message.channel.messages.fetch({
-			after: flags.after as string,
-			before: flags.before as string,
+			after: options.after as string,
+			before: options.before as string,
 			limit
 		});
     
-		if (typeof flags.bots === 'boolean' || typeof simpleFilter.bots === 'boolean') {
-			const bool = typeof flags.bots === 'boolean' ? flags.bots : simpleFilter.bots as boolean;
+		if (typeof options.bots === 'boolean' || typeof simpleFilter.bots === 'boolean') {
+			const bool = typeof options.bots === 'boolean' ? options.bots : simpleFilter.bots as boolean;
 			messages = messages.filter(msg => msg.author?.bot === bool);
-		} else if (typeof flags.user === 'string' || simpleFilter.users) {
+		} else if (typeof options.user === 'string' || simpleFilter.users) {
 
-			const userFlagIsString = typeof flags.user === 'string';
+			const userFlagIsString = typeof options.user === 'string';
 			
-			const users = userFlagIsString ? (flags.user as string).split(/ ?, ?/g)
+			const users = userFlagIsString ? (options.user as string).split(/ ?, ?/g)
 				.map(str => {
 					const [match] = str.match(SNOWFLAKE_REGEX) || [];
 					if (!match) return '';
@@ -172,19 +172,19 @@ export default class Purge extends Command {
 			));
 		}
     
-		if (typeof flags.match === 'string') {
-			messages = messages.filter(msg => msg.content.includes(flags.match as string));
-		} else if (typeof flags.matchexact === 'string') {
-			messages = messages.filter(msg => msg.content === flags.matchexact);
+		if (typeof options.match === 'string') {
+			messages = messages.filter(msg => msg.content.includes(options.match as string));
+		} else if (typeof options.matchexact === 'string') {
+			messages = messages.filter(msg => msg.content === options.matchexact);
 		}
 			
-		if (['boolean', 'string'].includes(typeof flags.mentions)) {
-			if (flags.mentions === true) {
+		if (['boolean', 'string'].includes(typeof options.mentions)) {
+			if (options.mentions === true) {
 				messages = messages.filter(
 					msg => Boolean(msg.mentions.users.size || msg.mentions.roles.size || msg.mentions.everyone)
 				);
-			} else if (typeof flags.mentions === 'string') {
-				const ids = flags.mentions.split(/ ?, ?/g)
+			} else if (typeof options.mentions === 'string') {
+				const ids = options.mentions.split(/ ?, ?/g)
 					.map(str => {
 						const [match] = str.match(SNOWFLAKE_REGEX) || [];
 						if (!match) return '';

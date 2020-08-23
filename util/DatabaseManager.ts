@@ -1080,7 +1080,7 @@ interface CaseQueryOptions {
 	before?: Date | number;
 }
 
-type CaseEditData = Partial<Omit<CaseCreateData, 'guild'>>
+export type CaseEditData = Partial<Omit<CaseCreateData, 'guild' | 'timestamp'>>
 
 interface GiveawayCreateData {
 	createdBy: User | Snowflake;

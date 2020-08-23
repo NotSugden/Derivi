@@ -16,18 +16,21 @@ import { DMMessage, GuildMessage, TextBasedChannels } from './Types';
 import { VALID_EXTENSIONS } from '../commands/Moderation/Attach';
 import OAuthUser from '../structures/OAuthUser';
 
-const arrToObject = <T extends string>(array: T[], fn: (key: string, index: number) => unknown) => {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const arrToObject = <T extends string, R>(array: T[], fn: (key: string, index: number) => R) => {
 	const obj: { [key: string]: unknown } = {};
 	for (let i = 0; i < array.length; i++) {
 		const key = array[i];
 		obj[key] = fn(key, i);
 	}
-	return obj as { [K in T]: null };
+	return obj as { [K in T]: R };
 };
 
 const getCipherKey = (password: string) => crypto.createHash('sha256')
 	.update(password)
 	.digest();
+
+const removeQuotes = (string: string) => /^(["'“]).*(\1)$/.test(string) ? string.slice(1, -1) : string;
 
 export default class Util {
 	static async downloadImage(url: string, name: string, config: Client['config']) {
@@ -38,48 +41,13 @@ export default class Util {
 		return `${config.attachmentsURL!}/${name}`;
 	}
 
-	static getOptions<T extends string>(string: string, options: T[]) {
-		const given = [...string.matchAll(OPTIONS_REGEX)]
-			.map(arr => arr.slice(1)) as [T, string][];
-		const obj: { [K in T]: string | null } = arrToObject(options, () => null);
-		for (const [name, value] of given) {
-			obj[name] = value.startsWith('"') ? value.slice(1, value.length - 1) : value;
-		}
-		return obj;
+	static extractOptions(string: string, optionTypes?: Flag[]) {
+		const obj = this._extractOptions(string, OPTIONS_REGEX, optionTypes);
+		return { options: obj.flags, string: obj.string };
 	}
 
-	static extractFlags(string: string, flagTypes?: Flag[]): {
-		flags: FlagData;
-		string: string;
-	} {
-		const flags = [...string.matchAll(FLAGS_REGEX)]
-			.map(arr => arr.slice(2));
-		const flagsObj: { [key: string]: string | boolean | number } = {};
-		for (const [name, value] of flags) {
-			flagsObj[name] = /^("|'|“)/.test(value) ? value.slice(1, value.length - 1) : value;
-			if (flagTypes) {
-				const data = flagTypes.find(flag => flag.name === name);
-				if (!data) throw new CommandError('INVALID_FLAG', name, flagTypes.map(flag => flag.name));
-				const includes = (string: FlagType) => Array.isArray(data.type) && data.type.includes(string);
-				if (data.type === 'boolean' || includes('boolean')) {
-					if (value === 'true' || value === 'false') flagsObj[name] = value === 'true';
-
-				} else if (data.type === 'number' || includes('number')) {
-					const number = parseInt(value);
-					if (!isNaN(number)) flagsObj[name] = number;
-				}
-
-				const type = typeof flagsObj[name];
-
-				if (typeof data.type === 'string' ? type !== data.type : !includes(type as FlagType)) {
-					throw new CommandError('INVALID_FLAG_TYPE', data.name, data.type);
-				}
-			}
-		}
-		return {
-			flags: flagsObj,
-			string: string.replace(FLAGS_REGEX, '').replace(/\s\s+/g, ' ')
-		};
+	static extractFlags(string: string, flagTypes?: Flag[]) {
+		return this._extractOptions(string, FLAGS_REGEX, flagTypes);
 	}
 
 	static encrypt(data: Buffer | string, password: string) {
@@ -392,6 +360,51 @@ export default class Util {
 
 	static isTextBasedChannel(channel: Channel): channel is TextBasedChannels {
 		return ['text', 'news', 'dm'].includes(channel.type);
+	}
+
+	private static _extractOptions(
+		string: string,
+		regex: typeof FLAGS_REGEX | typeof OPTIONS_REGEX,
+		types?: Flag[]
+	) {
+		const isFlags = regex === FLAGS_REGEX;
+		const options = [...string.matchAll(regex)];
+		const optionsObj: { [key: string]: string | boolean | number } = {};
+		for (const [, name, value] of options) {
+			optionsObj[name] = removeQuotes(value);
+			if (types) {
+				const data = types.find(type => type.name === name);
+				if (!data) {
+					throw new CommandError(
+						isFlags ? 'INVALID_FLAG' : 'INVALID_PARSED_OPTION',
+						name,
+						types.map(type => type.name)
+					);
+				}
+				const includes = (string: FlagType) => Array.isArray(data.type) && data.type.includes(string);
+				if (data.type === 'boolean' || includes('boolean')) {
+					if (value === 'true' || value === 'false') optionsObj[name] = value === 'true';
+
+				} else if (data.type === 'number' || includes('number')) {
+					const number = parseInt(value);
+					if (!isNaN(number)) optionsObj[name] = number;
+				}
+
+				const type = typeof optionsObj[name];
+
+				if (typeof data.type === 'string' ? type !== data.type : !includes(type as FlagType)) {
+					throw new CommandError(
+						isFlags ? 'INVALID_FLAG_TYPE' : 'INVALID_PARSED_OPTION_TYPE',
+						data.name,
+						data.type
+					);
+				}
+			}
+		}
+		return {
+			flags: optionsObj,
+			string: string.replace(regex, '').replace(/\s\s+/g, ' ')
+		};
 	}
 }
 

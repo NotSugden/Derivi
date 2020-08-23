@@ -86,9 +86,7 @@ export default class Eval extends Command {
 					body: inspected,
 					headers: {
 						'Content-Type': 'application/json'
-					},
-					method: 'POST'
-
+					}, method: 'POST'
 				}).then(response => response.json());
 				if (!json.key) return send('Output was too long for hastebin');
 				const url = URLs.HASTEBIN(json.key);

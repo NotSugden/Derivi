@@ -32,6 +32,10 @@ export interface DMMessage extends djs.Message {
 
 export type MessageT<M = false> = GuildMessage<M> | DMMessage;
 
+export type MapObject<T extends object, V> = {
+	[K in keyof T]: V
+};
+
 /* eslint-disable @typescript-eslint/no-empty-interface */
 
 declare module 'discord.js' {

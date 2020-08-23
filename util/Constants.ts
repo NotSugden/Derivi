@@ -242,7 +242,11 @@ export const CommandErrors = {
 	INVALID_OPTION_TYPE: (option: string, validTypes: string[]) =>
 		`Option ${option} is not valid, it should be one of ${
 			validTypes.map(type => `\`${type}\``).join(', ')
-		}.`
+		}.`,
+	INVALID_PARSED_OPTION_TYPE: (flag: string, type: string | string[]) => `Option ${flag} must be ${
+		Array.isArray(type) ? `one of ${type.map(t => `\`${t}\``).join(', ')}` : type}`,
+	INVALID_PARSED_OPTION: (provided: string, valid: string[]) =>
+		`Provided option '${provided}' is not valid, valid flags for this command are: ${valid.join(', ')}`
 };
 
 export type MatchState = 'won' | 'lost' | 'draw' | 'idle';
@@ -660,8 +664,14 @@ export const URLs = {
 	HASTEBIN: (endpointOrID?: string) => `https://paste.nomsy.net${endpointOrID ? `/${endpointOrID}` : ''}`
 };
 
-export const FLAGS_REGEX = /(--|—)([a-z]+)=('[^']*'|“[^“]*“|"[^"]*"|[0-9a-z]*)/gi;
-export const OPTIONS_REGEX = /([a-z]*)=('[^']*'|“[^“]*“|"[^"]*"|[0-9a-z]*)/gi;
+export const QUOTES = ['"', '\'', '“'];
+export const OPTIONS_REGEX = new RegExp(
+	`([a-z]+)=([^ "'“]+|${QUOTES.map(q => `${q}[^${q}]*${q}`).join('|')})`,
+	'gi'
+);
+export const FLAGS_REGEX = new RegExp(
+	`(?:--|—)${OPTIONS_REGEX.source}`, 'gi'
+);
 
 export const EventResponses = {
 	FILE_PERMISSIONS_NOTICE: (dm: true | GuildMember, guild: Guild): string | MessageOptions => {

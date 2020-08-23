@@ -4,7 +4,8 @@ import CommandArguments from '../../structures/CommandArguments';
 import CommandError from '../../util/CommandError';
 import CommandManager from '../../util/CommandManager';
 import { Responses, ModerationActionTypes } from '../../util/Constants';
-import { GuildMessage } from '../../util/Types';
+import { CaseEditData } from '../../util/DatabaseManager';
+import { GuildMessage, MapObject } from '../../util/Types';
 import Util from '../../util/Util';
 
 enum CaseModes {
@@ -12,7 +13,7 @@ enum CaseModes {
 	DELETE = 'delete'
 }
 
-const EDIT_OPTIONS = {
+const EDIT_OPTIONS: MapObject<CaseEditData, 'string' | 'number' | 'boolean'> = {
 	reason: 'string'
 };
 
@@ -100,9 +101,9 @@ export default class Case extends Command {
 
 			return response.edit(Responses.DELETE_CASE(caseID, true)) as Promise<GuildMessage<true>>; 
 		} else if (mode === CaseModes.EDIT) {
-			const newData = Util.getOptions(
-				args.regular.slice(1).join(' '),
-				Object.keys(EDIT_OPTIONS) as (keyof typeof EDIT_OPTIONS)[]
+			const { options: newData } = Util.extractOptions(
+				args.regular.slice(1).join(' '), Object.entries(EDIT_OPTIONS)
+					.map(([opt, type]) => ({ name: opt, type: type! }))
 			);
 			if (!Object.keys(newData).length) {
 				throw new CommandError('NO_OPTIONS', Object.keys(EDIT_OPTIONS));
