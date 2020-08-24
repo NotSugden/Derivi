@@ -403,7 +403,7 @@ export default class Util {
 		}
 		return {
 			flags: optionsObj,
-			string: string.replace(regex, '').replace(/\s\s+/g, ' ')
+			string: string.replace(new RegExp(` ?${regex.source} ?`, 'gi'), '')
 		};
 	}
 }
