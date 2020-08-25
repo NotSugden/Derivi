@@ -133,6 +133,7 @@ export default (async message => {
 			send
 		});
 	} catch (error) {
+		if (error === 'PRODUCTION_ERROR') return;
 		if (error instanceof CommandError) {
 			return error.dmError ?
 				message.author.send(error.message)

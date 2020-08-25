@@ -6,14 +6,14 @@ import { EventResponses } from '../util/Constants';
  * should be in the config.json
  */
 export default (async (oldMember: GuildMember, newMember: GuildMember) => {
-	const { guild } = newMember;
+	const { client, guild } = newMember;
 	const config = await guild.fetchConfig();
   
 	if (!config || newMember.user.bot) return;
 	
 	if (
 		config.filePermissionsRole && !oldMember.roles.cache.has(config.filePermissionsRoleID) &&
-    newMember.roles.cache.has(config.filePermissionsRoleID)
+    newMember.roles.cache.has(config.filePermissionsRoleID) && !client.config.PRODUCTION
 	) {
 		try {
 			await newMember.send(EventResponses.FILE_PERMISSIONS_NOTICE(true, guild));

@@ -27,7 +27,7 @@ export default (async (member: GuildMember) => {
 		}
 	}
 	const joinsHook = config.webhooks.joins;
-	if (joinsHook && !isMuted && !recentlyKicked) {
+	if (joinsHook && !isMuted && !recentlyKicked && !client.config.PRODUCTION) {
 		joinsHook.send(EventResponses.GUILD_MEMBER_ADD(member)).catch(console.error);
 	}
 	const auditHook = config.webhooks.memberLogs;

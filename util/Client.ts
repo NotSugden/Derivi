@@ -17,17 +17,18 @@ export interface DeriviClientT {
 	readonly config: {
 		attachmentLogging: boolean;
 		attachmentsURL?: string;
-    readonly encryptionPassword: string;
-    emojis: EmojiStore;
+		readonly encryptionPassword: string;
+		emojis: EmojiStore;
 		database: DatabaseOptions;
 		filesDir: string;
 		ownerIDs: Snowflake[];
 		prefix: string[];
-    reactionRoles: Map<Snowflake, {
+		reactionRoles: Map<Snowflake, {
 			emojis: Map<string, Snowflake>;
 			limit: number;
 		}>;
-    loginURL?: string;
+		loginURL?: string;
+		readonly PRODUCTION: boolean;
 	};
 	database: DatabaseManager;
 	lockedPoints: Set<Snowflake>;
@@ -40,21 +41,7 @@ export interface DeriviClientT {
 
 export default class Client extends DJSClient {
 	public commands: CommandManager;
-	public readonly config!: {
-		attachmentLogging: boolean;
-		attachmentsURL?: string;
-    readonly encryptionPassword: string;
-    emojis: EmojiStore;
-		database: DatabaseOptions;
-		filesDir: string;
-		ownerIDs: Snowflake[];
-		prefix: string[];
-    reactionRoles: Map<Snowflake, {
-			emojis: Map<string, Snowflake>;
-			limit: number;
-		}>;
-    loginURL?: string;
-	};
+	public readonly config!: DeriviClientT['config'];
 	public database: DatabaseManager;
 	public lockedPoints: Set<Snowflake>;
 	public recentlyKicked: Set<string>;
@@ -67,19 +54,19 @@ export default class Client extends DJSClient {
 		this.recentlyKicked = new Set();
 
 		this.commands = new CommandManager(this, config.commands_dir as string);
-		
+
 		this.token = config.token;
-    
+
 		Object.defineProperty(this, 'config', { value: {} });
 
 		// this isn't validated due to the user possibly not being cached
 		this.config.ownerIDs = config.owners;
 		this.config.loginURL = config.login_url;
-		this.config.attachmentLogging = config.attachment_logging as boolean,
-		this.config.attachmentsURL = config.attachment_files_url,
-		this.config.database = config.database,
-		this.config.filesDir = config.files_dir as string,
-		this.config.prefix = config.prefix,
+		this.config.attachmentLogging = config.attachment_logging as boolean;
+		this.config.attachmentsURL = config.attachment_files_url;
+		this.config.database = config.database;
+		this.config.filesDir = config.files_dir as string;
+		this.config.prefix = config.prefix;
 		this.config.reactionRoles = new Map(config.reaction_roles.map(data => [
 			data.message, {
 				emojis: new Map(data.emojis.map(emojiData => [
@@ -93,9 +80,10 @@ export default class Client extends DJSClient {
 		for (const { name, id } of config.emojis) {
 			this.config.emojis.set(name, id);
 		}
-    
-		Object.defineProperty(this.config, 'encryptionPassword', {
-			value: config.encryption_password
+
+		Object.defineProperties(this.config, {
+			PRODUCTION: { value: config.PRODUCTION ?? false },
+			encryptionPassword: { value: config.encryption_password }
 		});
 
 		if (config.website?.enabled) {
@@ -175,11 +163,11 @@ export interface ClientConfig {
 	attachment_files_url?: string;
 	attachment_logging: boolean;
 	commands_dir?: string;
-  encryption_password: string;
-  emojis: {
-    name: string;
-    id: Snowflake;
-  }[];
+	encryption_password: string;
+	emojis: {
+		name: string;
+		id: Snowflake;
+	}[];
 	database: DatabaseOptions;
 	files_dir?: string;
 	owners: Snowflake[];
@@ -198,5 +186,6 @@ export interface ClientConfig {
 		filename: string;
 		directory: string;
 	};
-  login_url?: string;
+	login_url?: string;
+	PRODUCTION?: boolean;
 }

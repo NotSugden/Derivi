@@ -21,7 +21,7 @@ export default (async (
 	const config = guild && await guild.fetchConfig();
 	if (!guild || !config) return;
 	
-	if (config.starboard.enabled && reaction.emoji.name === '⭐') {
+	if (config.starboard.enabled && reaction.emoji.name === '⭐' && !client.config.PRODUCTION) {
 		if (reaction.partial) await reaction.fetch();
 		if (reaction.message.author!.id === user.id) {
 			await reaction.users.remove(user.id);

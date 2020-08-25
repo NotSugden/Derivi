@@ -71,9 +71,11 @@ export async function runPartnership(message: GuildMessage<true>, config: GuildC
 			).dm();
 		}
 
-		await config.partnerRewardsChannel.send(Responses.PARTNER_REWARD(
-			message.author, message.channel, partnerChannel.points
-		));
+		if (!message.client.config.PRODUCTION) {
+			await config.partnerRewardsChannel.send(Responses.PARTNER_REWARD(
+				message.author, message.channel, partnerChannel.points
+			));
+		}
 
 		const points = await message.client.database.points(message.author);
 		await points.set({ amount: points.amount + partnerChannel.points });
@@ -84,10 +86,13 @@ export async function runPartnership(message: GuildMessage<true>, config: GuildC
 		});
 	} catch (error) {
 		await message.delete();
-		if (error.message === 'The user is banned from this guild.'){
+		const unknownInvite = error.message === 'Unknown Invite';
+		if (unknownInvite || error.message === 'The user is banned from this guild.') {
+			if (message.client.config.PRODUCTION) throw 'PRODUCTION_ERROR';
+			if (unknownInvite) {
+				throw new CommandError('UNKNOWN_INVITE', message.invites[0]).dm();
+			}
 			throw new CommandError('CLIENT_BANNED_INVITE').dm();
-		} else if (error.message === 'Unknown Invite') {
-			throw new CommandError('UNKNOWN_INVITE', message.invites[0]).dm();
 		}
 		throw error;
 	}
@@ -107,7 +112,7 @@ export async function runLevels(message: GuildMessage<true>, config: GuildConfig
 			'SELECT role_id FROM level_roles WHERE guild_id = :guildID AND level = :level',
 			options
 		);
-		if (data) {
+		if (data && !message.client.config.PRODUCTION) {
 			// only start removing roles after level 5 to reduce spam on new members
 			let roles = message.member.roles.cache.keyArray();
 			if (newLevel > 5) {
@@ -131,7 +136,7 @@ export async function runLevels(message: GuildMessage<true>, config: GuildConfig
 	XP_COOLDOWN.add(message.author.id);
 	setTimeout(() => XP_COOLDOWN.delete(message.author.id), 6e4);
 
-	if (typeof newData.level === 'number') {
+	if (typeof newData.level === 'number' && !message.client.config.PRODUCTION) {
 		await message.channel.send(Responses.LEVEL_UP(message.author, newData.level)); 
 	}
 }
@@ -144,6 +149,7 @@ export async function messageLink(
 	message: GuildMessage<true>,
 	[, guildID, channelID, messageID]: string[]
 ) {
+	if (message.client.config.PRODUCTION) return;
 	const guild = message.client.guilds.cache.get(guildID);
 	if (!guild) return;
 	const channel = guild.channels.cache.get(channelID);
