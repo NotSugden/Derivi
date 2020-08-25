@@ -10,8 +10,6 @@ import { GuildMessage } from '../util/Types';
 import * as mysql from 'mysql';
 import { SQLValues } from '../util/DatabaseManager';
 
-import * as typescript from 'typescript';
-
 const util: typeof import('util') = require('util');
 const djs: typeof import('discord.js') = require('discord.js');
 const fetch: typeof import('node-fetch').default = require('node-fetch');
@@ -131,7 +129,7 @@ export default class Eval extends Command {
 	private async resolveCode(message: GuildMessage<true>, code: string, {
 		lang,
 		finish
-	}: { lang?: string; finish: (res: unknown) => void}) {
+	}: { lang?: string; finish: (res: unknown) => void }) {
 		if (!lang) return code;
 		lang = lang.toLowerCase();
 		if (lang === 'sql') {
@@ -143,6 +141,7 @@ export default class Eval extends Command {
 					}, props));
 				});
 				const results = await this.client.database.query<SQLValues>(replaced);
+				await this.client.database.cache.sweepCache();
 				await finish(results);
 			} catch (error) {
 				await finish(error.stack || error);
