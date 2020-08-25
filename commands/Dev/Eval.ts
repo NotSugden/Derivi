@@ -2,24 +2,24 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
 /* eslint-disable import/order */
 import { MessageOptions } from 'discord.js';
-import Command, { CommandData, CommandCategory } from '../structures/Command';
-import CommandArguments from '../structures/CommandArguments';
-import CommandManager from '../util/CommandManager';
-import { URLs } from '../util/Constants';
-import { GuildMessage } from '../util/Types';
+import Command, { CommandData, CommandCategory } from '../../structures/Command';
+import CommandArguments from '../../structures/CommandArguments';
+import CommandManager from '../../util/CommandManager';
+import { URLs } from '../../util/Constants';
+import { GuildMessage } from '../../util/Types';
 import * as mysql from 'mysql';
-import { SQLValues } from '../util/DatabaseManager';
+import { SQLValues } from '../../util/DatabaseManager';
 
 const util: typeof import('util') = require('util');
 const djs: typeof import('discord.js') = require('discord.js');
 const fetch: typeof import('node-fetch').default = require('node-fetch');
-const Util: typeof import('../util/Util').default = require('../util/Util').default;
+const Util: typeof import('../../util/Util').default = require('../../util/Util').default;
 
 let EvalUtil;
 
 try {
 	// this can be a custom file, exported should be a class with static utility functions
-	const mod = require('../EvalUtil.js');
+	const mod = require('../../EvalUtil.js');
 	EvalUtil = mod.default || mod;
 } catch { } // eslint-disable-line no-empty
 

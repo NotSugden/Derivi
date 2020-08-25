@@ -5,13 +5,13 @@ import {
 	GuildChannelManager, TextChannel,
 	DataResolver, Role
 } from 'discord.js';
-import Command, { CommandData, CommandCategory } from '../structures/Command';
-import CommandArguments from '../structures/CommandArguments';
-import CommandError from '../util/CommandError';
-import CommandManager from '../util/CommandManager';
-import { SQLValues, QueryTypes } from '../util/DatabaseManager';
-import { GuildMessage } from '../util/Types';
-import Util from '../util/Util';
+import Command, { CommandData, CommandCategory } from '../../structures/Command';
+import CommandArguments from '../../structures/CommandArguments';
+import CommandError from '../../util/CommandError';
+import CommandManager from '../../util/CommandManager';
+import { SQLValues, QueryTypes } from '../../util/DatabaseManager';
+import { GuildMessage } from '../../util/Types';
+import Util from '../../util/Util';
 
 enum ConfigModes {
 	SETUP = 'setup'
