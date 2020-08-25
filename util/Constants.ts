@@ -131,7 +131,8 @@ export const Errors = {
 
 	NO_GIVEAWAYS_IN_CHANNEL: (id: Snowflake) => `There are no giveaways in channel ${id}.`,
 	WINNERS_NOT_CHOSEN: 'This giveaway hasn\'t had its winners picked yet.',
-	CONFIG_NOT_CACHED: 'The guild\'s config is not cached.'
+	CONFIG_NOT_CACHED: 'The guild\'s config is not cached.',
+	PROPERTY_DOESNT_EXIST: (path: string[], current: string) => `Property ${current} doesn't exist on ${path.join('.')}`
 };
 
 export const CommandErrors = {

@@ -7,6 +7,8 @@ import CommandArguments from '../structures/CommandArguments';
 import CommandManager from '../util/CommandManager';
 import { URLs } from '../util/Constants';
 import { GuildMessage } from '../util/Types';
+import * as mysql from 'mysql';
+import { SQLValues } from '../util/DatabaseManager';
 
 const util: typeof import('util') = require('util');
 const djs: typeof import('discord.js') = require('discord.js');
@@ -53,7 +55,6 @@ export default class Eval extends Command {
 				type: 'boolean'
 			}]
 		);
-		const code = _code.match(/```(?:(?<lang>\S+)\n)?\s?(?<code>[^]+?)\s?```/)?.groups?.code ?? _code;
 		const reverse = (string: string) => string.split('').reverse().join('');
 		const finish = async (result: unknown) => {
 			let inspected = (typeof result === 'string' ? result : util.inspect(result)).replace(
@@ -98,14 +99,41 @@ export default class Eval extends Command {
 				code: 'js'
 			});
 		};
+		const matches = _code.match(/```(?:(?<lang>\S+)\n)?\s?(?<code>[^]+?)\s?```/)?.groups;
+		let code = _code;
+		if (matches) {
+			if (matches.code) code = matches.code;
+			if (matches.lang && matches.lang.toLowerCase() === 'sql') {
+				try {
+					const replaced = code.replace(/{([^}]+)}/gi, (str, match: string) => {
+						const props = match.split('.');
+						return mysql.escape(Util.getProp({
+							client: this.client, message, this: this
+						}, props));
+					});
+					const results = await this.client.database.query<SQLValues>(replaced);
+					await finish(results);
+				} catch (error) {
+					await finish(error.stack || error);
+				}
+				return;
+			}
+		}
 		try {
-			let result = await eval(flags.async ? `(async() => {${code}})()` : code);
+			let result = await this._eval(
+				flags.async ? `(async() => {${code}})()` : code,
+				message, args
+			);
 			if (Array.isArray(result) && result.every(element => typeof element?.then === 'function')) {
 				result = await Promise.all(result);
 			}
 			await finish(result);
 		} catch (error) {
-			await finish(error.stack);
+			await finish(error.stack || error);
 		}
+	}
+
+	private _eval(code: string, message: GuildMessage<true>, args: CommandArguments): unknown {
+		return eval(code);
 	}
 }

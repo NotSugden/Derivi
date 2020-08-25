@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import * as crypto from 'crypto';
 import { promises as fs } from 'fs';
 import * as path from 'path';
@@ -12,6 +13,7 @@ import {
 import fetch from 'node-fetch';
 import CommandError from './CommandError';
 import { FLAGS_REGEX, ModerationActionTypes, OPTIONS_REGEX, Responses } from './Constants';
+import { Error } from './Errors';
 import { DMMessage, GuildMessage, TextBasedChannels } from './Types';
 import { VALID_EXTENSIONS } from '../commands/Moderation/Attach';
 import OAuthUser from '../structures/OAuthUser';
@@ -360,6 +362,32 @@ export default class Util {
 
 	static isTextBasedChannel(channel: Channel): channel is TextBasedChannels {
 		return ['text', 'news', 'dm'].includes(channel.type);
+	}
+
+	static getProp(
+		object: any, path: string[], omit = ['token']
+	) {
+		if (typeof object[path[0]] !== 'object' && path.length > 1) {
+			throw new Error('PROPERTY_DOESNT_EXIST', ['Given Object'], path[0]);
+		}
+		let current: any = object[path[0]];
+		for (let i = 1;i < path.length;i++) {
+			const prop = path[i];
+			if (omit.includes(prop)) break;
+			const isLast = i === (path.length-1);
+			const type = typeof current[prop];
+			console.log(prop, isLast, type);
+			if (
+				(type !== 'object' && !isLast) || (type === 'undefined' && isLast)
+			) {	
+				throw new Error(
+					'PROPERTY_DOESNT_EXIST',
+					path.slice(0, i), prop
+				);
+			}
+			current = current[prop];
+		}
+		return current;
 	}
 
 	private static _extractOptions(

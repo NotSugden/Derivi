@@ -1104,7 +1104,7 @@ interface MuteCreateData {
 	user: User | Snowflake;
 }
 
-type SQLDataType<E = never> = number | Date | string | null | E;
+export type SQLDataType<E = never> = number | Date | string | null | E;
 
 export interface SQLValues<E = never> {
 	[key: string]: SQLDataType | E;
