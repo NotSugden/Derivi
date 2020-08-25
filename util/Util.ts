@@ -376,7 +376,6 @@ export default class Util {
 			if (omit.includes(prop)) break;
 			const isLast = i === (path.length-1);
 			const type = typeof current[prop];
-			console.log(prop, isLast, type);
 			if (
 				(type !== 'object' && !isLast) || (type === 'undefined' && isLast)
 			) {	
