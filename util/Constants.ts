@@ -1,15 +1,15 @@
-import { join } from 'path';
+import { join, extname } from 'path';
 import {
 	Client, Constants, EmbedFieldData,
 	Guild, GuildMember, Invite, Message,
 	MessageAttachment, MessageEmbed,
 	MessageOptions, PartialMessage,
 	RoleData, Snowflake, TextChannel,
-	User, Util as DJSUtil
+	User, Util as DJSUtil, DMChannel
 } from 'discord.js';
-import { DMChannel } from 'discord.js';
 import * as moment from 'moment';
 import { GuildMessage, TextBasedChannels } from './Types';
+import { IMAGE_EXTENSIONS } from '../commands/Moderation/Attach';
 import { Card } from '../commands/Points/Blackjack';
 import Case from '../structures/Case';
 import Command from '../structures/Command';
@@ -19,10 +19,24 @@ import ShopItem from '../structures/ShopItem';
 import Warn from '../structures/Warn';
 /* eslint-disable sort-keys */
 
+export const SNOWFLAKE_REGEX = /(\d{17,20})/;
+
+// make lines shorter
+const __snowflakeRegex = SNOWFLAKE_REGEX.source;
+
+export const MESSAGE_URL_REGEX = new RegExp(
+	`discord(?:app)?\\.com/channels/${__snowflakeRegex}/${__snowflakeRegex}/${__snowflakeRegex}`,
+	'gi'
+);
+
+export const EMOJI_REGEX = new RegExp(
+	`<(a)?:?(\\w{2,32}):${__snowflakeRegex}>`, 'gi'
+);
+
 const hyperlink = (name: string, url: string) => `[${name}](${url})`;
 
 const hyperlinkEmojis = (content: string) => content.replace(
-	/<(a)?:?(\w{2,32}):(\d{17,19})>/g, (str, animated: 'a' | undefined, name: string, id: string) =>
+	EMOJI_REGEX, (str, animated: 'a' | undefined, name: string, id: string) =>
 		hyperlink(name, `https://cdn.discordapp.com/emojis/${id}.${animated === 'a' ? 'gif' : 'png'}`)
 );
 
@@ -92,8 +106,6 @@ export const ModerationActionTypes = {
 	WARN: Constants.Colors.YELLOW,
 	SOFT_BAN: Constants.Colors.PURPLE
 };
-
-export const SNOWFLAKE_REGEX = /([0-9]{17,20})/;
 
 const messageURL = (guildID: Snowflake, channelID: Snowflake, messageID: Snowflake) =>
 	`https://discord.com/channels/${guildID}/${channelID}/${messageID}`;
@@ -286,6 +298,20 @@ const GIVEAWAY_KEYWORDS = /nitro|code|steam|paypal|(£\$)[0-9]*/gi;
 type CommandCategory = { category: string; commands: Command[] };
 
 export const Responses = {
+	MESSAGE_LINKED: (by: User, message: GuildMessage) => {
+		const embed = new MessageEmbed()
+			.setAuthor(message.author.tag, message.author.displayAvatarURL({ dynamic: true }))
+			.setColor('WHITE')
+			.setDescription(message.content || 'No Content')
+			.setFooter(`Quoted by: ${by.tag}`, by.displayAvatarURL({ dynamic: true }))
+			.setTimestamp(message.createdAt)
+			.setURL(message.url);
+		const attachment = message.attachments.first();
+		if (attachment && IMAGE_EXTENSIONS.includes(extname(attachment.name || attachment.url).slice(1))) {
+			embed.setImage(attachment.url);
+		}
+		return embed;
+	},
 	LOCKDOWN: (locked: boolean, channelID: Snowflake) => {
 		if (locked) return `The server is now locked down, members can only see <#${channelID}>.`;
 		return 'The server is no longer locked down, members can see all channels.';
@@ -667,7 +693,7 @@ export const URLs = {
 
 export const QUOTES = ['"', '\'', '“'];
 export const OPTIONS_REGEX = new RegExp(
-	`([a-z]+)=([^ "'“]+|${QUOTES.map(q => `${q}[^${q}]*${q}`).join('|')})`,
+	`(\\w+)=([^ "'“]+|${QUOTES.map(q => `${q}[^${q}]*${q}`).join('|')})`,
 	'gi'
 );
 export const FLAGS_REGEX = new RegExp(

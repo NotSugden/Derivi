@@ -58,6 +58,7 @@ client.connect();
  */
 fs.readdir(join(__dirname, 'events')).then(files => {
 	for (const file of files) {
+		if (!file.endsWith('.js')) return;
 		const fn: (...args: unknown[]) => void = require(
 			join(__dirname, 'events', file)
 		).default;

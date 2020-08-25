@@ -1,27 +1,19 @@
 /* eslint-disable consistent-return */
-import { promises as fs } from 'fs';
-import { join, extname } from 'path';
 import {
 	ClientEvents, MessageAdditions,
 	MessageEditOptions, MessageOptions,
-	Snowflake, StringResolvable
+	StringResolvable
 } from 'discord.js';
-import fetch from 'node-fetch';
+import { logAttachments, runPartnership, runLevels, XP_COOLDOWN, messageLink } from './utils/message';
 import Command, { CommandData } from '../structures/Command';
 import CommandArguments from '../structures/CommandArguments';
-import Levels from '../structures/Levels';
 import CommandError from '../util/CommandError';
-import { CommandErrors, Responses } from '../util/Constants';
+import { CommandErrors, MESSAGE_URL_REGEX } from '../util/Constants';
 import { QueryTypes } from '../util/DatabaseManager';
 import { GuildMessage } from '../util/Types';
 import Util from '../util/Util';
 
-const XP_COOLDOWN = new Set<Snowflake>();
-const random = (min: number, max: number): number => {
-	const ran = Math.floor(Math.random() * max);
-	if (ran < min) return random(min, max);
-	return ran;
-};
+
 
 export default (async message => {
 	try {
@@ -44,126 +36,30 @@ export default (async message => {
 				client.emit('error', error);
 			}
 			if (message.attachments.size && !edited && client.config.attachmentLogging) {
-				const urls = message.attachments.map(({ proxyURL }) => proxyURL);
-				for (let i = 0; i < urls.length; i++) {
-					const url = urls[i];
-					const extension = extname(url);
-					const name = join(
-						client.config.filesDir,
-						`${message.id}-${i}${extension}`
-					);
-					const buffer = await fetch(url)
-						.then(response => response.buffer())
-						.then(data => Util.encrypt(data, client.config.encryptionPassword));
-					await fs.writeFile(name, buffer);
-				}
+				await logAttachments(message);
 			}
 
-			const [partnerChannel] = await client.database.query<{
-				min_members: number;
-				max_members: number | null;
-				points: number;
-			}>(
-				'SELECT min_members, max_members, points FROM partnership_channels WHERE channel_id = :channelID',
-				{ channelID: message.channel.id }
-			);
-			if (partnerChannel) {
-				if (message.invites.length > 1) {
-					await message.delete();
-					throw new CommandError('TOO_MANY_INVITES').dm();
-				} else if (!message.invites.length) {
-					await message.delete();
-					throw new CommandError('NO_INVITE').dm();
-				}
+			const madePartnership = await runPartnership(message, config);
 
-				try {
-					const invite = await client.fetchInvite(message.invites[0]);
-					if (!invite.guild) throw new CommandError('GROUP_INVITE').dm();
-					else if (invite.guild.id === message.guild.id) {
-						throw new CommandError('UNKNOWN_INVITE', invite.code).dm();
-					}
-
-					if (
-						invite.memberCount < partnerChannel.min_members ||
-						(partnerChannel.max_members && invite.memberCount > partnerChannel.max_members)
-					) {
-						throw new CommandError(
-							'PARTNER_MEMBER_COUNT', invite.memberCount < partnerChannel.min_members
-						).dm();
-					}
-
-					await config.partnerRewardsChannel.send(Responses.PARTNER_REWARD(
-						message.author, message.channel, partnerChannel.points
-					));
-
-					const points = await client.database.points(message.author);
-					await points.set({ amount: points.amount + partnerChannel.points });
-					await client.database.createPartnership({
-						guild: { id: invite.guild.id, invite: invite.code },
-						timestamp: new Date(),
-						user: message.author
-					});
-
-					return;
-				} catch (error) {
-					await message.delete();
-					if (error.message === 'The user is banned from this guild.'){
-						throw new CommandError('CLIENT_BANNED_INVITE').dm();
-					} else if (error.message === 'Unknown Invite') {
-						throw new CommandError('UNKNOWN_INVITE', message.invites[0]).dm();
-					}
-					throw error;
-				}
-			}
+			if (madePartnership) return;
 
 			if (
 				config.generalChannelID === message.channel.id &&
 				!XP_COOLDOWN.has(message.author.id) && !edited
 			) {
-				const levels = await client.database.levels(message.author.id);
-
-				const newData: { xp: number; level?: number } = {
-					xp: levels.xp + random(12, 37)
-				};
-				if (newData.xp > Levels.levelCalc(levels.level)) {
-					const newLevel = newData.level = levels.level + 1;
-					const options = { guildID: config.guildID, level: newLevel };
-					const [data] = await client.database.query<{ role_id: Snowflake }>(
-						'SELECT role_id FROM level_roles WHERE guild_id = :guildID AND level = :level',
-						options
-					);
-					if (data) {
-						// only start removing roles after level 5 to reduce spam on new members
-						let roles = message.member.roles.cache.keyArray();
-						if (newLevel > 5) {
-							const previousRoles = (await client.database.query<{ role_id: Snowflake }>(
-								'SELECT role_id FROM level_roles WHERE guild_id = :guildID AND level < :level',
-								options
-							)).map(({ role_id }) => role_id);
-							if (
-								previousRoles.length &&
-								previousRoles.some(roleID => roles.includes(roleID))
-							) {
-								roles = roles.filter(roleID => !previousRoles.includes(roleID));
-							}
-						}
-						roles.push(data.role_id);
-						await message.member.roles.set(roles);
-					}
-				}
-
-				await levels.set(newData);
-
-				XP_COOLDOWN.add(message.author.id);
-				setTimeout(() => XP_COOLDOWN.delete(message.author.id), 6e4);
-
-				if (typeof newData.level === 'number') {
-					await message.channel.send(Responses.LEVEL_UP(message.author, newData.level)); 
-				}
+				await runLevels(message, config);
 			}
 		}
 
-		if (!client.config.prefix.some(pfx => message.content.startsWith(pfx))) return;
+		if (!client.config.prefix.some(pfx => message.content.startsWith(pfx))) {
+			const urlMatch = [...message.content.matchAll(MESSAGE_URL_REGEX)];
+
+			// maybe support more at a later date
+			if (urlMatch.length === 1) {
+				await messageLink(message, urlMatch[0]);
+			}
+			return;
+		}
 		const [plainCommand] = message.content.slice(1).split(' ');
 		const args = new CommandArguments(message);
 		const { alias, command } = client.commands.resolve(plainCommand, true);
