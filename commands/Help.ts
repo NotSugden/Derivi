@@ -37,7 +37,7 @@ export default class Help extends Command {
 	public async run(message: GuildMessage<true>, args: CommandArguments, { send }: CommandData) {
 		if (args[0]) return this.commandHelp(send, message, args[0]);
 
-		const categories: { category: string; commands: Command [] }[] = [];
+		const categories: { category: CommandCategory; commands: Command[] }[] = [];
 		for (const command of this.client.commands.values()) {
 			const hasPermissions = await Command.hasPermissions(command, message.member, message.channel);
 			if (hasPermissions !== true) continue;
@@ -50,7 +50,7 @@ export default class Help extends Command {
 		}
 
 		await send(Responses.HELP_PROMPT(categories, this.client));
-		let category: { category: string; commands: Command[] } | undefined;
+		let category: { category: CommandCategory; commands: Command[] } | undefined;
 		const categoryResponse = await Util.awaitResponse(message.channel, message.author, resp => {
 			const content = resp.content.toLowerCase();
 			if (content === 'cancel') return true;

@@ -5,7 +5,7 @@ import {
 	StringResolvable
 } from 'discord.js';
 import { logAttachments, runPartnership, runLevels, XP_COOLDOWN, messageLink } from './utils/message';
-import Command, { CommandData } from '../structures/Command';
+import Command, { CommandData, CommandCategory } from '../structures/Command';
 import CommandArguments from '../structures/CommandArguments';
 import CommandError from '../util/CommandError';
 import { CommandErrors, MESSAGE_URL_REGEX } from '../util/Constants';
@@ -91,9 +91,11 @@ export default (async message => {
 			return msg as GuildMessage<true>;
 		};
 
+		const isModerationCommand = command.category === CommandCategory.MODERATION;
+
 		if (
 			!['attach', 'history', 'warnings', 'case', 'purge'].includes(command.name)
-			&& command.category === 'Moderation' && !config
+			&& isModerationCommand && !config
 		) {
 			throw new CommandError('GUILD_NOT_CONFIGURED');
 		}
@@ -107,7 +109,7 @@ export default (async message => {
 			);
 		}
     
-		if (command.name !== 'attach' && command.category === 'Moderation' && config?.mfaModeration) {
+		if (command.name !== 'attach' && isModerationCommand && config?.mfaModeration) {
 			const [data] = await client.database.query(
 				'SELECT access_token, token_type, expires_at FROM users WHERE id = ?',
 				message.author.id
