@@ -10,6 +10,8 @@ import { GuildMessage } from '../util/Types';
 import * as mysql from 'mysql';
 import { SQLValues } from '../util/DatabaseManager';
 
+import * as typescript from 'typescript';
+
 const util: typeof import('util') = require('util');
 const djs: typeof import('discord.js') = require('discord.js');
 const fetch: typeof import('node-fetch').default = require('node-fetch');
@@ -102,22 +104,11 @@ export default class Eval extends Command {
 		const matches = _code.match(/```(?:(?<lang>\S+)\n)?\s?(?<code>[^]+?)\s?```/)?.groups;
 		let code = _code;
 		if (matches) {
-			if (matches.code) code = matches.code;
-			if (matches.lang && matches.lang.toLowerCase() === 'sql') {
-				try {
-					const replaced = code.replace(/{([^}]+)}/gi, (str, match: string) => {
-						const props = match.split('.');
-						return mysql.escape(Util.getProp({
-							client: this.client, message, this: this
-						}, props));
-					});
-					const results = await this.client.database.query<SQLValues>(replaced);
-					await finish(results);
-				} catch (error) {
-					await finish(error.stack || error);
-				}
-				return;
-			}
+			const result = await this.resolveCode(message, matches.code || code, {
+				finish, lang: matches.lang
+			});
+			if (typeof result === 'boolean') return;
+			code = result;
 		}
 		try {
 			let result = await this._eval(
@@ -135,5 +126,29 @@ export default class Eval extends Command {
 
 	private _eval(code: string, message: GuildMessage<true>, args: CommandArguments): unknown {
 		return eval(code);
+	}
+
+	private async resolveCode(message: GuildMessage<true>, code: string, {
+		lang,
+		finish
+	}: { lang?: string; finish: (res: unknown) => void}) {
+		if (!lang) return code;
+		lang = lang.toLowerCase();
+		if (lang === 'sql') {
+			try {
+				const replaced = code.replace(/{([^}]+)}/gi, (str, match: string) => {
+					const props = match.split('.');
+					return mysql.escape(Util.getProp({
+						client: this.client, message, this: this
+					}, props));
+				});
+				const results = await this.client.database.query<SQLValues>(replaced);
+				await finish(results);
+			} catch (error) {
+				await finish(error.stack || error);
+			}
+			return true;
+		}
+		return code;
 	}
 }
