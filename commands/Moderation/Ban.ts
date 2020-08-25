@@ -1,5 +1,5 @@
 import { Permissions, BanOptions } from 'discord.js';
-import Command, { CommandData } from '../../structures/Command';
+import Command, { CommandData, CommandCategory } from '../../structures/Command';
 import CommandArguments from '../../structures/CommandArguments';
 import CommandError from '../../util/CommandError';
 import CommandManager from '../../util/CommandManager';
@@ -17,7 +17,7 @@ export default class Ban extends Command {
 				append: ['--days=7'],
 				name: 'ban7'
 			}],
-			category: 'Moderation',
+			category: CommandCategory.MODERATION,
 			cooldown: 5,
 			examples: [
 				'{author} Being too cool!',

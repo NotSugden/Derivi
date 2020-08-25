@@ -1,4 +1,4 @@
-import Command, { CommandData, PermissionsFunction } from '../../structures/Command';
+import Command, { CommandData, PermissionsFunction, CommandCategory } from '../../structures/Command';
 import CommandArguments from '../../structures/CommandArguments';
 import CommandError from '../../util/CommandError';
 import CommandManager from '../../util/CommandManager';
@@ -10,7 +10,7 @@ export default class History extends Command {
 	constructor(manager: CommandManager) {
 		super(manager, {
 			aliases: ['case-history', 'cases', 'punishments'],
-			category: 'Moderation',
+			category: CommandCategory.MODERATION,
 			cooldown: 5,
 			examples: [
 				'{randomuserid}',

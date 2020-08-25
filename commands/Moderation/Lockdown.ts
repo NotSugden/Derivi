@@ -1,5 +1,5 @@
 import { Permissions, TextChannel, OverwriteData } from 'discord.js';
-import Command, { CommandData } from '../../structures/Command';
+import Command, { CommandData, CommandCategory } from '../../structures/Command';
 import CommandArguments from '../../structures/CommandArguments';
 import CommandManager from '../../util/CommandManager';
 import { Responses } from '../../util/Constants';
@@ -9,7 +9,7 @@ export default class Lockdown extends Command {
 	constructor(manager: CommandManager) {
 		super(manager, {
 			aliases: [],
-			category: 'Moderation',
+			category: CommandCategory.MODERATION,
 			cooldown: 5,
 			examples: [''],
 			name: 'lockdown',

@@ -10,6 +10,15 @@ import CommandArguments from './CommandArguments';
 import CommandManager from '../util/CommandManager';
 import { GuildMessage, TextBasedChannels } from '../util/Types';
 
+export enum CommandCategory {
+	DEV = 'Dev',
+	GENERAL = 'General',
+	LEVELS = 'Levels',
+	MODERATION = 'Moderation',
+	PM = 'PM',
+	POINTS = 'Points'
+}
+
 export type CommandAlias = string | {
 	append?: string[];
 	name: string;
@@ -116,7 +125,7 @@ export interface CommandData {
 
 export interface CommandOptions {
 	aliases: CommandAlias[];
-	category: string;
+	category: CommandCategory;
 	cooldown?: number;
 	examples: string[];
 	name: string;

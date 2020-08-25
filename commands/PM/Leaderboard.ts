@@ -1,5 +1,5 @@
 import { Snowflake, User } from 'discord.js';
-import Command, { CommandData } from '../../structures/Command';
+import Command, { CommandData, CommandCategory } from '../../structures/Command';
 import CommandArguments from '../../structures/CommandArguments';
 import CommandManager from '../../util/CommandManager';
 import { Responses } from '../../util/Constants';
@@ -16,7 +16,7 @@ export default class Leaderboard extends Command {
 	constructor(manager: CommandManager) {
 		super(manager, {
 			aliases: ['plb'],
-			category: 'PM',
+			category: CommandCategory.PM,
 			cooldown: 5,
 			examples: ['', 'month', 'week', 'alltime'],
 			name: 'pleaderboard'

@@ -1,6 +1,6 @@
 import ms from '@naval-base/ms';
 import { Snowflake } from 'discord.js';
-import Command, { CommandData } from '../structures/Command';
+import Command, { CommandData, CommandCategory } from '../structures/Command';
 import CommandArguments from '../structures/CommandArguments';
 import CommandManager from '../util/CommandManager';
 import { Responses, SNOWFLAKE_REGEX } from '../util/Constants';
@@ -11,7 +11,7 @@ export default class Messages extends Command {
 	constructor(manager: CommandManager) {
 		super(manager, {
 			aliases: ['msgs'],
-			category: 'General',
+			category: CommandCategory.GENERAL,
 			cooldown: 5,
 			examples: [
 				'', '{author}', '{author.id} 7d'

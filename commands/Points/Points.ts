@@ -1,5 +1,5 @@
 import { Permissions } from 'discord.js';
-import Command, { CommandData } from '../../structures/Command';
+import Command, { CommandData, CommandCategory } from '../../structures/Command';
 import CommandArguments from '../../structures/CommandArguments';
 import CommandError from '../../util/CommandError';
 import CommandManager from '../../util/CommandManager';
@@ -11,7 +11,7 @@ export default class Points extends Command {
 	constructor(manager: CommandManager) {
 		super(manager, {
 			aliases: ['wallet', 'p'],
-			category: 'Points',
+			category: CommandCategory.POINTS,
 			cooldown: 5,
 			examples: [
 				'', '{author}', '{author.id}'

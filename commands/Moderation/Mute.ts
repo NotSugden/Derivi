@@ -1,6 +1,6 @@
 import ms from '@naval-base/ms';
 import { Permissions, PermissionOverwriteOption } from 'discord.js';
-import Command, { CommandData } from '../../structures/Command';
+import Command, { CommandData, CommandCategory } from '../../structures/Command';
 import CommandArguments from '../../structures/CommandArguments';
 import CommandError from '../../util/CommandError';
 import CommandManager from '../../util/CommandManager';
@@ -12,7 +12,7 @@ export default class Mute extends Command {
 	constructor(manager: CommandManager) {
 		super(manager, {
 			aliases: [],
-			category: 'Moderation',
+			category: CommandCategory.MODERATION,
 			cooldown: 5,
 			examples: [
 				'{author} 1h Being too cool!',

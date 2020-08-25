@@ -1,4 +1,4 @@
-import Command, { CommandData } from '../../structures/Command';
+import Command, { CommandData, CommandCategory } from '../../structures/Command';
 import CommandArguments from '../../structures/CommandArguments';
 import CommandError from '../../util/CommandError';
 import CommandManager from '../../util/CommandManager';
@@ -17,7 +17,7 @@ export default class Top extends Command {
 					prepend: [num.toString()]
 				}))
 			]),
-			category: 'Levels',
+			category: CommandCategory.LEVELS,
 			cooldown: 5,
 			examples: ['', '5', '10'],
 			name: 'top'

@@ -1,6 +1,6 @@
 
 import { extname } from 'path';
-import Command, { CommandData } from '../../structures/Command';
+import Command, { CommandData, CommandCategory } from '../../structures/Command';
 import CommandArguments from '../../structures/CommandArguments';
 import CommandError from '../../util/CommandError';
 import CommandManager from '../../util/CommandManager';
@@ -17,7 +17,7 @@ export default class Attach extends Command {
 	constructor(manager: CommandManager) {
 		super(manager, {
 			aliases: [],
-			category: 'Moderation',
+			category: CommandCategory.MODERATION,
 			cooldown: 5,
 			examples: ['69 <attached image>'],
 			name: 'attach',

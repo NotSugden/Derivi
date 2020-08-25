@@ -1,4 +1,4 @@
-import Command, { CommandData } from '../../structures/Command';
+import Command, { CommandData, CommandCategory } from '../../structures/Command';
 import CommandArguments from '../../structures/CommandArguments';
 import Points from '../../structures/Points';
 import CommandError from '../../util/CommandError';
@@ -147,7 +147,7 @@ export default class Blackjack extends Command {
 	constructor(manager: CommandManager) {
 		super(manager, {
 			aliases: ['bj'],
-			category: 'Points',
+			category: CommandCategory.POINTS,
 			cooldown: 5,
 			examples: [
 				'500'

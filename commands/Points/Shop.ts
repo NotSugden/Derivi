@@ -1,4 +1,4 @@
-import Command, { CommandData } from '../../structures/Command';
+import Command, { CommandData, CommandCategory } from '../../structures/Command';
 import CommandArguments from '../../structures/CommandArguments';
 import CommandError from '../../util/CommandError';
 import CommandManager from '../../util/CommandManager';
@@ -9,7 +9,7 @@ export default class Shop extends Command {
 	constructor(manager: CommandManager) {
 		super(manager, {
 			aliases: ['buy'],
-			category: 'Points',
+			category: CommandCategory.POINTS,
 			cooldown: 5,
 			examples: [
 				'{alias:1} Cool Role'

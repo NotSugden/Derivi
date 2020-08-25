@@ -1,4 +1,4 @@
-import Command, { CommandData } from '../structures/Command';
+import Command, { CommandData, CommandCategory } from '../structures/Command';
 import CommandArguments from '../structures/CommandArguments';
 import CommandError from '../util/CommandError';
 import CommandManager, { CommandResolvable } from '../util/CommandManager';
@@ -10,7 +10,7 @@ export default class Help extends Command {
 	constructor(manager: CommandManager) {
 		super(manager, {
 			aliases: [],
-			category: 'General',
+			category: CommandCategory.GENERAL,
 			cooldown: 5,
 			examples: [
 				'', 'points', 'level'

@@ -1,5 +1,5 @@
 import { Permissions, SnowflakeUtil, Snowflake } from 'discord.js';
-import Command from '../../structures/Command';
+import Command, { CommandCategory } from '../../structures/Command';
 import CommandArguments from '../../structures/CommandArguments';
 import CommandError from '../../util/CommandError';
 import CommandManager from '../../util/CommandManager';
@@ -28,7 +28,7 @@ export default class Purge extends Command {
 				name: 'cb',
 				prepend: ['bots']
 			}],
-			category: 'Moderation',
+			category: CommandCategory.MODERATION,
 			cooldown: 5,
 			examples: [
 				'{alias:1}',

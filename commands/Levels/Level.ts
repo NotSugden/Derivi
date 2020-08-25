@@ -1,4 +1,4 @@
-import Command, { CommandData } from '../../structures/Command';
+import Command, { CommandData, CommandCategory } from '../../structures/Command';
 import CommandArguments from '../../structures/CommandArguments';
 import CommandManager from '../../util/CommandManager';
 import { Responses } from '../../util/Constants';
@@ -9,7 +9,7 @@ export default class Level extends Command {
 	constructor(manager: CommandManager) {
 		super(manager, {
 			aliases: ['rank'],
-			category: 'Levels',
+			category: CommandCategory.LEVELS,
 			cooldown: 5,
 			examples: ['', '{author}', '{author.id}'],
 			name: 'level'

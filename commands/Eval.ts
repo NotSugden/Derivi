@@ -2,7 +2,7 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
 /* eslint-disable import/order */
 import { MessageOptions } from 'discord.js';
-import Command, { CommandData } from '../structures/Command';
+import Command, { CommandData, CommandCategory } from '../structures/Command';
 import CommandArguments from '../structures/CommandArguments';
 import CommandManager from '../util/CommandManager';
 import { URLs } from '../util/Constants';
@@ -30,7 +30,7 @@ export default class Eval extends Command {
 				name: 'evala',
 				prepend: ['--async=true']
 			}],
-			category: 'Dev',
+			category: CommandCategory.DEV,
 			cooldown: 0,
 			examples: [
 				'message.channel.send("Hello!")'

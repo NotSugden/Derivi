@@ -1,5 +1,5 @@
 import { createCanvas, loadImage, CanvasRenderingContext2D } from 'canvas';
-import Command, { CommandData } from '../structures/Command';
+import Command, { CommandData, CommandCategory } from '../structures/Command';
 import CommandArguments from '../structures/CommandArguments';
 import CommandManager from '../util/CommandManager';
 import { GuildMessage } from '../util/Types';
@@ -17,7 +17,7 @@ export default class Profile extends Command {
 	constructor(manager: CommandManager) {
 		super(manager, {
 			aliases: [],
-			category: 'General',
+			category: CommandCategory.GENERAL,
 			cooldown: 5,
 			examples: [
 				'', '{author}', '{author.id}'

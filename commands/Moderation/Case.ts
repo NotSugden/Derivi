@@ -1,5 +1,5 @@
 import { Permissions, MessageEmbed, Util as DJSUtil, Snowflake } from 'discord.js';
-import Command, { CommandData, PermissionsFunction } from '../../structures/Command';
+import Command, { CommandData, PermissionsFunction, CommandCategory } from '../../structures/Command';
 import CommandArguments from '../../structures/CommandArguments';
 import CommandError from '../../util/CommandError';
 import CommandManager from '../../util/CommandManager';
@@ -31,7 +31,7 @@ export default class Case extends Command {
 					prepend: [mode]
 				}]
 			),
-			category: 'Moderation',
+			category: CommandCategory.MODERATION,
 			cooldown: 5,
 			examples: [
 				'delete 69',

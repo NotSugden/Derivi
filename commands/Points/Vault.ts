@@ -1,4 +1,4 @@
-import Command, { CommandData } from '../../structures/Command';
+import Command, { CommandData, CommandCategory } from '../../structures/Command';
 import CommandArguments from '../../structures/CommandArguments';
 import CommandError from '../../util/CommandError';
 import CommandManager from '../../util/CommandManager';
@@ -28,7 +28,7 @@ export default class Vault extends Command {
 				name: 'w',
 				prepend: ['withdraw']
 			}],
-			category: 'Points',
+			category: CommandCategory.POINTS,
 			cooldown: 5,
 			examples: [
 				'{alias:3} 500',

@@ -5,7 +5,7 @@ import {
 	GuildChannelManager, TextChannel,
 	DataResolver, Role
 } from 'discord.js';
-import Command, { CommandData } from '../structures/Command';
+import Command, { CommandData, CommandCategory } from '../structures/Command';
 import CommandArguments from '../structures/CommandArguments';
 import CommandError from '../util/CommandError';
 import CommandManager from '../util/CommandManager';
@@ -90,7 +90,7 @@ export default class BotConfig extends Command {
 	constructor(manager: CommandManager) {
 		super(manager, {
 			aliases: [],
-			category: 'Dev',
+			category: CommandCategory.DEV,
 			cooldown: 0,
 			examples: [
 				'setup'

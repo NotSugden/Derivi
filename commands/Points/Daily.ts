@@ -1,5 +1,5 @@
 import * as moment from 'moment';
-import Command, { CommandData } from '../../structures/Command';
+import Command, { CommandData, CommandCategory } from '../../structures/Command';
 import CommandArguments from '../../structures/CommandArguments';
 import CommandError from '../../util/CommandError';
 import CommandManager from '../../util/CommandManager';
@@ -10,7 +10,7 @@ export default class Daily extends Command {
 	constructor(manager: CommandManager) {
 		super(manager, {
 			aliases: [],
-			category: 'Points',
+			category: CommandCategory.POINTS,
 			cooldown: 5,
 			examples: [''],
 			name: 'daily'
