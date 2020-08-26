@@ -36,6 +36,34 @@ export type MapObject<T extends object, V> = {
 	[K in keyof T]: V
 };
 
+export interface PackageJSON {
+	name: string;
+	version: string;
+	description: string;
+	main: string;
+	scripts: {
+		[key: string]: string;
+		build: string;
+		start: string;
+	};
+	repository: {
+		type: string;
+		url: string;
+	};
+	author: string;
+	license: string;
+	bugs: {
+		url: string;
+	};
+	homepage: string;
+	dependencies: {
+		[key: string]: string;
+	};
+	devDependencies: {
+		[key: string]: string;
+	};
+}
+
 /* eslint-disable @typescript-eslint/no-empty-interface */
 
 declare module 'discord.js' {

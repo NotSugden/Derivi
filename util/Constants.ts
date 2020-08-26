@@ -8,7 +8,7 @@ import {
 	User, Util as DJSUtil, DMChannel
 } from 'discord.js';
 import * as moment from 'moment';
-import { GuildMessage, TextBasedChannels } from './Types';
+import { GuildMessage, TextBasedChannels, PackageJSON } from './Types';
 import { IMAGE_EXTENSIONS } from '../commands/Moderation/Attach';
 import { Card } from '../commands/Points/Blackjack';
 import Case from '../structures/Case';
@@ -18,6 +18,33 @@ import Profile from '../structures/Profile';
 import ShopItem from '../structures/ShopItem';
 import Warn from '../structures/Warn';
 /* eslint-disable sort-keys */
+
+const tryIgnore = <T>(...callbacks: (() => T)[]) => {
+	for (const callback of callbacks) {
+		try {
+			return callback();
+		// eslint-disable-next-line no-empty
+		} catch { }
+	}
+	return null;
+};
+
+export const packageJSON = tryIgnore<PackageJSON>(
+	() => require('./package.json'),
+	() => require('./src/package.json'),
+	() => require('../package.json'),
+	() => require('../src/package.json')
+);
+
+export const BRANCH = (!packageJSON || packageJSON.version.endsWith('-dev'))
+	? 'master' : 'stable';
+
+export const GITHUB_URL = packageJSON
+	? packageJSON.repository.url.slice(packageJSON.repository.type.length + 1).replace(/\.git$/, '')
+	: 'https://github.com/NotSugden/Derivi';
+
+export const COMMAND_URL = (path: string[]) =>
+	`${GITHUB_URL}/tree/${BRANCH}/${path.join('/')}`;
 
 export const SNOWFLAKE_REGEX = /(\d{17,20})/;
 
@@ -43,6 +70,9 @@ const hyperlinkEmojis = (content: string) => content.replace(
 const neverReturn = () => {
 	throw null;
 };
+
+const upperFirst = (string: string, lowerRest = false) =>
+	string.charAt(0).toUpperCase() + (lowerRest ? string.toLowerCase() : string).slice(1);
 
 const EMOJI_CARDS = [
 	{ suit: 'Diamonds', value: '2', emoji: '<:2D:625291323540504616>' },
@@ -289,6 +319,17 @@ function punishmentSuccessDM(
 
 const splitChars = (string: string, char = '\u200b') => string.split('').join(char);
 
+const NUMBER_COMMA_REGEX = /\B(?=(\d{3})+(?!\d))/g;
+
+const addCommas = (number: number) => {
+	const string = number.toString();
+	if (number < 1000) return string;
+	const [start, ...rest] = string.split('.');
+	return `${start.replace(NUMBER_COMMA_REGEX, ',')}${
+		rest.length ? `.${rest.join('.')}` : ''
+	}`;
+};
+
 const GIVEAWAY_KEYWORDS = /nitro|code|steam|paypal|(£\$)[0-9]*/gi;
 
 /*const mapAliases = (command: Command) => command.aliases.map(
@@ -298,6 +339,33 @@ const GIVEAWAY_KEYWORDS = /nitro|code|steam|paypal|(£\$)[0-9]*/gi;
 type CommandCategory = { category: string; commands: Command[] };
 
 export const Responses = {
+	BOT_SOURCE: [
+		`${
+			packageJSON ? upperFirst(packageJSON.name) : 'Derivi'
+		} - Made by ${packageJSON ? packageJSON.author : 'Sugden'}`,
+		`GitHub Repository: <${GITHUB_URL}>`,
+		`Bugs can be reported at: <${
+			packageJSON ? packageJSON.bugs.url : `${GITHUB_URL}/issues`
+		}>`,
+		'', 'Derivi is an open source bot made by Sugden, written in TypeScript.'
+	],
+	BOT_STATS: (client: Client, totalXP: number, totalPoints: number) => {
+		const channels = client.channels.cache.reduce((acc, next) => {
+			if (['text', 'news'].includes(next.type)) acc.text++;
+			else if (next.type === 'voice') acc.voice++;
+			else if (next.type === 'category') acc.category++;
+			return acc;
+		}, { text: 0, voice: 0, category: 0 });
+		return [
+			`**Guilds**: ${client.guilds.cache.size}`,
+			`**Channels** ${channels.text} Text, ${channels.voice} Voice, ${channels.category} Categories`,
+			`**Cached Users**: ${client.users.cache.size}`,
+			`**Online For**: ${moment(client.readyAt!).fromNow(true)}`,
+			'', `**Commands**: ${client.commands.size}`,
+			`**Total points from all users**: ${addCommas(totalPoints)}`,
+			`**Total XP Gained**: ${addCommas(totalXP)}`
+		];
+	},
 	MESSAGE_LINKED: (by: User, message: GuildMessage) => {
 		const embed = new MessageEmbed()
 			.setAuthor(message.author.tag, message.author.displayAvatarURL({ dynamic: true }))
@@ -377,7 +445,7 @@ export const Responses = {
 	},
 	COMMAND_HELP: (command: Command, message: GuildMessage<true>) => {
 		const examples = command.formatExamples(message);
-		const capitalized = command.name.charAt(0).toUpperCase() + command.name.slice(1);
+		const capitalized = upperFirst(command.name);
 		const aliases = command.aliases.length
 			? command.aliases.map(alias => `\`${typeof alias === 'string' ? alias : alias.name}\``)
 			: 'No Aliases';
@@ -607,7 +675,7 @@ export const Responses = {
 	}),
 	HISTORY: (cases: Case[]) => {
 		return cases.flatMap(caseData => [
-			`${caseData.id}: ${caseData.action.charAt(0) + caseData.action.slice(1).toLowerCase()} ${
+			`${caseData.id}: ${upperFirst(caseData.action, true)} ${
 				caseData.moderator ? DJSUtil.escapeMarkdown(caseData.moderator.tag) : caseData.moderatorID
 			} (${moment.utc(caseData.timestamp).format('DD/MM/YYYY HH:mm A')}): ${caseData.reason}`,
 			...Object.entries(caseData.extras).map(([name, value]) => `${name}: ${value}`)
@@ -629,7 +697,7 @@ export const Responses = {
 		context, extras
 	}: { context?: Message; extras: { [key: string]: string } }) => {
 		const description = [
-			`ASC Logs: ${action.split('_').map(str => str.charAt(0) + str.slice(1).toLowerCase())}`
+			`ASC Logs: ${action.split('_').map(str => upperFirst(str, true))}`
 		];
 		if (Object.keys(extras).length) {
 			description.push(...Object.entries(extras)
