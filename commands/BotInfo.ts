@@ -23,7 +23,7 @@ export default class BotInfo extends Command {
 				name: ['source', 'command-source'],
 				prepend: [SourceModes.COMMAND]
 			}],
-			category: CommandCategory.DEV,
+			category: CommandCategory.GENERAL,
 			cooldown: 0,
 			examples: [
 				'', 'command rank'
