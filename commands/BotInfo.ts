@@ -1,5 +1,5 @@
 import * as path from 'path';
-import Command, { CommandData, CommandCategory } from '../../structures/Command';
+import Command, { CommandData, CommandCategory } from '../structures/Command';
 import CommandArguments from '../structures/CommandArguments';
 import CommandError from '../util/CommandError';
 import CommandManager from '../util/CommandManager';
