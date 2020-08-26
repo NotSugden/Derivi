@@ -24,10 +24,7 @@ export default class Case extends Command {
 		super(manager, {
 			aliases: Object.values(CaseModes).flatMap(
 				mode => [{
-					name: `case-${mode}`,
-					prepend: [mode]
-				}, {
-					name: `${mode}-case`,
+					name: [`${mode}-case`, `case-${mode}`],
 					prepend: [mode]
 				}]
 			),

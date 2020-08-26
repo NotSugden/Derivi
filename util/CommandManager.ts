@@ -35,7 +35,8 @@ export default class CommandManager extends Collection<string, Command> {
 				if (!cmd.aliases.length) return false;
 				const _usedAlias = cmd.aliases.find(alias => {
 					if (typeof alias === 'string') return alias === command;
-					return alias.name === command;
+					return typeof alias.name === 'string'
+						? alias.name === command : alias.name.includes(command);
 				});
 				if (_usedAlias) {
 					usedAlias = _usedAlias;

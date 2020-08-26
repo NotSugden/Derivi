@@ -21,7 +21,7 @@ export default class Giveaway extends Command {
 		super(manager, {
 			aliases: [
 				...[GiveawayModes.START, GiveawayModes.REROLL, GiveawayModes.END].map(mode => ({
-					name: `g${mode}`,
+					name: [`g${mode}`, `g-${mode}`],
 					prepend: [mode]
 				})), {
 					name: 'grequire',

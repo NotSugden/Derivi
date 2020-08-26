@@ -12,10 +12,10 @@ export default class Ban extends Command {
 		super(manager, {
 			aliases: ['🔨', '🍌',{
 				append: ['--soft=true'],
-				name: 'softban'
+				name: ['softban', 'soft-ban']
 			}, {
 				append: ['--days=7'],
-				name: 'ban7'
+				name: ['ban7', 'ban-7']
 			}],
 			category: CommandCategory.MODERATION,
 			cooldown: 5,

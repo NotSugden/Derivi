@@ -21,7 +21,7 @@ export enum CommandCategory {
 
 export type CommandAlias = string | {
 	append?: string[];
-	name: string;
+	name: string | string[];
 	prepend?: string[];
 };
 
@@ -66,9 +66,16 @@ export default class Command {
 	public formatExamples(message: GuildMessage<true>, limit?: number): string[];
 	public formatExamples(message: GuildMessage<true>, limit = Infinity) {
 		const array = this._examples.slice(0, limit).map(example => {
-			const [, id] = example.match(/{alias:(\d+)}/i) || [];
+			const [, id, id2] = example.match(/{alias:(\d+)(?::(\d+))?}/i) || [];
 			let alias = id ? this.aliases[parseInt(id)-1] : null;
-			if (alias && typeof alias === 'object') alias = alias.name;
+			if (alias && typeof alias === 'object') {
+				if (typeof alias.name === 'string') alias = alias.name;
+				else {
+					alias = id2
+						? alias.name[parseInt(id2)-1]
+						: alias.name[Math.floor(Math.random() * alias.name.length)];
+				}
+			}
 			const name = `${this.client.config.prefix[0]}${alias || this.name}`;
 			if (id) example = example.split(' ').slice(1).join(' ');
 			if (!example.length) return name;
