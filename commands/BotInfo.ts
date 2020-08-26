@@ -1,10 +1,10 @@
 import * as path from 'path';
 import Command, { CommandData, CommandCategory } from '../../structures/Command';
-import CommandArguments from '../../structures/CommandArguments';
-import CommandError from '../../util/CommandError';
-import CommandManager from '../../util/CommandManager';
-import { Responses, COMMAND_URL } from '../../util/Constants';
-import { GuildMessage } from '../../util/Types';
+import CommandArguments from '../structures/CommandArguments';
+import CommandError from '../util/CommandError';
+import CommandManager from '../util/CommandManager';
+import { Responses, COMMAND_URL } from '../util/Constants';
+import { GuildMessage } from '../util/Types';
 
 export enum SourceModes {
 	COMMAND = 'command',
