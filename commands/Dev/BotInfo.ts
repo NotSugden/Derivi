@@ -29,7 +29,7 @@ export default class BotInfo extends Command {
 				'', 'command rank'
 			],
 			name: 'botinfo',
-			permissions: member => member.client.config.ownerIDs.includes(member.id)
+			permissions: 0
 		}, __filename);
 	}
 
