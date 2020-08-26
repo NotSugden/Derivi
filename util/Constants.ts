@@ -23,7 +23,7 @@ const tryIgnore = <T>(...callbacks: (() => T)[]) => {
 	for (const callback of callbacks) {
 		try {
 			return callback();
-		// eslint-disable-next-line no-empty
+			// eslint-disable-next-line no-empty
 		} catch { }
 	}
 	return null;
@@ -73,6 +73,20 @@ const neverReturn = () => {
 
 const upperFirst = (string: string, lowerRest = false) =>
 	string.charAt(0).toUpperCase() + (lowerRest ? string.toLowerCase() : string).slice(1);
+
+const NUMBER_COMMA_REGEX = /\B(?=(\d{3})+(?!\d))/g;
+
+
+const addCommas = (number: number) => {
+	const string = number.toString();
+	if (number < 1000) return string;
+	const [start, ...rest] = string.split('.');
+	return `${start.replace(NUMBER_COMMA_REGEX, ',')}${
+		rest.length ? `.${rest.join('.')}` : ''
+	}`;
+};
+
+
 
 const EMOJI_CARDS = [
 	{ suit: 'Diamonds', value: '2', emoji: '<:2D:625291323540504616>' },
@@ -259,14 +273,14 @@ export const CommandErrors = {
 	} members for this channel.`,
 	INVALID_NUMBER: ({ min, max }: { min?: number; max?: number } = {}) => {
 		let str = 'The number you provided is invalid';
-		if (typeof min === 'number') str += `, it must be a minimum of ${min}`;
+		if (typeof min === 'number') str += `, it must be a minimum of ${addCommas(min)}`;
 		if (typeof max === 'number') {
-			str += `${typeof min === 'number' ? ' and a maximum of' : ', it must be no higher than'} ${max}`;
+			str += `${typeof min === 'number' ? ' and a maximum of' : ', it must be no higher than'} ${addCommas(max)}`;
 		}
 		return `${str}.`;
 	},
 	NOT_ENOUGH_POINTS: (required: number, wallet = true) =>
-		`You need at least ${required} points in your ${wallet ? 'wallet' : 'vault'} to do this.`,
+		`You need at least ${addCommas(required)} points in your ${wallet ? 'wallet' : 'vault'} to do this.`,
 	NO_POINTS: (vault = false) => `You do not have any points${vault ? ' in the vault' : ''}.`,
 	UNKNOWN_SHOP_ITEM: (item: string) => `${item} isn't listed in the shop.`,
 	ALREADY_PURCHASED: 'You already own this item.',
@@ -319,17 +333,6 @@ function punishmentSuccessDM(
 
 const splitChars = (string: string, char = '\u200b') => string.split('').join(char);
 
-const NUMBER_COMMA_REGEX = /\B(?=(\d{3})+(?!\d))/g;
-
-const addCommas = (number: number) => {
-	const string = number.toString();
-	if (number < 1000) return string;
-	const [start, ...rest] = string.split('.');
-	return `${start.replace(NUMBER_COMMA_REGEX, ',')}${
-		rest.length ? `.${rest.join('.')}` : ''
-	}`;
-};
-
 const GIVEAWAY_KEYWORDS = /nitro|code|steam|paypal|(£\$)[0-9]*/gi;
 
 /*const mapAliases = (command: Command) => command.aliases.map(
@@ -359,7 +362,7 @@ export const Responses = {
 		return [
 			`**Guilds**: ${client.guilds.cache.size}`,
 			`**Channels** ${channels.text} Text, ${channels.voice} Voice, ${channels.category} Categories`,
-			`**Cached Users**: ${client.users.cache.size}`,
+			`**Cached Users**: ${addCommas(client.users.cache.size)}`,
 			`**Online For**: ${moment(client.readyAt!).fromNow(true)}`,
 			'', `**Commands**: ${client.commands.size}`,
 			`**Total points from all users**: ${addCommas(totalPoints)}`,
@@ -385,28 +388,29 @@ export const Responses = {
 		return 'The server is no longer locked down, members can see all channels.';
 	},
 	MESSAGES: (data: {
-		channels: { count: number; channelID: Snowflake }[]; total: number; },
+		channels: { count: number; channelID: Snowflake }[]; total: number;
+	},
 	user: User,
 	time: string
 	) => {
 		return [
 			`**Messages sent by ${DJSUtil.escapeMarkdown(user.tag)} in the past ${time}.**`,
-			`**Total**: ${data.total}`,
+			`**Total**: ${addCommas(data.total)}`,
 			...data.channels.slice(0, 5).map(({ count, channelID }) =>
-				`${user.client.config.emojis.get('RIGHT_ARROW')} <#${channelID}>: **${count}** Messages`
+				`${user.client.config.emojis.get('RIGHT_ARROW')} <#${channelID}>: **${addCommas(count)}** Messages`
 			)
 		];
 	},
 	PARTNERSHIPS: (user: User | null, thisWeek: number, thisMonth: number, alltime: number) => {
-		const format = (type: string, num: number) => 
-			`${type} • **${num}** Partnerships`;
+		const format = (type: string, num: number) =>
+			`${type} • **${addCommas(num)}** Partnerships`;
 		return new MessageEmbed()
 			.setAuthor(`${user ? `**${DJSUtil.escapeMarkdown(user.username)}**'s` : 'Your'} Partnerships`)
 			.setColor(Constants.Colors.WHITE)
 			.setDescription([
 				format('Alltime', alltime),
 				format('This month', thisMonth),
-				format('This week',thisWeek)
+				format('This week', thisWeek)
 			]);
 	},
 	PARTNER_TOP: (partners: {
@@ -417,7 +421,7 @@ export const Responses = {
 		const array = partners.map(
 			(obj, index) => `\`${index + 1}.\` ${
 				obj.user ? `**${DJSUtil.escapeMarkdown(obj.user.username)}**#${obj.user.discriminator}` : obj.userID
-			} - **${obj.count}** Partnerships`
+			} - **${addCommas(obj.count)}** Partnerships`
 		);
 		return new MessageEmbed()
 			.setColor(11309714)
@@ -426,18 +430,20 @@ export const Responses = {
 			.setFooter(`This is the ${type}${type !== 'alltime' ? 'ly' : ''} counter for partnerships`);
 	},
 	CATEGORY_HELP: (category: CommandCategory, client: Client) => {
-		return { content: '', embed: new MessageEmbed()
-			.setColor(Constants.Colors.WHITE)
-			.setAuthor(category.category)
-			.setDescription(category.commands.map(
-				(command, index) => `${
-					client.config.emojis.get('RIGHT_ARROW')
-				} \`[${index+1}]\` ${client.config.prefix[0]}${command.name}`
-			)) };
+		return {
+			content: '', embed: new MessageEmbed()
+				.setColor(Constants.Colors.WHITE)
+				.setAuthor(category.category)
+				.setDescription(category.commands.map(
+					(command, index) => `${
+						client.config.emojis.get('RIGHT_ARROW')
+					} \`[${index + 1}]\` ${client.config.prefix[0]}${command.name}`
+				))
+		};
 	},
 	HELP_PROMPT: (categories: CommandCategory[], client: Client) => {
 		const array = categories.map(({ category }, index) => {
-			return `${client.config.emojis.get('RIGHT_ARROW')} \`[${index+1}]\`${category}`;
+			return `${client.config.emojis.get('RIGHT_ARROW')} \`[${index + 1}]\`${category}`;
 		});
 		array.push('Type a category name to view its commands, or `cancel` to cancel.');
 		array.unshift('**Help**');
@@ -495,7 +501,7 @@ export const Responses = {
 			const str = '✅ Requirement:';
 			description.push('', str);
 			if (hasMessageRequirement) {
-				description.push(`**${splitChars(`Must send ${data.messageRequirement} messages.`)}**`);
+				description.push(`**${splitChars(`Must send ${addCommas(data.messageRequirement!)} messages.`)}**`);
 			}
 			if (hasRequirement) description.push(`**${splitChars(data.requirement!)}**`);
 			const index = description.indexOf(str);
@@ -555,16 +561,19 @@ export const Responses = {
 		}
 	}),
 	DELETE_CASE: (caseID: number, deleted = false) => {
-		if (!deleted) return `Deleting case ${caseID}, this may take a while to complete.`;
+		if (!deleted) return `Deleting case ${addCommas(caseID)}, this may take a while to complete.`;
 		return `Deleted case ${caseID}.`;
 	},
 	POINTS_MODIFY: (user: User, amount: number, mode: 'add' | 'set' | 'remove') => {
-		if (mode === 'set') return `Successfully set ${DJSUtil.escapeMarkdown(user.username)}'s points to ${amount}.`;
+		if (mode === 'set') {
+			return `Successfully set ${DJSUtil.escapeMarkdown(user.username)}'s points to ${addCommas(amount)}.`;
+		}
 		return `Successfully ${mode === 'add' ? 'added' : 'removed'} ${amount} points from ${
 			DJSUtil.escapeMarkdown(user.username)
 		}.`;
 	},
-	GAME_END_STATE: (state: MatchState, bet: number) => `You ${state === 'won' ? 'won' : 'lost'} **${bet}** points.`,
+	GAME_END_STATE: (state: MatchState, bet: number) =>
+		`You ${state === 'won' ? 'won' : 'lost'} **${addCommas(bet)}** points.`,
 	BLACKJACK_MESSAGE: (userHand: Card[], dealerHand: Card[], bet: number) => {
 		const mapHand = (hand: Card[]) => hand.map(
 			card => EMOJI_CARDS.find(({ value, suit }) => value === card.value && suit === card.suit)?.emoji
@@ -590,7 +599,7 @@ export const Responses = {
 					`Total: ${getWeight(dealerHand)}`
 				]
 			})
-			.setFooter(`Your bet: ${bet}`);
+			.setFooter(`Your bet: ${addCommas(bet)}`);
 	},
 	BLACKJACK_RULES: (client: Client) => {
 		const RIGHT_ARROW = client.config.emojis.get('RIGHT_ARROW')!;
@@ -630,12 +639,12 @@ export const Responses = {
 			}
 		}), `Use \`${guild.client.config.prefix[0]}buy [name]\` to buy an item.`];
 	},
-	WITHDRAW_SUCCESS: (amount: number) => `Successfully withdrew **${amount}** points.`,
-	DEPOSIT_SUCCESS: (amount: number) => `Successfully deposited **${amount}** points.`,
+	WITHDRAW_SUCCESS: (amount: number) => `Successfully withdrew **${addCommas(amount)}** points.`,
+	DEPOSIT_SUCCESS: (amount: number) => `Successfully deposited **${addCommas(amount)}** points.`,
 	VAULT_CHECK: (user: User, amount: number) =>
-		`You have **${amount}** points in your vault.`,
+		`You have **${addCommas(amount)}** points in your vault.`,
 	POINTS: (user: User, amount: number, self = true) =>
-		`${self ? 'You' : 'They'} have **${amount}** points in ${self ? 'your' : 'their'} wallet.`,
+		`${self ? 'You' : 'They'} have **${addCommas(amount)}** points in ${self ? 'your' : 'their'} wallet.`,
 	TOP: (levels: Levels[], guild: Guild) => {
 		return new MessageEmbed()
 			.setAuthor(`${guild.name} Leaderboards`, guild.iconURL({ dynamic: true })!)
@@ -658,7 +667,7 @@ export const Responses = {
 			//`${RIGHT_ARROW} Rank **${rank}**`,
 			`${RIGHT_ARROW} Level **${level}**`,
 			`${LEFT_BORDER}${MIDDLE_BORDER.toString().repeat(6)}${RIGHT_BORDER}`,
-			`XP: **${xp}**/**${Levels.levelCalc(level).toFixed(0)}**`
+			`XP: **${addCommas(xp)}**/**${addCommas(Levels.levelCalc(level)).split('.').shift()}**`
 		];
 	},
 	LEVEL_UP: (user: User, newLevel: number) => ({
@@ -668,7 +677,7 @@ export const Responses = {
 		}
 	}),
 	PARTNER_REWARD: (user: User, channel: TextBasedChannels, points: number) => ({
-		content: `${user} Was rewarded **${points}** points for a ${channel}.`,
+		content: `${user} Was rewarded **${addCommas(points)}** points for a ${channel}.`,
 		allowedMentions: {
 			users: [user.id]
 		}
@@ -712,7 +721,7 @@ export const Responses = {
 		`${kick ?
 			'Kicked' :
 			kick === null ? 'Softbanned' : 'Banned'
-		} by ${DJSUtil.escapeMarkdown(moderator.tag)}: Case ${caseID}`,
+		} by ${DJSUtil.escapeMarkdown(moderator.tag)}: Case ${addCommas(caseID)}`,
 
 	/**
    * Big spaghetti code ;(
