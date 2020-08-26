@@ -11,7 +11,7 @@ export enum SourceModes {
 	STATS = 'stats'
 }
 
-const modeKeys = Object.keys(SourceModes);
+const modeKeys = Object.values(SourceModes);
 
 export default class BotInfo extends Command {
 	constructor(manager: CommandManager) {
