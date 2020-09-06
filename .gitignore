@@ -1,0 +1,13 @@
+node_modules
+package-lock.json
+.vscode
+compiled
+
+# Config files
+
+config.json
+
+# Custom scripts
+
+EvalUtil.ts
+EvalUtil.js

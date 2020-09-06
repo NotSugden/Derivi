@@ -1,0 +1,37 @@
+{
+	"name": "derivi",
+	"version": "0.0.0",
+	"description": "Derivi",
+	"main": "compiled/index.js",
+	"scripts": {
+		"build": "tsc && npm run start",
+		"start": "cd compiled && node index.js"
+	},
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/NotSugden/Derivi.git"
+	},
+	"author": "Sugden",
+	"license": "Apache-2.0",
+	"bugs": {
+		"url": "https://github.com/NotSugden/Derivi/issues"
+	},
+	"homepage": "https://github.com/NotSugden/Derivi#readme",
+	"dependencies": {
+		"@naval-base/ms": "^3.1.0",
+		"@types/mysql": "^2.15.15",
+		"@types/node": "^14.6.4",
+		"@types/node-fetch": "^2.5.7",
+		"@types/ws": "^7.2.6",
+		"discord.js": "^12.3.1",
+		"mysql": "github:nwoltman/node-mysql#caching-sha2-password",
+		"node-fetch": "^2.6.1",
+		"typescript": "^4.0.2"
+	},
+	"devDependencies": {
+		"@typescript-eslint/eslint-plugin": "^4.0.1",
+		"@typescript-eslint/parser": "^4.0.1",
+		"eslint": "^7.8.1",
+		"eslint-plugin-import": "^2.22.0"
+	}
+}

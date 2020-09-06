@@ -1,0 +1,32 @@
+{
+	"token": "token",
+	"database": {
+		"host": "localhost",
+		"user": "root",
+		"password": "secure-password",
+		"database": "main"
+	},
+	"encryption_password": "secure-password",
+	"prefix": [
+		"+",
+		"."
+	],
+	"emojis": [
+		{
+			"name": "RIGHT_ARROW",
+			"id": "123456789012345678"
+		},
+		{
+			"name": "RIGHT_BORDER",
+			"id": "123456789012345678"
+		},
+		{
+			"name": "MIDDLE_BORDER",
+			"id": "123456789012345678"
+		},
+		{
+			"name": "LEFT_BORDER",
+			"id": "123456789012345678"
+		}
+	]
+}
