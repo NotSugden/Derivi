@@ -87,7 +87,7 @@ export default class Client extends DJSClient {
 			encryptionPassword: { value: config.encryption_password }
 		});
 
-		this.config.xpMultiplier = config.xp_mutliplier ?? 1;
+		this.config.xpMultiplier = config.xp_multiplier ?? 1;
 
 		if (config.website?.enabled) {
 			this.website = new WebsiteManager(this, config.website);
@@ -191,5 +191,5 @@ export interface ClientConfig {
 	};
 	login_url?: string;
 	PRODUCTION?: boolean;
-	xp_mutliplier?: number;
+	xp_multiplier?: number;
 }
