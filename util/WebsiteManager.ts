@@ -62,7 +62,7 @@ export default class WebsiteManager extends EventEmitter {
 		const handler = handlers.get(message._action.type);
 		if (!handler) return;
 		const _data = await handler(this.client, message._action);
-		return new Promise((resolve, reject) => this.process!.send({
+		return new Promise<void>((resolve, reject) => this.process!.send({
 			_data,
 			_responseID: message._responseID
 		}, error => {

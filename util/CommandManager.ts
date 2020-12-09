@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-var-requires */
 import { promises as fs } from 'fs';
 import { join } from 'path';
 import { Client, Collection } from 'discord.js';

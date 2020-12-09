@@ -25,7 +25,7 @@ export enum QueryTypes {
 }
 
 const SQL_SEARCH_REGEX = /:(\w+)/g;
-const hasOwnProperty = (obj: object, prop: string) => Object.prototype.hasOwnProperty.call(obj, prop);
+const hasOwnProperty = (obj: Record<string, unknown>, prop: string) => Object.prototype.hasOwnProperty.call(obj, prop);
 
 export default class DatabaseManager {
 	public cache: CacheManager;

@@ -19,7 +19,7 @@ export default class Guild extends DJSGuild {
 	public bans = new Collection<string, BanInfo>();
 	public invites = new Collection<string, Invite>();
 
-	constructor(client: Client, data: object) {
+	constructor(client: Client, data: Record<string, unknown>) {
 		super(client, data);
 
 		this.config = null;

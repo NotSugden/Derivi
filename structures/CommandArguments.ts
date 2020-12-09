@@ -37,7 +37,7 @@ export default class CommandArguments extends Array<string> {
 		this.regular = message.content.split(' ').slice(1);
 	}
 
-	slice(start?: number, end?: number) {
+	slice(start?: number, end?: number): string[] {
 		return [...this].slice(start, end);
 	}
 }

@@ -103,7 +103,7 @@ export async function runLevels(message: GuildMessage<true>, config: GuildConfig
 	const levels = await message.client.database.levels(message.author.id);
 
 	const newData: { xp: number; level?: number } = {
-		xp: levels.xp + random(12, 37)
+		xp: levels.xp + (random(12, 37) * message.client.config.xpMultiplier)
 	};
 	if (newData.xp > Levels.levelCalc(levels.level)) {
 		const newLevel = newData.level = levels.level + 1;

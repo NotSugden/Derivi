@@ -256,10 +256,11 @@ export default class Util {
 		return caseData;
 	}
 
-	static makePromiseObject<T>() {
+	static makePromiseObject<T = void>() {
 		const promise = new Promise<T>((resolve, reject) => {
 			// setImmediate has to be used here, otherwise an error is thrown
 			setImmediate(() => {
+				// @ts-expect-error lazy fix
 				promise.resolve = resolve;
 				promise.reject = reject;
 			});
@@ -435,10 +436,10 @@ export default class Util {
 	}
 }
 
-export type PromiseObject<T> = Promise<T> & {
+export interface PromiseObject<T> extends Promise<T> {
 	resolve: (value?: T | PromiseLike<T>) => void;
 	reject: (reason?: unknown) => void;
-};
+}
 
 export interface ReasonData {
 	reason: string;

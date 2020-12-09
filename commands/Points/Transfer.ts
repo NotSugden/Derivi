@@ -25,7 +25,7 @@ export default class Transfer extends Command {
 			throw new CommandError('LOCKED_POINTS');
 		}
 		const user = await Util.users(message, 1);
-		if (!user) {
+		if (!user || user.id === message.author.id) {
 			throw new CommandError('MENTION_USER');
 		}
 		if (this.client.lockedPoints.has(user.id)) {
