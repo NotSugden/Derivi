@@ -359,7 +359,7 @@ export const Responses = {
 			else if (next.type === 'category') acc.category++;
 			return acc;
 		}, { text: 0, voice: 0, category: 0 });
-		return [
+		const info = [
 			`**Guilds**: ${client.guilds.cache.size}`,
 			`**Channels** ${channels.text} Text, ${channels.voice} Voice, ${channels.category} Categories`,
 			`**Cached Users**: ${addCommas(client.users.cache.size)}`,
@@ -368,6 +368,11 @@ export const Responses = {
 			`**Total points from all users**: ${addCommas(totalPoints)}`,
 			`**Total XP Gained**: ${addCommas(totalXP)}`
 		];
+		const { xpMultiplier } = client.config;
+		if (xpMultiplier !== 1) {
+			info.unshift(`**${xpMultiplier}x** XP multiplier active!`);
+		}
+		return info;
 	},
 	MESSAGE_LINKED: (by: User, message: GuildMessage) => {
 		const embed = new MessageEmbed()

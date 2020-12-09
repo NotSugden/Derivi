@@ -1,5 +1,6 @@
+/* eslint-disable @typescript-eslint/ban-types */
 import { Errors } from './Constants';
-type ArgumentTypes<T> = T extends (...args: infer U ) => infer R ? U: never;
+type ArgumentTypes<T> = T extends (...args: infer U ) => unknown ? U: never;
 
 const makeError = (Class: typeof Error) => {
 	return class DeriviError<T extends keyof typeof Errors> extends Class {

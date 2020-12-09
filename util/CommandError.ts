@@ -1,5 +1,6 @@
+/* eslint-disable @typescript-eslint/ban-types */
 import { CommandErrors } from './Constants';
-type ArgumentTypes<T> = T extends (...args: infer U ) => infer R ? U: never;
+type ArgumentTypes<T> = T extends (...args: infer U ) => unknown ? U: never;
 
 export default class CommandError<T extends keyof typeof CommandErrors> {
 	public name: T;

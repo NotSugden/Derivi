@@ -31,7 +31,7 @@
 		"prettier/prettier": "off",
 		"@typescript-eslint/member-ordering": "error",
 		"@typescript-eslint/camelcase": "off",
-		"@typescript-eslint/explicit-function-return-type": "off",
+		"@typescript-eslint/explicit-module-boundary-types": "off",
 		"@typescript-eslint/no-non-null-assertion": "off",
 		"indent": [
 			"error",
@@ -52,7 +52,14 @@
 		"import/order": [
 			"error",
 			{
-				"groups": ["builtin", "external", "internal", "index", "sibling", "parent"],
+				"groups": [
+					"builtin",
+					"external",
+					"internal",
+					"index",
+					"sibling",
+					"parent"
+				],
 				"alphabetize": {
 					"order": "asc"
 				}

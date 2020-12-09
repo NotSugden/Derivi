@@ -24,7 +24,7 @@ class Handlers extends Map<
 	}
 
 	public set<T extends ProcessActionObject['type']>(key: T, fn: HandlerFunction<T>) {
-		// eslint-disable-next-line @typescript-eslint/ban-ts-ignore
+		// eslint-disable-next-line @typescript-eslint/ban-ts-comment
 		// @ts-ignore
 		return super.set(key, fn);
 	}

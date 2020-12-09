@@ -13,8 +13,6 @@ import { QueryTypes } from '../util/DatabaseManager';
 import { GuildMessage } from '../util/Types';
 import Util from '../util/Util';
 
-
-
 export default (async message => {
 	try {
 		if (message.author.bot || !Util.isGuildMessage(message, true)) return;

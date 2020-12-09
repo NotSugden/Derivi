@@ -32,7 +32,7 @@ export interface DMMessage extends djs.Message {
 
 export type MessageT<M = false> = GuildMessage<M> | DMMessage;
 
-export type MapObject<T extends object, V> = {
+export type MapObject<T extends Record<string, unknown>, V> = {
 	[K in keyof T]: V
 };
 
