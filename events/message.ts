@@ -84,7 +84,7 @@ export default (async message => {
 			}
 
 			// Lazy fix here casting it to MessageOptions, TS complains otherwise.
-			const msg = await message.channel.send(content, options as MessageOptions | MessageAdditions);
+			const msg = await message.channel.send(content, options as MessageOptions & { split: false });
 			message.commandID = msg.id;
 			return msg as GuildMessage<true>;
 		};

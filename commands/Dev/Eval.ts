@@ -80,7 +80,7 @@ export default class Eval extends Command {
 				);
 			}
 			const respond = (content: unknown, options?: MessageOptions) => flags.silent ?
-				message.author.send(content, options) :
+				message.author.send(content, options!) :
 				send(content, options);
 			if (inspected.length > 1250 || flags.hastebin) {
 				const json = await fetch(URLs.HASTEBIN('documents'), {

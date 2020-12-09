@@ -15,11 +15,12 @@ export default (async (oldMember: GuildMember, newMember: GuildMember) => {
 		config.filePermissionsRole && !oldMember.roles.cache.has(config.filePermissionsRoleID) &&
     newMember.roles.cache.has(config.filePermissionsRoleID) && !client.config.PRODUCTION
 	) {
+		// lazy-fixes here because the send overloads for djs are messed up
 		try {
-			await newMember.send(EventResponses.FILE_PERMISSIONS_NOTICE(true, guild));
+			await newMember.send(<string> EventResponses.FILE_PERMISSIONS_NOTICE(true, guild));
 		} catch {
 			await config.generalChannel.send(
-				EventResponses.FILE_PERMISSIONS_NOTICE(newMember, guild)
+				<string> EventResponses.FILE_PERMISSIONS_NOTICE(newMember, guild)
 			);
 		}
 	}
