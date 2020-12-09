@@ -13,6 +13,7 @@ import { IMAGE_EXTENSIONS } from '../commands/Moderation/Attach';
 import { Card } from '../commands/Points/Blackjack';
 import Case from '../structures/Case';
 import Command from '../structures/Command';
+import GuildConfig from '../structures/GuildConfig';
 import Levels from '../structures/Levels';
 import Profile from '../structures/Profile';
 import ShopItem from '../structures/ShopItem';
@@ -192,6 +193,8 @@ export const Errors = {
 };
 
 export const CommandErrors = {
+	INVALID_SETTING: (settings: string[]) =>
+		`Please provide a valid setting to edit, valid settings are ${settings.map(s => `\`${s}\``).join(', ')}.`,
 	NO_PARTNERS: (user?: User | null) =>
 		`${user ? `${DJSUtil.escapeMarkdown(user.tag)} doesn't` : 'You don\'t'} have any partners.`,
 	RESPONSE_TIMEOUT: (time: string) => `Response timed out, as no answer was recieved in ${time}.`,
@@ -335,13 +338,23 @@ const splitChars = (string: string, char = '\u200b') => string.split('').join(ch
 
 const GIVEAWAY_KEYWORDS = /nitro|code|steam|paypal|(£\$)[0-9]*/gi;
 
-/*const mapAliases = (command: Command) => command.aliases.map(
-	alias => typeof alias === 'string' ? alias : alias.name
-);*/
-
 type CommandCategory = { category: string; commands: Command[] };
 
 export const Responses = {
+	VIEW_SERVER_CONFIG: (config: GuildConfig) => {
+		return new MessageEmbed()
+			.setAuthor(
+				config.guild.name,
+				config.guild.iconURL({ dynamic: true }) ?? config.client.user!.displayAvatarURL()
+			).setColor(Constants.Colors.WHITE).setDescription([
+				`**Access Level Roles (1-4)**: ${config.accessLevelRoles
+					.reverse().map(roleID => `<@&${roleID}>`).join(', ')
+				}`,
+				`**File Permissions Role**: ${config.filePermissionsRole}`,
+				`**Lockdown Channel**: ${config.lockdownChannel}`,
+				`**2FA Moderation?**: ${config.mfaModeration ? 'Yes' : 'No'}`
+			]);
+	},
 	BOT_SOURCE: [
 		`${
 			packageJSON ? upperFirst(packageJSON.name) : 'Derivi'
@@ -372,7 +385,7 @@ export const Responses = {
 	MESSAGE_LINKED: (by: User, message: GuildMessage) => {
 		const embed = new MessageEmbed()
 			.setAuthor(message.author.tag, message.author.displayAvatarURL({ dynamic: true }))
-			.setColor('WHITE')
+			.setColor(Constants.Colors.WHITE)
 			.setDescription(message.content || 'No Content')
 			.setFooter(`Quoted by: ${by.tag}`, by.displayAvatarURL({ dynamic: true }))
 			.setTimestamp(message.createdAt)

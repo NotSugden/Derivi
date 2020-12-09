@@ -1,4 +1,9 @@
-import { Client, Collection, Guild,  Message, Snowflake, SnowflakeUtil, User, Util as DJSUtil } from 'discord.js';
+import {
+	Client, Collection, Guild,
+	Message, Snowflake, Role,
+	SnowflakeUtil, User,
+	Util as DJSUtil, Emoji
+} from 'discord.js';
 import * as mysql from 'mysql';
 import CacheManager from './CacheManager';
 import { ModerationActionTypes, Defaults } from './Constants';
@@ -1029,6 +1034,47 @@ message_id = :messageID OR author_id = :messageID\
 		return items.map(item => new ShopItem(this.client, item));
 	}
 
+	public async reactionRole(message: Message | Snowflake, options?: ReactionRoleOptions) {
+		const where = [`message_id = ${mysql.escape(
+			typeof message === 'string' ? message : message.id
+		)}`];
+		if (options) {
+			if (options.emoji) {
+				where.push(`emoji = ${
+					mysql.escape(typeof options.emoji === 'string'
+						? options.emoji
+						: (options.emoji.id || options.emoji.name)
+					)
+				}`);
+			}
+			if (options.role) {
+				where.push(`role_id = ${
+					typeof options.role === 'string' ? options.role : options.role.id
+				}`);
+			}
+		}
+		const results = await this.query<{
+			id: number; message_id: Snowflake; role_id: Snowflake; emoji: string;
+		}>(
+			'SELECT * FROM reaction_roles WHERE :where', {
+				where: where.join(' OR ')
+			}
+		);
+		return results.map(data => ({
+			emoji: data.emoji,
+			id: data.id,
+			roleID: data.role_id
+		}));
+	}
+
+	public async editConfig(guild: Guild | Snowflake, data: Partial<
+		Omit<RawGuildConfig, 'id'>
+	>) {
+		guild = this.client.guilds.resolve(guild)!;
+		const existing = await guild.fetchConfig();
+		existing!.patch(data);
+	}
+
 	private async deleteWarn(id: number, guild: Guild): Promise<number>
 	private async deleteWarn(id: Snowflake): Promise<number>;
 	private async deleteWarn(id: number | Snowflake, guild?: Guild) {
@@ -1102,6 +1148,11 @@ interface MuteCreateData {
 	guild: Guild | Snowflake;
 	start: Date;
 	user: User | Snowflake;
+}
+
+interface ReactionRoleOptions {
+	emoji?: Emoji | Snowflake;
+	role?: Role | Snowflake;
 }
 
 export type SQLDataType<E = never> = number | Date | string | null | E;

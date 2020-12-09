@@ -46,22 +46,20 @@ export default (async (
 		}
 		return;
 	}
-	if (!client.config.reactionRoles.size) return;
+	const [data] = await client.database.reactionRole(reaction.message.id, {
+		emoji: reaction.emoji
+	});
 
-	const data = client.config.reactionRoles.get(reaction.message.id);
 	if (!data) return;
-	const member = await guild.members.fetch(user.id);
-	if (data.limit > 0) {
-		const filtered = [...data.emojis.values()]
-			.filter(roleID => member.roles.cache.has(roleID));
-		if (filtered.length > data.limit) return;
-	}
-	const roleID = data.emojis.get(reaction.emoji.id || reaction.emoji.name);
-	if (!roleID || !guild.roles.cache.has(roleID)) return;
 
+	const role = guild.roles.resolve(data.roleID);
+	if (!role) {
+		return client.emit('warn', 'There is a reaction role in the database without a valid role ID');
+	}
 	try {
-		if (member.roles.cache.has(roleID)) return;
-		await member.roles.add(roleID);
+		const member = await guild.members.fetch(user);
+		if (member.roles.cache.has(role.id)) return;
+		await member.roles.add(role);
 	} catch (error) {
 		client.emit('error', error);
 	}

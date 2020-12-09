@@ -16,7 +16,8 @@ export enum CommandCategory {
 	LEVELS = 'Levels',
 	MODERATION = 'Moderation',
 	PM = 'PM',
-	POINTS = 'Points'
+	POINTS = 'Points',
+	ADMIN = 'Admin'
 }
 
 export type CommandAlias = string | {

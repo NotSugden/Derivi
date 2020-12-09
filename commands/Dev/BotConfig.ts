@@ -7,6 +7,7 @@ import {
 } from 'discord.js';
 import Command, { CommandData, CommandCategory } from '../../structures/Command';
 import CommandArguments from '../../structures/CommandArguments';
+import { RawGuildConfig } from '../../structures/GuildConfig';
 import CommandError from '../../util/CommandError';
 import CommandManager from '../../util/CommandManager';
 import { SQLValues, QueryTypes } from '../../util/DatabaseManager';
@@ -19,7 +20,7 @@ enum ConfigModes {
 
 const keys = Object.values(ConfigModes);
 
-const CONFIG_ITEMS = [{
+export const CONFIG_ITEMS = [{
 	description: 'Requires two factor authentication be enabled to use moderation commands.',
 	key: 'mfa_moderation',
 	name: '2FA Moderation',
@@ -84,7 +85,13 @@ const CONFIG_ITEMS = [{
 	name: 'Lockdown Channel',
 	optional: true,
 	type: 'channel'
-}];
+}] as ConfigItem[];
+
+const normalize = (str: string) =>
+	str.replace(/_(.)/, (str, match) => match.toUpperCase());
+for (const obj of CONFIG_ITEMS) {
+	obj.normalizedKey = normalize(obj.key);
+}
 // <3 milk
 export default class BotConfig extends Command {
 	constructor(manager: CommandManager) {
@@ -98,6 +105,173 @@ export default class BotConfig extends Command {
 			name: 'botconfig',
 			permissions: member => member.client.config.ownerIDs.includes(member.id)
 		}, __filename);
+	}
+
+	static async createChannels(message: GuildMessage<true>, guild: Guild) {
+		const values = {} as {
+			audit_logs_webhook: string;
+			member_logs_webhook: string;
+			invite_logs_webhook: string;
+			staff_server_category: string;
+			staff_commands_channel: string;
+			punishment_channel: string;
+		};
+		const messages = [(await message.channel.send('Creating channels... please wait.')).id];
+		let staffMember = guild.roles.cache.find(role => role.name.toLowerCase() === 'staff member');
+		if (!staffMember) {
+			staffMember = await guild.roles.create({ data: {
+				name: 'Staff Member', permissions: 0
+			}, reason: 'Staff Member Role' });
+		}
+		let serverRole = guild.roles.cache.find(
+			role => role.name.toLowerCase() === guild.name.toLowerCase()
+		);
+		if (!serverRole) {
+			serverRole = await guild.roles.create({ data: {
+				name: message.guild.name, permissions: 0
+			}, reason: `Server Role for ${message.guild.name}` });
+		}
+		const permissionOverwrites = ([{
+			deny: Permissions.FLAGS.VIEW_CHANNEL,
+			id: staffMember.id,
+			type: 'role'
+		}, {
+			allow: Permissions.FLAGS.VIEW_CHANNEL,
+			id: serverRole.id,
+			type: 'role'
+		}] as OverwriteResolvable[]).map(o => PermissionOverwrites.resolve(o, guild));
+		const category = await guild.channels.create(message.guild.name, {
+			permissionOverwrites, type: 'category'
+		});
+		// tfw GuildChannelCreateOptions isn't exported
+		const options: Parameters<GuildChannelManager['create']>[1] = {
+			parent: category,
+			permissionOverwrites,
+			reason: `Config setup by ${message.author.tag}`,
+			type: 'text'
+		};
+		const [cases, commands, logsCategory] = await Promise.all([
+			guild.channels.create('cases', options),
+			guild.channels.create('commands', options),
+			guild.channels.create(`${message.guild.name}-LOGS`, {
+				permissionOverwrites, type: 'category'
+			})
+		]) as [TextChannel, TextChannel, CategoryChannel];
+		options.parent = logsCategory;
+		const logChannels = await Promise.all([
+			guild.channels.create('audit-logs', options),
+			guild.channels.create('member-logs', options),
+			guild.channels.create('invite-logs', options)
+		]) as [TextChannel, TextChannel, TextChannel];
+		const webhookOptions: { avatar?: string } = {};
+		if (message.guild.icon) {
+			webhookOptions.avatar = await DataResolver.resolveImage(message.guild.iconURL()!);
+		}
+		for (let i = 0; i < logChannels.length; i++) {
+			const logChannel = logChannels[i];
+			const webhook = await logChannel.createWebhook(logChannel.name, webhookOptions);
+			let hookName: 'audit_logs' | 'member_logs' | 'invite_logs';
+			if (i === 0) hookName = 'audit_logs';
+			else if (i === 1) hookName = 'member_logs';
+			else hookName = 'invite_logs';
+			values[`${hookName}_webhook` as keyof typeof values] = `${webhook.id}:${webhook.token}`;
+		}
+		values['staff_server_category'] = category.id;
+		values['staff_commands_channel'] = commands.id;
+		values['punishment_channel'] = cases.id;
+		messages.push((await message.channel.send('Finished creating channels')).id);
+		return { data: values, messages };
+	}
+
+	static async resolveValue(
+		data: ConfigItem, response: GuildMessage<true>,
+		options: { createChannels: true; string?: string }
+	): Promise<string | { values: SQLValues; messages: string[] }>;
+	static async resolveValue(
+		data: ConfigItem, response: GuildMessage<true>,
+		options: { createChannels?: false; string?: string }
+	): Promise<string | { values: SQLValues; messages: null }>;
+	static async resolveValue(
+		data: ConfigItem, response: GuildMessage<true>,
+		options: { createChannels?: boolean; string?: string } = {}
+	) {
+		const { createChannels = false, string = response.content } = options;
+		const values: SQLValues = {};
+		let messages: string[] | null = null;
+		if (data.type === 'boolean') {
+			values[data.key] = ['y', 'enabled', 'yes'].includes(string) ? 1 : 0;
+		} else if (data.type === 'role') {
+			const role = Util.resolveRole(response, string);
+			if (!role) {
+				return 'That is not a valid role, please try again';
+			}
+			values[data.key] = role.id;
+		} else if (data.type === 'channel' || data.type === 'channel_id') {
+			const channel = data.type === 'channel' ?
+				Util.resolveChannel(response, string) :
+				response.client.channels.cache.get(string);
+
+			if (!channel) {
+				return 'That is not a valid channel, please try again';
+			}
+			values[data.key] = channel.id;
+			if (data.key === 'starboard_channel_id') {
+				values['starboard_enabled'] = 1;
+				if (!response.guild.config?.starboard.minimum) {
+					values['starboard_minimum'] = 3;
+				}
+			}
+		} else if (data.type === 'guild_id') {
+			const guild = response.client.guilds.cache.get(string);
+
+			if (!guild) {
+				return 'That is not a valid guild ID, please try again';
+			}
+			if (data.key === 'staff-server' && createChannels) {
+				const { data: _data, messages: _messages } = await this.createChannels(response, guild);
+				Object.assign(values, _data);
+				messages = _messages;
+			}
+		} else if (data.type.startsWith('roles-')) {
+			const _roles = string.toLowerCase().split(/ *, * /g);
+			let errorResponse = 'Please provide 4 roles seperated by a comma.';
+			if (data.key === 'access_level_roles') {
+				// eslint-disable-next-line max-len
+				errorResponse += '\nin the order: Owner, Admin, Moderator, Trainee (the roles don\'t have to be named this, just the respective roles).';
+			}
+			if (_roles.length !== 4) {
+				return errorResponse;
+			}
+			const roles = _roles.map(idOrName => {
+				const [id] = idOrName.match(MessageMentions.ROLES_PATTERN) || [];
+				return Util.resolveRole(response, id || idOrName);
+			});
+			if (roles.some(role => !(role instanceof Role))) {
+				return errorResponse;
+			}
+			values[data.key] = JSON.stringify(roles.map(role => role!.id));
+		}
+		return { messages, values };
+	}
+
+	static resolveTypes(data: ConfigItem, foundDefault = false) {
+		let type;
+		let allowedResponses: string[] | '*' = ['y', 'n'];
+		if (data.type === 'boolean') type = 'y/n';
+		else allowedResponses = '*';
+		if (data.type === 'role') type = 'role name/mention/id';
+		else if (data.type === 'channel') type = 'channel mention/name/id';
+		else if (data.type === 'guild_id') type = 'Guild ID';
+		else if (data.type === 'channel_id') type = 'channel ID';
+		else if (data.type.startsWith('roles-')) {
+			type = `${data.type.split('-')[1]} roles seperated by a comma`;
+		}
+		let fullString = `What would you like the ${data.name} to be? (${type})\n${data.description}`;
+		if (foundDefault) {
+			fullString += '\nA default was not found.';
+		}
+		if (data.optional) fullString += '\nType `n` if you do not want this';
+		return { allowedResponses, fullString, type };
 	}
 
 	public async run(message: GuildMessage<true>, args: CommandArguments, { send }: CommandData) {
@@ -114,18 +288,6 @@ export default class BotConfig extends Command {
 			const values: SQLValues = {};
 
 			const messages = [];
-
-			const resolveRole = (msg: GuildMessage<true>) => {
-				return msg.mentions.roles.first()
-					|| msg.guild.roles.cache.get(msg.content)
-					|| msg.guild.roles.cache.find(role => role.name.toLowerCase() === msg.content.toLowerCase());
-			};
-
-			const resolveChannel = (msg: GuildMessage<true>) => {
-				return msg.mentions.channels.first()
-					|| msg.guild.channels.cache.get(msg.content)
-					|| msg.guild.channels.cache.find(ch => ch.name.toLowerCase() === msg.content.toLowerCase());
-			};
 			for (let i = 0; i < CONFIG_ITEMS.length; i++) {
 				const data = CONFIG_ITEMS[i];
 				if (typeof data.default === 'function') {
@@ -139,24 +301,11 @@ export default class BotConfig extends Command {
 						continue;
 					}
 				}
-				let type;
-				let allowedResponses: string[] | '*' = ['y', 'n'];
-				if (data.type === 'boolean') type = 'y/n';
-				else allowedResponses = '*';
-				if (data.type === 'role') type = 'role name/mention/id';
-				else if (data.type === 'channel') type = 'channel mention/name/id';
-				else if (data.type === 'guild_id') type = 'Guild ID';
-				else if (data.type === 'channel_id') type = 'channel ID';
-				else if (data.type.startsWith('roles-')) {
-					type = `${data.type.split('-')[1]} roles seperated by a comma`;
-				}
-				let str = `What would you like the ${data.name} to be? (${type})\n${data.description}`;
-				if (typeof data.default === 'function') {
-					str += '\nA default was not found.';
-				}
-				if (data.optional) str += '\nType `n` if you do not want this';
+				const { allowedResponses, fullString } = BotConfig.resolveTypes(
+					data, typeof data.default === 'function'
+				);
 
-				const question = await message.channel.send(str);
+				const question = await message.channel.send(fullString);
 
 				const response = await Util.awaitResponse(
 					message.channel,
@@ -164,7 +313,7 @@ export default class BotConfig extends Command {
 					allowedResponses
 				);
 				if (!response) {
-					await message.channel.bulkDelete(messages);
+					await Util.bulkDelete(message.channel, messages, false);
 					return message.channel.send(
 						'3 Minute response timeout, cancelling command'
 					) as Promise<GuildMessage<true>>;
@@ -179,137 +328,33 @@ export default class BotConfig extends Command {
 					i--;
 				};
 
-				if (data.type === 'boolean') {
-					values[data.key] = response.content === 'y' ? 1 : 0;
-				} else if (data.type === 'role') {
-					const role = resolveRole(response);
-					if (!role) {
-						await tryAgain('That is not a valid role, please try again');
-						continue;
-					}
-					values[data.key] = role.id;
-				} else if (data.type === 'channel' || data.type === 'channel_id') {
-					const channel = data.type === 'channel' ?
-						resolveChannel(response) :
-						this.client.channels.cache.get(response.content);
-
-					if (!channel) {
-						await tryAgain('That is not a valid channel, please try again');
-						continue;
-					}
-					values[data.key] = channel.id;
-					if (data.key === 'starboard_channel_id') {
-						values['starboard_enabled'] = 1;
-						values['starboard_minimum'] = 3;
-					}
-				} else if (data.type === 'guild_id') {
-					const guild = this.client.guilds.cache.get(response.content);
-
-					if (!guild) {
-						await tryAgain('That is not a valid guild ID, please try again');
-						continue;
-					}
-					if (data.key === 'staff-server') {
-						messages.push((await message.channel.send('Creating channels... please wait.')).id);
-						let staffMember = guild.roles.cache.find(role => role.name.toLowerCase() === 'staff member');
-						if (!staffMember) {
-							staffMember = await guild.roles.create({ data: {
-								name: 'Staff Member', permissions: 0
-							}, reason: 'Staff Member Role' });
-						}
-						let serverRole = guild.roles.cache.find(
-							role => role.name.toLowerCase() === message.guild.name.toLowerCase()
-						);
-						if (!serverRole) {
-							serverRole = await guild.roles.create({ data: {
-								name: message.guild.name, permissions: 0
-							}, reason: `Server Role for ${message.guild.name}` });
-						}
-						const permissionOverwrites = ([{
-							deny: Permissions.FLAGS.VIEW_CHANNEL,
-							id: staffMember.id,
-							type: 'role'
-						}, {
-							allow: Permissions.FLAGS.VIEW_CHANNEL,
-							id: serverRole.id,
-							type: 'role'
-						}] as OverwriteResolvable[]).map(o => PermissionOverwrites.resolve(o, guild));
-						const category = await guild.channels.create(message.guild.name, {
-							permissionOverwrites, type: 'category'
-						});
-						// tfw GuildChannelCreateOptions isn't exported
-						const options: Parameters<GuildChannelManager['create']>[1] = {
-							parent: category,
-							permissionOverwrites,
-							reason: `Config setup by ${message.author.tag}`,
-							type: 'text'
-						};
-						const [cases, commands, logsCategory] = await Promise.all([
-							guild.channels.create('cases', options),
-							guild.channels.create('commands', options),
-							guild.channels.create(`${message.guild.name}-LOGS`, {
-								permissionOverwrites, type: 'category'
-							})
-						]) as [TextChannel, TextChannel, CategoryChannel];
-						options.parent = logsCategory;
-						const logChannels = await Promise.all([
-							guild.channels.create('audit-logs', options),
-							guild.channels.create('member-logs', options),
-							guild.channels.create('invite-logs', options)
-						]) as [TextChannel, TextChannel, TextChannel];
-						const webhookOptions: { avatar?: string } = {};
-						if (message.guild.icon) {
-							webhookOptions.avatar = await DataResolver.resolveImage(message.guild.iconURL()!);
-						}
-						for (let i = 0; i < logChannels.length; i++) {
-							const logChannel = logChannels[i];
-							const webhook = await logChannel.createWebhook(logChannel.name, webhookOptions);
-							let hookName: 'audit_logs' | 'member_logs' | 'invite_logs';
-							if (i === 0) hookName = 'audit_logs';
-							else if (i === 1) hookName = 'member_logs';
-							else hookName = 'invite_logs';
-							values[`${hookName}_webhook`] = `${webhook.id}:${webhook.token}`;
-						}
-						values['staff_server_category'] = category.id;
-						values['staff_commands_channel'] = commands.id;
-						values['punishment_channel'] = cases.id;
-						messages.push((await message.channel.send('Finished creating channels')).id);
-					}
-				} else if (data.type.startsWith('roles-')) {
-					const _roles = response.content.split(/ *, */g);
-					const errorResponse = [
-						'Please provide 4 roles seperated by a comma.',
-						// eslint-disable-next-line max-len
-						'in the order: Owner, Admin, Moderator, Trainee (the roles don\'t have to be named this, just the respective roles).'
-					];
-					if (_roles.length !== 4) {
-						await tryAgain(errorResponse);
-						continue;
-					}
-					const roles = _roles.map(idOrName => {
-						const [id] = idOrName.match(MessageMentions.ROLES_PATTERN) || [];
-						return message.guild.roles.cache.get(id || idOrName) || message.guild.roles.cache.find(
-							role => role.name.toLowerCase() === idOrName.toLowerCase()
-						);
-					});
-					if (roles.some(role => !(role instanceof Role))) {
-						await tryAgain(errorResponse);
-						continue;
-					}
-					values[data.key] = JSON.stringify(roles.map(role => role!.id));
+				const result = await BotConfig.resolveValue(data, response, {
+					createChannels: true
+				});
+				if (typeof result === 'string') {
+					await tryAgain(result);
+					continue;
 				}
+				Object.assign(values, result.values);
+				if (result.messages !== null) messages.push(...result.messages);
 			}
 
 			await this.client.database.query(QueryTypes.INSERT, 'settings', values);
 			
-			if (messages.length > 100) {
-				while (messages.length > 100) {
-					const msgs = messages.splice(0, 100);
-					await message.channel.bulkDelete(msgs);
-				}
-			} else await message.channel.bulkDelete(messages);
+			await Util.bulkDelete(message.channel, messages, false);
 			return send(`Added guild config for ${message.guild.name}`);
 		}
 		throw new CommandError('INVALID_MODE', keys);
 	}
+}
+
+
+interface ConfigItem {
+	default?: (guild: Guild) => (string | { id: string });
+	description: string;
+	key: keyof RawGuildConfig | 'staff-server';
+	normalizedKey: string;
+	name: string;
+	optional?: boolean;
+	type: string;
 }

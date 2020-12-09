@@ -23,10 +23,6 @@ export interface DeriviClientT {
 		filesDir: string;
 		ownerIDs: Snowflake[];
 		prefix: string[];
-		reactionRoles: Map<Snowflake, {
-			emojis: Map<string, Snowflake>;
-			limit: number;
-		}>;
 		loginURL?: string;
 		readonly PRODUCTION: boolean;
 	};
@@ -67,15 +63,6 @@ export default class Client extends DJSClient {
 		this.config.database = config.database;
 		this.config.filesDir = config.files_dir as string;
 		this.config.prefix = config.prefix;
-		this.config.reactionRoles = new Map(config.reaction_roles.map(data => [
-			data.message, {
-				emojis: new Map(data.emojis.map(emojiData => [
-					emojiData.id,
-					emojiData.role
-				])),
-				limit: data.limit ?? -1
-			}
-		]));
 		this.config.emojis = new EmojiStore(this);
 		for (const { name, id } of config.emojis) {
 			this.config.emojis.set(name, id);
@@ -172,14 +159,6 @@ export interface ClientConfig {
 	files_dir?: string;
 	owners: Snowflake[];
 	prefix: string[];
-	reaction_roles: {
-		limit?: number;
-		message: Snowflake;
-		emojis: {
-			id: Snowflake;
-			role: Snowflake;
-		}[];
-	}[];
 	token: string;
 	website?: {
 		enabled: boolean;

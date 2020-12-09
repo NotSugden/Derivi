@@ -17,18 +17,21 @@ export default (async (
 		await existing.refreshStars();
 		return;
 	}
-	if (!client.config.reactionRoles.size) return;
+	const [data] = await client.database.reactionRole(reaction.message.id, {
+		emoji: reaction.emoji
+	});
 
-	const data = client.config.reactionRoles.get(reaction.message.id);
 	if (!data) return;
-	const roleID = data.emojis.get(reaction.emoji.id || reaction.emoji.name);
-	if (!roleID || !guild.roles.cache.has(roleID)) return;
 
+	const role = guild.roles.resolve(data.roleID);
+	if (!role) {
+		return client.emit('warn', 'There is a reaction role in the database without a valid role ID');
+	}
 	try {
-		const member = await guild.members.fetch(user.id);
-		if (!member.roles.cache.has(roleID)) return;
-		await member.roles.remove(roleID);
+		const member = await guild.members.fetch(user);
+		if (!member.roles.cache.has(role.id)) return;
+		await member.roles.remove(role);
 	} catch (error) {
 		client.emit('error', error);
-	} // eslint-disable-line no-empty
+	}
 }) as (...args: ClientEvents['messageReactionAdd']) => void;

@@ -10,6 +10,7 @@ import {
 	MessageEmbed, Snowflake,
 	User
 } from 'discord.js';
+import { TextBasedChannelFields } from 'discord.js';
 import fetch from 'node-fetch';
 import CommandError from './CommandError';
 import { FLAGS_REGEX, ModerationActionTypes, OPTIONS_REGEX, Responses } from './Constants';
@@ -387,6 +388,46 @@ export default class Util {
 			current = current[prop];
 		}
 		return current;
+	}
+
+	static resolveRole(msg: GuildMessage<true>, string = msg.content.toLowerCase()) {
+		return msg.mentions.roles.first()
+			|| msg.guild.roles.cache.get(string)
+			|| msg.guild.roles.cache.find(role => role.name.toLowerCase() === string);
+	}
+
+	static resolveChannel(msg: GuildMessage<true>, string = msg.content.toLowerCase()) {
+		return msg.mentions.channels.first()
+			|| msg.guild.channels.cache.get(string)
+			|| msg.guild.channels.cache.find(ch => ch.name.toLowerCase() === string);
+	}
+
+	static async bulkDelete(
+		channel: TextBasedChannelFields,
+		messages: Parameters<TextBasedChannelFields['bulkDelete']>[0],
+		filterOld = true
+	) {
+		let deleted: Collection<string, Message> | null = null;
+		if (typeof messages === 'number'){
+			while (messages > 0) {
+				const amount = messages >= 100 ? 100 : messages;
+				messages -= amount;
+				deleted = await channel.bulkDelete(amount, filterOld);
+				if (deleted.size === 0) break;
+			}
+			return deleted ?? new Collection();
+		}
+		const array = [...messages.values()];
+
+		if (array.length <= 100) {
+			deleted = await channel.bulkDelete(messages, filterOld);
+		} else {
+			while (array.length > 0) {
+				deleted = await channel.bulkDelete(array.splice(0, 100), filterOld);
+				if (deleted.size === 0) break;
+			}
+		}
+		return deleted;
 	}
 
 	private static _extractOptions(
