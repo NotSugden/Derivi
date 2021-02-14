@@ -711,7 +711,7 @@ export const Responses = {
 		context, extras
 	}: { context?: Message; extras: { [key: string]: string } }) => {
 		const description = [
-			`ASC Logs: ${action.split('_').map(str => upperFirst(str, true))}`
+			`ASN Punishment Logs: Logs: ${action.split('_').map(str => upperFirst(str, true))}`
 		];
 		if (Object.keys(extras).length) {
 			description.push(...Object.entries(extras)
