@@ -4,7 +4,7 @@ import { GuildMessage } from '../util/Types';
 import Util from '../util/Util';
 
 export default class Case {
-	public client!: Client;
+	public readonly client!: Client;
 	public action!: keyof typeof ModerationActionTypes;
 	public extras!: { [key: string]: string };
 	public id!: number;

@@ -1,3 +1,4 @@
+import { APIInteractionResponseType, MessageFlags } from 'discord-api-types/v8';
 import {
 	CategoryChannel, Client,
 	Collection, DMChannel,
@@ -7,6 +8,7 @@ import {
 	TextChannel, User,
 	VoiceChannel
 } from 'discord.js';
+import Interaction from '../../structures/Interaction';
 import { GuildChannels } from '../Types';
 import Util from '../Util';
 import { ProcessActionObject } from '../WebsiteManager';
@@ -274,4 +276,29 @@ handlers.set('GET_GUILD', async (client, data) => {
 	}
   
 	return { guild };
+});
+
+handlers.set('RUN_INTERACTION', async (client, { data }) => {
+	const command = client.commands.resolve(data.data!.name);
+	if (!command) return { response: {
+		data: {
+			content: 'Unknown command',
+			flags: MessageFlags.EPHEMERAL
+		},
+		type: APIInteractionResponseType.Acknowledge
+	} };
+	try {
+		const interaction = new Interaction(client, data);
+		const response = await command.interaction(interaction);
+		return { response };
+	} catch (error) {
+		console.error('Interaction error:', error);
+		return { response: {
+			data: {
+				content: 'An error occoured executing this command, try again later.',
+				flags: MessageFlags.EPHEMERAL
+			},
+			type: APIInteractionResponseType.Acknowledge
+		} };
+	}
 });

@@ -1,12 +1,16 @@
+import { 
+	APIInteractionApplicationCommandCallbackData,
+	APIInteractionResponseType, MessageFlags
+} from 'discord-api-types/v8';
 import {
 	Client, DMChannel, GuildMember,
 	MessageAdditions, MessageEditOptions,
 	MessageOptions, PermissionResolvable,
 	Snowflake, StringResolvable,
-	TextChannel, User
+	TextChannel, User, NewsChannel
 } from 'discord.js';
-import { NewsChannel } from 'discord.js';
 import CommandArguments from './CommandArguments';
+import Interaction from './Interaction';
 import CommandManager from '../util/CommandManager';
 import { GuildMessage, TextBasedChannels } from '../util/Types';
 
@@ -117,6 +121,21 @@ export default class Command {
 		if (edited) return Promise.resolve();
 		return send('No implementation for command');
 	}
+
+	public interaction(interaction: Interaction): Promise<InteractionResponse> | InteractionResponse {
+		return {
+			data: {
+				content: `No implementation for command (${interaction.name})`,
+				flags: MessageFlags.EPHEMERAL
+			},
+			type: APIInteractionResponseType.Acknowledge
+		};
+	}
+}
+
+export type InteractionResponse = {
+	type: APIInteractionResponseType;
+	data: APIInteractionApplicationCommandCallbackData;
 }
 
 export interface CommandData {
