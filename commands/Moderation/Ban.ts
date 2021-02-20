@@ -151,7 +151,9 @@ export default class Ban extends Command {
 		const { users, members } = interaction.resolved!;
 		const user = this.client.users.add(users![userID]);
 		const { guild } = interaction;
-		const member = members && userID in members ? guild.members.add(members![userID]) : null;
+		const member = members && userID in members
+			? guild.members.add(Object.assign({ user: users![userID] }, members![userID]))
+			: null;
 
 		if (member && !Util.manageable(member, interaction.member)) {
 			return { data: {

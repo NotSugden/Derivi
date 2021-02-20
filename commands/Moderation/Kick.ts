@@ -98,7 +98,10 @@ export default class Kick extends Command {
 	public async interaction(interaction: Interaction): Promise<InteractionResponse> {
 		const userID = <Snowflake> interaction.options!.find(opt => opt.name === 'member')!.value;
 		const { guild } = interaction;
-		const member = guild.members.add(interaction.resolved!.members![userID]);
+		const member = guild.members.add(Object.assign(
+			{ user: interaction.resolved!.users![userID] },
+			interaction.resolved!.members![userID]
+		));
 
 		if (member && !Util.manageable(member, interaction.member)) {
 			return { data: {
