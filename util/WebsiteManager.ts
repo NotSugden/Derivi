@@ -1,6 +1,7 @@
 import { ChildProcess, fork } from 'child_process';
 import { EventEmitter } from 'events';
 import * as path from 'path';
+import { APIInteraction } from 'discord-api-types/v8';
 import { Client, MessageEmbedOptions, Snowflake, Util as DJSUtil } from 'discord.js';
 import handlers from './handlers';
 
@@ -110,7 +111,10 @@ export type ProcessActionObject = {
   type: 'GET_GUILD';
   id?: Snowflake;
   withChannels?: boolean;
-};
+} | ({
+	type: 'RUN_INTERACTION';
+	data: APIInteraction
+});
 
 export type ProcessMessage = {
 	_responseID: string;
