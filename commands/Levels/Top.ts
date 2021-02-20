@@ -1,5 +1,8 @@
-import Command, { CommandData, CommandCategory } from '../../structures/Command';
+import { APIInteractionResponseType, MessageFlags } from 'discord-api-types/v8';
+import { Snowflake } from 'discord.js';
+import Command, { CommandData, CommandCategory, InteractionResponse } from '../../structures/Command';
 import CommandArguments from '../../structures/CommandArguments';
+import Interaction from '../../structures/Interaction';
 import CommandError from '../../util/CommandError';
 import CommandManager from '../../util/CommandManager';
 import { Responses } from '../../util/Constants';
@@ -39,5 +42,16 @@ export default class Top extends Command {
 		}
 
 		return send(Responses.TOP(topUsers.array(), message.guild!));
+	}
+
+	public async interaction(interaction: Interaction): Promise<InteractionResponse> {
+		const id = <Snowflake> interaction.options?.[0]?.value ?? interaction.member.id;
+		const apiUser = interaction.resolved?.users![id];
+		const user = apiUser ? this.client.users.add(apiUser, true) : interaction.member.user;
+		const { level, xp } = await this.client.database.levels(user);
+		return { data: {
+			content: Responses.LEVEL(user, level, xp).join('\n'),
+			flags: MessageFlags.EPHEMERAL
+		}, type: APIInteractionResponseType.Acknowledge };
 	}
 }

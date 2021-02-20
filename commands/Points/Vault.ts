@@ -1,5 +1,7 @@
-import Command, { CommandData, CommandCategory } from '../../structures/Command';
+import { APIInteractionResponseType, MessageFlags } from 'discord-api-types/v8';
+import Command, { CommandData, CommandCategory, InteractionResponse } from '../../structures/Command';
 import CommandArguments from '../../structures/CommandArguments';
+import Interaction from '../../structures/Interaction';
 import CommandError from '../../util/CommandError';
 import CommandManager from '../../util/CommandManager';
 import { Responses } from '../../util/Constants';
@@ -87,5 +89,14 @@ export default class Vault extends Command {
 			return send(Responses.WITHDRAW_SUCCESS(amount));
 		}
 		throw new CommandError('INVALID_MODE', keys);
+	}
+
+	public async interaction(interaction: Interaction): Promise<InteractionResponse> {
+		const { user } = interaction.member;
+		const { vault } = await this.client.database.points(user);
+		return { data: {
+			content: Responses.VAULT_CHECK(user, vault),
+			flags: MessageFlags.EPHEMERAL
+		}, type: APIInteractionResponseType.Acknowledge };
 	}
 }

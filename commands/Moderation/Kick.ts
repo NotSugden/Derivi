@@ -1,9 +1,11 @@
-import { Permissions } from 'discord.js';
-import Command, { CommandData, CommandCategory } from '../../structures/Command';
+import { APIInteractionResponseType, MessageFlags } from 'discord-api-types/v8';
+import { Snowflake, Permissions } from 'discord.js';
+import Command, { CommandData, CommandCategory, InteractionResponse } from '../../structures/Command';
 import CommandArguments from '../../structures/CommandArguments';
+import Interaction from '../../structures/Interaction';
 import CommandError from '../../util/CommandError';
 import CommandManager from '../../util/CommandManager';
-import { Responses } from '../../util/Constants';
+import { CommandErrors, Responses } from '../../util/Constants';
 import { GuildMessage } from '../../util/Types';
 import Util from '../../util/Util';
 
@@ -91,5 +93,35 @@ export default class Kick extends Command {
 		}
 
 		return context;
+	}
+
+	public async interaction(interaction: Interaction): Promise<InteractionResponse> {
+		const userID = <Snowflake> interaction.options!.find(opt => opt.name === 'member')!.value;
+		const { guild } = interaction;
+		const member = guild.members.add(interaction.resolved!.members![userID]);
+
+		if (member && !Util.manageable(member, interaction.member)) {
+			return { data: {
+				content: CommandErrors.CANNOT_ACTION_USER('BAN', false),
+				flags: MessageFlags.EPHEMERAL
+			}, type: APIInteractionResponseType.Acknowledge };
+		}
+
+		const { id: caseID, reason } = await Util.sendLog({
+			action: 'KICK',
+			extras: {},
+			guild,
+			moderator: interaction.member.user,
+			reason: <string> interaction.options!.find(opt => opt.name === 'reason')!.value,
+			screenshots: [],
+			users: [member.user]
+		});
+
+		await member.kick(Responses.AUDIT_LOG_MEMBER_REMOVE(interaction.member.user, caseID, true));
+
+		return { data: {
+			content: `Kicked ${member.user.tag} for reason ${reason}.`,
+			flags: MessageFlags.EPHEMERAL
+		}, type: APIInteractionResponseType.Acknowledge };
 	}
 }

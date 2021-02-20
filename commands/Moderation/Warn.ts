@@ -1,9 +1,11 @@
-import { Permissions } from 'discord.js';
-import Command, { CommandData, CommandCategory } from '../../structures/Command';
+import { APIInteractionResponseType, MessageFlags } from 'discord-api-types/v8';
+import { Permissions, Snowflake } from 'discord.js';
+import Command, { CommandData, CommandCategory, InteractionResponse } from '../../structures/Command';
 import CommandArguments from '../../structures/CommandArguments';
+import Interaction from '../../structures/Interaction';
 import CommandError from '../../util/CommandError';
 import CommandManager from '../../util/CommandManager';
-import { Responses } from '../../util/Constants';
+import { Responses, CommandErrors } from '../../util/Constants';
 import { GuildMessage } from '../../util/Types';
 import Util from '../../util/Util';
 
@@ -85,5 +87,48 @@ export default class Warn extends Command {
 		);
 
 		return context;
+	}
+
+	public async interaction(interaction: Interaction): Promise<InteractionResponse> {
+		const userID = <Snowflake> interaction.options!.find(opt => opt.name === 'user')!.value;
+		const { users, members } = interaction.resolved!;
+		const user = this.client.users.add(users![userID]);
+		const { guild } = interaction;
+		const member = members && userID in members ? guild.members.add(members![userID]) : null;
+
+		if (member && !Util.manageable(member, interaction.member)) {
+			return { data: {
+				content: CommandErrors.CANNOT_ACTION_USER('WARN', false),
+				flags: MessageFlags.EPHEMERAL
+			}, type: APIInteractionResponseType.Acknowledge };
+		}
+
+		const { id: caseID, reason } = await Util.sendLog({
+			action: 'WARN',
+			extras: {},
+			guild,
+			moderator: interaction.member.user,
+			reason: <string> interaction.options!.find(opt => opt.name === 'reason')!.value,
+			screenshots: [],
+			users: [user]
+		});
+
+		try {
+			await user.send(Responses.DM_PUNISHMENT_ACTION(guild, 'WARN', reason));
+		} catch { } // eslint-disable-line no-empty
+
+		await this.client.database.createWarn({
+			case: caseID,
+			guild: guild,
+			moderator: interaction.member.user,
+			reason,
+			timestamp: new Date(),
+			user
+		});
+
+		return { data: {
+			content: `Warned ${user.tag} for reason ${reason}.`,
+			flags: MessageFlags.EPHEMERAL
+		}, type: APIInteractionResponseType.Acknowledge };
 	}
 }
