@@ -113,7 +113,7 @@ export type ProcessActionObject = {
   withChannels?: boolean;
 } | ({
 	type: 'RUN_INTERACTION';
-	data: APIInteraction
+	data: APIInteraction;
 });
 
 export type ProcessMessage = {
