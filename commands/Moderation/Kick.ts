@@ -96,14 +96,11 @@ export default class Kick extends Command {
 	}
 
 	public async interaction(interaction: Interaction): Promise<InteractionResponse> {
-		const userID = <Snowflake> interaction.options!.find(opt => opt.name === 'member')!.value;
+		const userID = <Snowflake> interaction.options!.find(opt => opt.name === 'user')!.value;
+		const member = interaction.resolved!.members!.get(userID)!;
 		const { guild } = interaction;
-		const member = guild.members.add(Object.assign(
-			{ user: interaction.resolved!.users![userID] },
-			interaction.resolved!.members![userID]
-		));
 
-		if (member && !Util.manageable(member, interaction.member)) {
+		if (!Util.manageable(member, interaction.member)) {
 			return { data: {
 				content: CommandErrors.CANNOT_ACTION_USER('BAN', false),
 				flags: MessageFlags.EPHEMERAL

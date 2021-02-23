@@ -91,16 +91,13 @@ export default class Warn extends Command {
 
 	public async interaction(interaction: Interaction): Promise<InteractionResponse> {
 		const userID = <Snowflake> interaction.options!.find(opt => opt.name === 'user')!.value;
-		const { users, members } = interaction.resolved!;
-		const user = this.client.users.add(users![userID]);
+		const member = interaction.resolved!.members!.get(userID)!;
+		const { user } = member;
 		const { guild } = interaction;
-		const member = members && userID in members
-			? guild.members.add(Object.assign({ user: users![userID] }, members![userID]))
-			: null;
 
-		if (member && !Util.manageable(member, interaction.member)) {
+		if (!Util.manageable(member, interaction.member)) {
 			return { data: {
-				content: CommandErrors.CANNOT_ACTION_USER('WARN', false),
+				content: CommandErrors.CANNOT_ACTION_USER('BAN', false),
 				flags: MessageFlags.EPHEMERAL
 			}, type: APIInteractionResponseType.Acknowledge };
 		}

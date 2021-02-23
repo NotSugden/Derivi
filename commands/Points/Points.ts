@@ -77,9 +77,8 @@ export default class Points extends Command {
 	}
 
 	public async interaction(interaction: Interaction): Promise<InteractionResponse> {
-		const id = <Snowflake> interaction.options?.[0]?.value ?? interaction.member.id;
-		const apiUser = interaction.resolved?.users![id];
-		const user = apiUser ? this.client.users.add(apiUser, true) : interaction.member.user;
+		const id = <Snowflake | undefined> interaction.options?.[0]?.value;
+		const user = id ? interaction.resolved!.users!.get(id)! : interaction.member.user;
 		const points = await this.client.database.points(user);
 		return { data: {
 			content: Responses.POINTS(user, points.amount, user.id === interaction.member.id),

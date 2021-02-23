@@ -148,14 +148,10 @@ export default class Ban extends Command {
 	public async interaction(interaction: Interaction): Promise<InteractionResponse> {
 		const days = <number | undefined> interaction.options!.find(opt => opt.name === 'days')?.value;
 		const userID = <Snowflake> interaction.options!.find(opt => opt.name === 'user')!.value;
-		const { users, members } = interaction.resolved!;
-		const user = this.client.users.add(users![userID]);
+		const member = interaction.resolved!.members!.get(userID)!;
 		const { guild } = interaction;
-		const member = members && userID in members
-			? guild.members.add(Object.assign({ user: users![userID] }, members![userID]))
-			: null;
 
-		if (member && !Util.manageable(member, interaction.member)) {
+		if (!Util.manageable(member, interaction.member)) {
 			return { data: {
 				content: CommandErrors.CANNOT_ACTION_USER('BAN', false),
 				flags: MessageFlags.EPHEMERAL
@@ -175,15 +171,15 @@ export default class Ban extends Command {
 			moderator: interaction.member.user,
 			reason: <string> interaction.options!.find(opt => opt.name === 'reason')!.value,
 			screenshots: [],
-			users: [user]
+			users: [member.user]
 		});
 
-		await guild.members.ban(user, {
+		await member.ban({
 			days, reason: Responses.AUDIT_LOG_MEMBER_REMOVE(interaction.member.user, caseID, false)
 		});
 
 		return { data: {
-			content: `Banned ${user.tag} for reason ${reason}.`,
+			content: `Banned ${member.user.tag} for reason ${reason}.`,
 			flags: MessageFlags.EPHEMERAL
 		}, type: APIInteractionResponseType.Acknowledge };
 	}

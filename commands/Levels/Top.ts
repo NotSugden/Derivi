@@ -45,7 +45,7 @@ export default class Top extends Command {
 
 	public async interaction(interaction: Interaction): Promise<InteractionResponse> {
 		const topUsers = await this.client.database.levels(
-			<number> interaction.options?.[0]?.value || 10
+			<number> interaction.options?.[0]?.value ?? 10
 		);
 
 		for (const levels of topUsers.values()) {
