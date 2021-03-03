@@ -1,5 +1,7 @@
-import Command, { CommandData, CommandCategory } from '../../structures/Command';
+import { APIInteractionResponseType, MessageFlags } from 'discord-api-types/v8';
+import Command, { CommandData, CommandCategory, InteractionResponse } from '../../structures/Command';
 import CommandArguments from '../../structures/CommandArguments';
+import Interaction from '../../structures/Interaction';
 import CommandError from '../../util/CommandError';
 import CommandManager from '../../util/CommandManager';
 import { Responses } from '../../util/Constants';
@@ -39,5 +41,23 @@ export default class Top extends Command {
 		}
 
 		return send(Responses.TOP(topUsers.array(), message.guild!));
+	}
+
+	public async interaction(interaction: Interaction): Promise<InteractionResponse> {
+		const topUsers = await this.client.database.levels(
+			<number> interaction.options?.[0]?.value ?? 10
+		);
+
+		for (const levels of topUsers.values()) {
+			if (!levels.user) {
+				await this.client.users.fetch(levels.userID)
+					.catch(console.error);
+			}
+		}
+
+		return { data: {
+			content: Responses.TOP(topUsers.array(), interaction.guild).description!,
+			flags: MessageFlags.EPHEMERAL
+		}, type: APIInteractionResponseType.Acknowledge };
 	}
 }

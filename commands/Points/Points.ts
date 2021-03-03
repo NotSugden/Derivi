@@ -1,6 +1,8 @@
-import { Permissions } from 'discord.js';
-import Command, { CommandData, CommandCategory } from '../../structures/Command';
+import { APIInteractionResponseType, MessageFlags } from 'discord-api-types/v8';
+import { Snowflake, Permissions } from 'discord.js';
+import Command, { CommandData, CommandCategory, InteractionResponse } from '../../structures/Command';
 import CommandArguments from '../../structures/CommandArguments';
+import Interaction from '../../structures/Interaction';
 import CommandError from '../../util/CommandError';
 import CommandManager from '../../util/CommandManager';
 import { Responses } from '../../util/Constants';
@@ -72,5 +74,15 @@ export default class Points extends Command {
 			}
 		}
 		return send(Responses.POINTS(user, points.amount, user.id === message.author.id));
+	}
+
+	public async interaction(interaction: Interaction): Promise<InteractionResponse> {
+		const id = <Snowflake | undefined> interaction.options?.[0]?.value;
+		const user = id ? interaction.resolved!.users!.get(id)! : interaction.member.user;
+		const points = await this.client.database.points(user);
+		return { data: {
+			content: Responses.POINTS(user, points.amount, user.id === interaction.member.id),
+			flags: MessageFlags.EPHEMERAL
+		}, type: APIInteractionResponseType.Acknowledge };
 	}
 }

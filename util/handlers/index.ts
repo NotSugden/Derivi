@@ -8,7 +8,9 @@ import {
 	TextChannel, User,
 	VoiceChannel
 } from 'discord.js';
+import Command from '../../structures/Command';
 import Interaction from '../../structures/Interaction';
+import { CommandErrors } from '../Constants';
 import { GuildChannels } from '../Types';
 import Util from '../Util';
 import { ProcessActionObject } from '../WebsiteManager';
@@ -289,6 +291,24 @@ handlers.set('RUN_INTERACTION', async (client, { data }) => {
 	} };
 	try {
 		const interaction = new Interaction(client, data);
+		const hasPermissions = await Command.hasPermissions(command, interaction.member, interaction.channel);
+		if (hasPermissions === null) return { response: {
+			data: {
+				content: CommandErrors.INSUFFICIENT_PERMISSIONS(),
+				flags: MessageFlags.EPHEMERAL
+			},
+			type: APIInteractionResponseType.Acknowledge
+		} };
+		const isString = typeof hasPermissions === 'string';
+		if (!hasPermissions || isString) {
+			return { response: {
+				data: {
+					content: isString ? hasPermissions : CommandErrors.INSUFFICIENT_PERMISSIONS(),
+					flags: MessageFlags.EPHEMERAL
+				},
+				type: APIInteractionResponseType.Acknowledge
+			} };
+		}
 		const response = await command.interaction(interaction);
 		return { response };
 	} catch (error) {

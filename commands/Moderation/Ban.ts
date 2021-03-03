@@ -1,9 +1,11 @@
-import { Permissions, BanOptions } from 'discord.js';
-import Command, { CommandData, CommandCategory } from '../../structures/Command';
+import { APIInteractionResponseType, MessageFlags } from 'discord-api-types/v8';
+import { Permissions, BanOptions, Snowflake } from 'discord.js';
+import Command, { CommandData, CommandCategory, InteractionResponse } from '../../structures/Command';
 import CommandArguments from '../../structures/CommandArguments';
+import Interaction from '../../structures/Interaction';
 import CommandError from '../../util/CommandError';
 import CommandManager from '../../util/CommandManager';
-import { Responses } from '../../util/Constants';
+import { CommandErrors, Responses } from '../../util/Constants';
 import { GuildMessage } from '../../util/Types';
 import Util from '../../util/Util';
 
@@ -141,5 +143,44 @@ export default class Ban extends Command {
 		}
 
 		return context;
+	}
+
+	public async interaction(interaction: Interaction): Promise<InteractionResponse> {
+		const days = <number | undefined> interaction.options!.find(opt => opt.name === 'days')?.value;
+		const userID = <Snowflake> interaction.options!.find(opt => opt.name === 'user')!.value;
+		const member = interaction.resolved!.members!.get(userID)!;
+		const { guild } = interaction;
+
+		if (!Util.manageable(member, interaction.member)) {
+			return { data: {
+				content: CommandErrors.CANNOT_ACTION_USER('BAN', false),
+				flags: MessageFlags.EPHEMERAL
+			}, type: APIInteractionResponseType.Acknowledge };
+		}
+
+		const extras: Record<string, string> = {};
+
+		if (days) {
+			extras['Days of Messages Deleted'] = days.toString();
+		}
+
+		const { id: caseID, reason } = await Util.sendLog({
+			action: 'BAN',
+			extras,
+			guild,
+			moderator: interaction.member.user,
+			reason: <string> interaction.options!.find(opt => opt.name === 'reason')!.value,
+			screenshots: [],
+			users: [member.user]
+		});
+
+		await member.ban({
+			days, reason: Responses.AUDIT_LOG_MEMBER_REMOVE(interaction.member.user, caseID, false)
+		});
+
+		return { data: {
+			content: `Banned ${member.user.tag} for reason ${reason}.`,
+			flags: MessageFlags.EPHEMERAL
+		}, type: APIInteractionResponseType.Acknowledge };
 	}
 }
