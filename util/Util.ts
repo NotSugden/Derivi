@@ -272,8 +272,7 @@ export default class Util {
 		if (member.id === member.guild.ownerID) return false;
 		if (by.id === member.guild.ownerID) return true;
 		const position = member.roles.highest.comparePositionTo(by.roles.highest);
-		if (position < 0) return true;
-		return false;
+		return position < 0;
 	}
 
 	static async fetchOauthUser(client: Client, accessToken: string, tokenType = 'Bearer') {

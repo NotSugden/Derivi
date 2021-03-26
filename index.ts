@@ -2,7 +2,7 @@
 import { promises as fs } from 'fs';
 import { join } from 'path';
 import { registerFont } from 'canvas';
-import { ClientEvents, Constants, Extendable, Intents, Structures } from 'discord.js';
+import { ClientEvents, Constants, Extendable, Intents, Structures, Permissions } from 'discord.js';
 import Client from './util/Client';
 
 registerFont(join(__dirname, 'assets', 'fonts', 'BebasNeue-Bold.ttf'), {
@@ -37,7 +37,7 @@ client.on('warn', console.warn);
  * `user` shouldn't be a partial, so it is typed as such
  */
 client.on(Constants.Events.GUILD_BAN_ADD, async (guild, user) => {
-	if (guild.bans.has(user.id)) return;
+	if (guild.bans.has(user.id) || !guild.me?.hasPermission(Permissions.FLAGS.BAN_MEMBERS)) return;
 	try {
 		const ban = await guild.fetchBan(user.id);
 		guild.bans.set(user.id, ban);
