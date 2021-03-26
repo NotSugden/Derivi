@@ -3,12 +3,13 @@ import { Responses } from '../util/Constants';
 import { GuildMessage } from '../util/Types';
 
 export default (async (
-	reaction: Omit<MessageReaction, 'message'> & { message: Message | PartialMessage },
+	reaction: MessageReaction,
 	user: User
 ) => {
+	if (reaction.message.partial) await reaction.message.fetch();
 	const { client, guild, author } = reaction.message;
 
-	if (!author || author.id === client.user!.id) {
+	if (author.id === client.user!.id) {
 		const giveaway = await client.database.giveaway(reaction.message.id);
 		if (giveaway && !giveaway.ended) {
 			await reaction.message.edit(Responses.GIVEAWAY_START(giveaway.prize, {
@@ -23,7 +24,7 @@ export default (async (
 	
 	if (config.starboard.enabled && reaction.emoji.name === '⭐' && !client.config.PRODUCTION) {
 		if (reaction.partial) await reaction.fetch();
-		if (author!.id === user.id) {
+		if (author.id === user.id) {
 			await reaction.users.remove(user.id);
 			await reaction.message.channel.send(Responses.STAR_OWN_MESSAGE(user));
 			return;
