@@ -97,6 +97,6 @@ export default class Vault extends Command {
 		return { data: {
 			content: Responses.VAULT_CHECK(user, vault),
 			flags: MessageFlags.EPHEMERAL
-		}, type: APIInteractionResponseType.Acknowledge };
+		}, type: APIInteractionResponseType.ChannelMessageWithSource };
 	}
 }

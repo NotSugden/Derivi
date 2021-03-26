@@ -104,7 +104,7 @@ export default class Kick extends Command {
 			return { data: {
 				content: CommandErrors.CANNOT_ACTION_USER('BAN', false),
 				flags: MessageFlags.EPHEMERAL
-			}, type: APIInteractionResponseType.Acknowledge };
+			}, type: APIInteractionResponseType.ChannelMessageWithSource };
 		}
 
 		const { id: caseID, reason } = await Util.sendLog({
@@ -122,6 +122,6 @@ export default class Kick extends Command {
 		return { data: {
 			content: `Kicked ${member.user.tag} for reason ${reason}.`,
 			flags: MessageFlags.EPHEMERAL
-		}, type: APIInteractionResponseType.Acknowledge };
+		}, type: APIInteractionResponseType.ChannelMessageWithSource };
 	}
 }

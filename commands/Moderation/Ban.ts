@@ -155,7 +155,7 @@ export default class Ban extends Command {
 			return { data: {
 				content: CommandErrors.CANNOT_ACTION_USER('BAN', false),
 				flags: MessageFlags.EPHEMERAL
-			}, type: APIInteractionResponseType.Acknowledge };
+			}, type: APIInteractionResponseType.ChannelMessageWithSource };
 		}
 
 		const extras: Record<string, string> = {};
@@ -181,6 +181,6 @@ export default class Ban extends Command {
 		return { data: {
 			content: `Banned ${member.user.tag} for reason ${reason}.`,
 			flags: MessageFlags.EPHEMERAL
-		}, type: APIInteractionResponseType.Acknowledge };
+		}, type: APIInteractionResponseType.ChannelMessageWithSource };
 	}
 }

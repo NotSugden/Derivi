@@ -287,7 +287,7 @@ handlers.set('RUN_INTERACTION', async (client, { data }) => {
 			content: 'Unknown command',
 			flags: MessageFlags.EPHEMERAL
 		},
-		type: APIInteractionResponseType.Acknowledge
+		type: APIInteractionResponseType.ChannelMessageWithSource
 	} };
 	try {
 		const interaction = new Interaction(client, data);
@@ -297,7 +297,7 @@ handlers.set('RUN_INTERACTION', async (client, { data }) => {
 				content: CommandErrors.INSUFFICIENT_PERMISSIONS(),
 				flags: MessageFlags.EPHEMERAL
 			},
-			type: APIInteractionResponseType.Acknowledge
+			type: APIInteractionResponseType.ChannelMessageWithSource
 		} };
 		const isString = typeof hasPermissions === 'string';
 		if (!hasPermissions || isString) {
@@ -306,7 +306,7 @@ handlers.set('RUN_INTERACTION', async (client, { data }) => {
 					content: isString ? hasPermissions : CommandErrors.INSUFFICIENT_PERMISSIONS(),
 					flags: MessageFlags.EPHEMERAL
 				},
-				type: APIInteractionResponseType.Acknowledge
+				type: APIInteractionResponseType.ChannelMessageWithSource
 			} };
 		}
 		const response = await command.interaction(interaction);
@@ -318,7 +318,7 @@ handlers.set('RUN_INTERACTION', async (client, { data }) => {
 				content: 'An error occoured executing this command, try again later.',
 				flags: MessageFlags.EPHEMERAL
 			},
-			type: APIInteractionResponseType.Acknowledge
+			type: APIInteractionResponseType.ChannelMessageWithSource
 		} };
 	}
 });
