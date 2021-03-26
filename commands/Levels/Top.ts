@@ -58,6 +58,6 @@ export default class Top extends Command {
 		return { data: {
 			content: Responses.TOP(topUsers.array(), interaction.guild).description!,
 			flags: MessageFlags.EPHEMERAL
-		}, type: APIInteractionResponseType.Acknowledge };
+		}, type: APIInteractionResponseType.ChannelMessageWithSource };
 	}
 }

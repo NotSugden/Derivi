@@ -99,7 +99,7 @@ export default class Warn extends Command {
 			return { data: {
 				content: CommandErrors.CANNOT_ACTION_USER('BAN', false),
 				flags: MessageFlags.EPHEMERAL
-			}, type: APIInteractionResponseType.Acknowledge };
+			}, type: APIInteractionResponseType.ChannelMessageWithSource };
 		}
 
 		const { id: caseID, reason } = await Util.sendLog({
@@ -128,6 +128,6 @@ export default class Warn extends Command {
 		return { data: {
 			content: `Warned ${user.tag} for reason ${reason}.`,
 			flags: MessageFlags.EPHEMERAL
-		}, type: APIInteractionResponseType.Acknowledge };
+		}, type: APIInteractionResponseType.ChannelMessageWithSource };
 	}
 }

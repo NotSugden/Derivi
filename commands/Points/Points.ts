@@ -83,6 +83,6 @@ export default class Points extends Command {
 		return { data: {
 			content: Responses.POINTS(user, points.amount, user.id === interaction.member.id),
 			flags: MessageFlags.EPHEMERAL
-		}, type: APIInteractionResponseType.Acknowledge };
+		}, type: APIInteractionResponseType.ChannelMessageWithSource };
 	}
 }

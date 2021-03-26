@@ -34,6 +34,6 @@ export default class Level extends Command {
 		return { data: {
 			content: Responses.LEVEL(user, level, xp).join('\n'),
 			flags: MessageFlags.EPHEMERAL
-		}, type: APIInteractionResponseType.Acknowledge };
+		}, type: APIInteractionResponseType.ChannelMessageWithSource };
 	}
 }

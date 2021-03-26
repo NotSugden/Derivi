@@ -128,7 +128,7 @@ export default class Command {
 				content: `No implementation for command (${interaction.name})`,
 				flags: MessageFlags.EPHEMERAL
 			},
-			type: APIInteractionResponseType.Acknowledge
+			type: APIInteractionResponseType.ChannelMessageWithSource
 		};
 	}
 }
