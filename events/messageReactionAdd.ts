@@ -1,4 +1,4 @@
-import { ClientEvents, User, Message, PartialMessage, MessageReaction } from 'discord.js';
+import { ClientEvents, User, Message, MessageReaction } from 'discord.js';
 import { Responses } from '../util/Constants';
 import { GuildMessage } from '../util/Types';
 
